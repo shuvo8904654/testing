@@ -90,13 +90,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const insertData = {
+      ...userData,
+      permissions: userData.permissions || [],
+    };
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(insertData as any)
       .onConflictDoUpdate({
         target: users.id,
         set: {
-          ...userData,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          role: userData.role,
+          permissions: (userData.permissions || []) as string[],
+          isActive: userData.isActive,
           updatedAt: new Date(),
         },
       })
@@ -105,9 +115,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: InsertUser): Promise<User> {
+    const insertData = {
+      ...userData,
+      permissions: userData.permissions || [],
+    };
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(insertData as any)
       .returning();
     return user;
   }
@@ -122,17 +136,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMember(memberData: InsertMember): Promise<Member> {
+    const insertData = {
+      ...memberData,
+      social: memberData.social || {},
+    };
     const [member] = await db
       .insert(members)
-      .values(memberData)
+      .values(insertData as any)
       .returning();
     return member;
   }
 
   async updateMember(id: string, memberData: Partial<InsertMember>): Promise<Member> {
+    const updateData: any = { ...memberData };
+    if (updateData.social) {
+      updateData.social = updateData.social;
+    }
     const [member] = await db
       .update(members)
-      .set(memberData)
+      .set(updateData)
       .where(eq(members.id, id))
       .returning();
     return member;

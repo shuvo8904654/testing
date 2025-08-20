@@ -223,16 +223,16 @@ export default function MemberDashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Member Dashboard
               </h1>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Welcome back, {user?.firstName || user?.email}
               </p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
               <Button 
                 variant="outline" 
                 onClick={() => window.location.href = "/"}
@@ -255,25 +255,28 @@ export default function MemberDashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Tabs defaultValue="news" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="news" data-testid="tab-news">
-                <FileText className="w-4 h-4 mr-2" />
-                News & Stories
+            <TabsList className="grid w-full grid-cols-3 gap-1">
+              <TabsTrigger value="news" data-testid="tab-news" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
+                <FileText className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">News & Stories</span>
+                <span className="sm:hidden">News</span>
               </TabsTrigger>
-              <TabsTrigger value="projects" data-testid="tab-projects">
-                <FolderOpen className="w-4 h-4 mr-2" />
-                Projects
+              <TabsTrigger value="projects" data-testid="tab-projects" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
+                <FolderOpen className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Projects</span>
+                <span className="sm:hidden">Projects</span>
               </TabsTrigger>
-              <TabsTrigger value="gallery" data-testid="tab-gallery">
-                <Image className="w-4 h-4 mr-2" />
-                Gallery
+              <TabsTrigger value="gallery" data-testid="tab-gallery" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
+                <Image className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Gallery</span>
+                <span className="sm:hidden">Gallery</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="news" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
                     <div>
                       <CardTitle>News & Stories</CardTitle>
                       <CardDescription>
@@ -282,12 +285,12 @@ export default function MemberDashboard() {
                     </div>
                     <Dialog open={activeDialog === "news"} onOpenChange={(open) => setActiveDialog(open ? "news" : null)}>
                       <DialogTrigger asChild>
-                        <Button data-testid="button-add-news">
+                        <Button data-testid="button-add-news" className="w-full sm:w-auto">
                           <Plus className="w-4 h-4 mr-2" />
                           Add Story
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
+                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Create New Story</DialogTitle>
                         </DialogHeader>
@@ -397,9 +400,9 @@ export default function MemberDashboard() {
                       No stories created yet. Create your first story to get started!
                     </p>
                   ) : (
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {news.map((article) => (
-                        <div key={article.id} className="border rounded-lg p-4" data-testid={`card-news-${article.id}`}>
+                        <div key={article.id} className="border rounded-lg p-3 sm:p-4" data-testid={`card-news-${article.id}`}>
                           <h3 className="font-medium mb-2">{article.title}</h3>
                           <p className="text-sm text-gray-600 mb-2">{article.excerpt}</p>
                           <div className="flex justify-between items-center text-xs text-gray-500">
@@ -431,7 +434,7 @@ export default function MemberDashboard() {
                           Add Project
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Create New Project</DialogTitle>
                         </DialogHeader>
@@ -550,9 +553,9 @@ export default function MemberDashboard() {
                       No projects created yet. Create your first project to get started!
                     </p>
                   ) : (
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {projects.map((project) => (
-                        <div key={project.id} className="border rounded-lg p-4" data-testid={`card-project-${project.id}`}>
+                        <div key={project.id} className="border rounded-lg p-3 sm:p-4" data-testid={`card-project-${project.id}`}>
                           <h3 className="font-medium mb-2">{project.title}</h3>
                           <p className="text-sm text-gray-600 mb-2">{project.description}</p>
                           <div className="flex justify-between items-center text-xs text-gray-500">
@@ -584,7 +587,7 @@ export default function MemberDashboard() {
                           Add Image
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Add Gallery Image</DialogTitle>
                         </DialogHeader>
