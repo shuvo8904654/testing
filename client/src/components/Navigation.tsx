@@ -23,7 +23,7 @@ export default function Navigation() {
   // Add dashboard links for authenticated users
   const dashboardNavigation = [];
   if (isAuthenticated && user) {
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.role === "super_admin") {
       dashboardNavigation.push({ name: "Admin Dashboard", href: "/admin-dashboard", icon: Settings });
     } else if (user.role === "member") {
       dashboardNavigation.push({ name: "Member Dashboard", href: "/member-dashboard", icon: User });
