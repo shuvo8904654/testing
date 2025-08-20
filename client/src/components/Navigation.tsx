@@ -97,17 +97,14 @@ export default function Navigation() {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={() => window.location.href = "/api/login"}
-                  variant="outline"
-                  size="sm"
-                  data-testid="button-login"
-                >
-                  Login
-                </Button>
-                <Link href="/join" data-testid="button-join">
-                  <Button className="bg-eco-green text-white hover:bg-eco-green-dark">
-                    Join Us
+                <Link href="/login" data-testid="link-login">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register" data-testid="link-register">
+                  <Button size="sm" className="bg-eco-green text-white hover:bg-eco-green-dark">
+                    Sign Up
                   </Button>
                 </Link>
               </div>

@@ -15,6 +15,7 @@ import type { Registration, NewsArticle, Project, GalleryImage, User } from "@sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { FileUpload } from "@/components/ui/file-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
@@ -27,12 +28,16 @@ export default function AdminDashboard() {
 
   // Form for creating new user
   const createUserForm = useForm<z.infer<typeof insertUserSchema>>({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(insertUserSchema.extend({
+      password: z.string().min(8, "Password must be at least 8 characters"),
+    })),
     defaultValues: {
       email: "",
       firstName: "",
       lastName: "",
       profileImageUrl: "",
+      password: "",
+      authType: "email",
       role: "member",
       permissions: [],
       isActive: true,
@@ -345,26 +350,26 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Tabs defaultValue="registrations" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
-              <TabsTrigger value="registrations" data-testid="tab-registrations" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
-                <UserCheck className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Registrations</span>
-                <span className="sm:hidden">Reg.</span>
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto">
+              <TabsTrigger value="registrations" data-testid="tab-registrations" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <UserCheck className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Registrations</span>
+                <span className="lg:hidden text-center">Reg.</span>
               </TabsTrigger>
-              <TabsTrigger value="members" data-testid="tab-members" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
-                <Users className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Members</span>
-                <span className="sm:hidden">Users</span>
+              <TabsTrigger value="members" data-testid="tab-members" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <Users className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Members</span>
+                <span className="lg:hidden text-center">Users</span>
               </TabsTrigger>
-              <TabsTrigger value="content" data-testid="tab-content" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
-                <FileText className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Content</span>
-                <span className="sm:hidden">Content</span>
+              <TabsTrigger value="content" data-testid="tab-content" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <FileText className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Content</span>
+                <span className="lg:hidden text-center">Content</span>
               </TabsTrigger>
-              <TabsTrigger value="gallery" data-testid="tab-gallery" className="flex-col sm:flex-row text-xs sm:text-sm p-2">
-                <Image className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Gallery</span>
-                <span className="sm:hidden">Gallery</span>
+              <TabsTrigger value="gallery" data-testid="tab-gallery" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <Image className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Gallery</span>
+                <span className="lg:hidden text-center">Gallery</span>
               </TabsTrigger>
             </TabsList>
 
@@ -492,7 +497,7 @@ export default function AdminDashboard() {
                             Create User
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-xs sm:max-w-md md:max-w-2xl mx-2 sm:mx-4 max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+                        <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto max-h-[90vh] overflow-y-auto p-3 sm:p-6">
                           <DialogHeader>
                             <DialogTitle>Create New User</DialogTitle>
                           </DialogHeader>
@@ -544,9 +549,26 @@ export default function AdminDashboard() {
                                 name="profileImageUrl"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Profile Image URL</FormLabel>
+                                    <FormLabel>Profile Image</FormLabel>
                                     <FormControl>
-                                      <Input {...field} value={field.value || ""} data-testid="input-user-image" />
+                                      <FileUpload
+                                        onFileUpload={field.onChange}
+                                        currentValue={field.value || ""}
+                                        placeholder="Upload profile image"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={createUserForm.control}
+                                name="password"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Password *</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} value={field.value || ""} type="password" data-testid="input-user-password" required />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>

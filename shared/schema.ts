@@ -19,6 +19,8 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  password: varchar("password"), // For email/password authentication
+  authType: varchar("auth_type", { enum: ["replit", "email"] }).default("replit").notNull(),
   role: varchar("role", { enum: ["super_admin", "admin", "member"] }).default("member").notNull(),
   permissions: jsonb("permissions").$type<string[]>().default([]),
   isActive: boolean("is_active").default(true),

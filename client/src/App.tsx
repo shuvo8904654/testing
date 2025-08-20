@@ -17,6 +17,8 @@ import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import AdminDashboard from "@/pages/AdminDashboard";
 import MemberDashboard from "@/pages/MemberDashboard";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 
 function DashboardRouter() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
@@ -58,6 +60,8 @@ function Router() {
               <Route path="/news" component={News} />
               <Route path="/join" component={Join} />
               <Route path="/contact" component={Contact} />
+              <Route path="/login" component={Login} />
+              <Route path="/register" component={Register} />
               <Route path="/admin-dashboard" component={AdminDashboard} />
               <Route path="/member-dashboard" component={MemberDashboard} />
               <Route component={NotFound} />
