@@ -11,14 +11,14 @@ import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plu
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect, useState } from "react";
-import type { Registration, NewsArticle, Project, GalleryImage, User } from "@shared/schema";
+import type { IRegistration, INewsArticle, IProject, IGalleryImage, IUser } from "@shared/models";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema } from "@shared/validation";
 import { z } from "zod";
 
 export default function AdminDashboard() {
@@ -70,21 +70,21 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isLoading, isAdmin, toast]);
 
-  const { data: registrations = [] } = useQuery<Registration[]>({
+  const { data: registrations = [] } = useQuery<IRegistration[]>({
     queryKey: ["/api/registrations"],
     enabled: isAdmin,
   });
 
   const { data: pendingContent } = useQuery<{
-    news: NewsArticle[];
-    projects: Project[];
-    gallery: GalleryImage[];
+    news: INewsArticle[];
+    projects: IProject[];
+    gallery: IGalleryImage[];
   }>({
     queryKey: ["/api/pending-content"],
     enabled: isAdmin,
   });
 
-  const { data: allUsers = [] } = useQuery<User[]>({
+  const { data: allUsers = [] } = useQuery<IUser[]>({
     queryKey: ["/api/users"],
     enabled: isAdmin,
   });

@@ -1,380 +1,305 @@
-import { 
-  type User, 
-  type UpsertUser,
-  type InsertUser, 
-  type Member, 
-  type InsertMember, 
-  type Project, 
-  type InsertProject, 
-  type NewsArticle, 
-  type InsertNewsArticle, 
-  type GalleryImage, 
-  type InsertGalleryImage, 
-  type ContactMessage, 
-  type InsertContactMessage,
-  type Registration,
-  type InsertRegistration
-} from "@shared/schema";
-import { randomUUID } from "crypto";
+import { connectToMongoDB } from './mongodb';
+import {
+  User, Member, Project, NewsArticle, GalleryImage, ContactMessage, Registration,
+  IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration,
+  UserRole, ContentStatus, ApplicationStatus
+} from '@shared/models';
+import type {
+  InsertUser, InsertMember, InsertProject, InsertNewsArticle, 
+  InsertGalleryImage, InsertContactMessage, InsertRegistration
+} from '@shared/validation';
+
+// Connect to MongoDB when storage is imported
+connectToMongoDB().catch(console.error);
 
 export interface IStorage {
   // User operations
-  getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  createUser(user: InsertUser): Promise<User>;
+  getUser(id: string): Promise<IUser | null>;
+  getUserByEmail(email: string): Promise<IUser | null>;
+  createUser(userData: InsertUser): Promise<IUser>;
+  updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null>;
+  getAllUsers(): Promise<IUser[]>;
+  updateUserRole(id: string, role: string, permissions: string[]): Promise<IUser | null>;
+  updateUserStatus(id: string, isActive: boolean): Promise<IUser | null>;
   
-  getMembers(): Promise<Member[]>;
-  getMember(id: string): Promise<Member | undefined>;
-  createMember(member: InsertMember): Promise<Member>;
-  updateMember(id: string, member: Partial<InsertMember>): Promise<Member>;
+  // Member operations
+  getMembers(): Promise<IMember[]>;
+  getMember(id: string): Promise<IMember | null>;
+  createMember(memberData: InsertMember): Promise<IMember>;
+  updateMember(id: string, memberData: Partial<InsertMember>): Promise<IMember | null>;
   deleteMember(id: string): Promise<void>;
   
-  getProjects(): Promise<Project[]>;
-  getProject(id: string): Promise<Project | undefined>;
-  createProject(project: InsertProject, createdBy?: string): Promise<Project>;
-  updateProject(id: string, project: Partial<InsertProject>): Promise<Project>;
+  // Project operations
+  getProjects(): Promise<IProject[]>;
+  getProject(id: string): Promise<IProject | null>;
+  createProject(projectData: InsertProject, createdBy?: string): Promise<IProject>;
+  updateProject(id: string, projectData: Partial<InsertProject>): Promise<IProject | null>;
   deleteProject(id: string): Promise<void>;
   
-  getNewsArticles(): Promise<NewsArticle[]>;
-  getNewsArticle(id: string): Promise<NewsArticle | undefined>;
-  createNewsArticle(article: InsertNewsArticle): Promise<NewsArticle>;
-  updateNewsArticle(id: string, article: Partial<InsertNewsArticle>): Promise<NewsArticle>;
+  // News operations
+  getNewsArticles(): Promise<INewsArticle[]>;
+  getNewsArticle(id: string): Promise<INewsArticle | null>;
+  createNewsArticle(articleData: InsertNewsArticle): Promise<INewsArticle>;
+  updateNewsArticle(id: string, articleData: Partial<InsertNewsArticle>): Promise<INewsArticle | null>;
   deleteNewsArticle(id: string): Promise<void>;
+  incrementReadCount(id: string): Promise<void>;
   
-  getGalleryImages(): Promise<GalleryImage[]>;
-  createGalleryImage(image: InsertGalleryImage): Promise<GalleryImage>;
+  // Gallery operations
+  getGalleryImages(): Promise<IGalleryImage[]>;
+  createGalleryImage(imageData: InsertGalleryImage): Promise<IGalleryImage>;
   deleteGalleryImage(id: string): Promise<void>;
   
-  createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
+  // Contact operations
+  createContactMessage(messageData: InsertContactMessage): Promise<IContactMessage>;
   
   // Registration operations
-  getRegistrations(): Promise<Registration[]>;
-  getRegistration(id: string): Promise<Registration | undefined>;
-  createRegistration(registration: InsertRegistration): Promise<Registration>;
-  updateRegistrationStatus(id: string, status: string, reviewedBy: string): Promise<Registration>;
+  getRegistrations(): Promise<IRegistration[]>;
+  getRegistration(id: string): Promise<IRegistration | null>;
+  createRegistration(registrationData: InsertRegistration): Promise<IRegistration>;
+  updateRegistrationStatus(id: string, status: ApplicationStatus, reviewedBy: string): Promise<IRegistration | null>;
   
-  // Approval operations
-  approveContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void>;
-  rejectContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void>;
+  // Content approval operations
   getPendingContent(): Promise<{
-    news: NewsArticle[];
-    projects: Project[];
-    gallery: GalleryImage[];
+    projects: IProject[];
+    news: INewsArticle[];
+    members: IMember[];
+    gallery: IGalleryImage[];
   }>;
-  
-  // Role management operations
-  getAllUsers(): Promise<User[]>;
-  updateUserRole(id: string, role: string, permissions: string[]): Promise<User>;
-  updateUserStatus(id: string, isActive: boolean): Promise<User>;
+  approveContent(type: string, id: string, approvedBy: string): Promise<void>;
+  rejectContent(type: string, id: string, approvedBy: string): Promise<void>;
 }
 
-
-
-import { 
-  users,
-  members,
-  projects,
-  newsArticles,
-  galleryImages,
-  contactMessages,
-  registrations
-} from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-
-export class DatabaseStorage implements IStorage {
+export class MongoStorage implements IStorage {
   // User operations
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUser(id: string): Promise<IUser | null> {
+    return await User.findById(id);
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+  async getUserByEmail(email: string): Promise<IUser | null> {
+    return await User.findOne({ email });
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const insertData = {
-      ...userData,
-      permissions: userData.permissions || [],
-    };
-    const [user] = await db
-      .insert(users)
-      .values(insertData as any)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          role: userData.role,
-          permissions: (userData.permissions || []) as string[],
-          isActive: userData.isActive,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+  async createUser(userData: InsertUser): Promise<IUser> {
+    const user = new User(userData);
+    return await user.save();
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
-    const insertData = {
-      ...userData,
-      permissions: userData.permissions || [],
-    };
-    const [user] = await db
-      .insert(users)
-      .values(insertData as any)
-      .returning();
-    return user;
+  async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(id, userData, { new: true });
   }
 
-  async getMembers(): Promise<Member[]> {
-    return await db.select().from(members).orderBy(members.createdAt);
+  async getAllUsers(): Promise<IUser[]> {
+    return await User.find().select('-password').sort({ createdAt: -1 });
   }
 
-  async getMember(id: string): Promise<Member | undefined> {
-    const [member] = await db.select().from(members).where(eq(members.id, id));
-    return member;
+  async updateUserRole(id: string, role: string, permissions: string[]): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(
+      id, 
+      { role: role as UserRole, permissions, updatedAt: new Date() }, 
+      { new: true }
+    );
   }
 
-  async createMember(memberData: InsertMember): Promise<Member> {
-    const insertData = {
-      ...memberData,
-      social: memberData.social || {},
-    };
-    const [member] = await db
-      .insert(members)
-      .values(insertData as any)
-      .returning();
-    return member;
+  async updateUserStatus(id: string, isActive: boolean): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(
+      id, 
+      { isActive, updatedAt: new Date() }, 
+      { new: true }
+    );
   }
 
-  async updateMember(id: string, memberData: Partial<InsertMember>): Promise<Member> {
-    const updateData: any = { ...memberData };
-    if (updateData.social) {
-      updateData.social = updateData.social;
-    }
-    const [member] = await db
-      .update(members)
-      .set(updateData)
-      .where(eq(members.id, id))
-      .returning();
-    return member;
+  // Member operations
+  async getMembers(): Promise<IMember[]> {
+    return await Member.find({ status: 'approved' }).sort({ createdAt: -1 });
+  }
+
+  async getMember(id: string): Promise<IMember | null> {
+    return await Member.findById(id);
+  }
+
+  async createMember(memberData: InsertMember): Promise<IMember> {
+    const member = new Member(memberData);
+    return await member.save();
+  }
+
+  async updateMember(id: string, memberData: Partial<InsertMember>): Promise<IMember | null> {
+    return await Member.findByIdAndUpdate(id, memberData, { new: true });
   }
 
   async deleteMember(id: string): Promise<void> {
-    await db.delete(members).where(eq(members.id, id));
+    await Member.findByIdAndDelete(id);
   }
 
-  async getProjects(): Promise<Project[]> {
-    return await db.select().from(projects).orderBy(projects.createdAt);
+  // Project operations
+  async getProjects(): Promise<IProject[]> {
+    return await Project.find({ status: 'approved' }).sort({ createdAt: -1 });
   }
 
-  async getProject(id: string): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
-    return project;
+  async getProject(id: string): Promise<IProject | null> {
+    return await Project.findById(id);
   }
 
-  async createProject(projectData: InsertProject, createdBy?: string): Promise<Project> {
-    const [project] = await db
-      .insert(projects)
-      .values({ ...projectData, createdBy })
-      .returning();
-    return project;
+  async createProject(projectData: InsertProject, createdBy?: string): Promise<IProject> {
+    const project = new Project({ ...projectData, createdBy });
+    return await project.save();
   }
 
-  async updateProject(id: string, projectData: Partial<InsertProject>): Promise<Project> {
-    const [project] = await db
-      .update(projects)
-      .set(projectData)
-      .where(eq(projects.id, id))
-      .returning();
-    return project;
+  async updateProject(id: string, projectData: Partial<InsertProject>): Promise<IProject | null> {
+    return await Project.findByIdAndUpdate(id, projectData, { new: true });
   }
 
   async deleteProject(id: string): Promise<void> {
-    await db.delete(projects).where(eq(projects.id, id));
+    await Project.findByIdAndDelete(id);
   }
 
-  async getNewsArticles(): Promise<NewsArticle[]> {
-    return await db.select().from(newsArticles).orderBy(newsArticles.publishedAt);
+  // News operations
+  async getNewsArticles(): Promise<INewsArticle[]> {
+    return await NewsArticle.find({ status: 'approved' }).sort({ createdAt: -1 });
   }
 
-  async getNewsArticle(id: string): Promise<NewsArticle | undefined> {
-    const [article] = await db.select().from(newsArticles).where(eq(newsArticles.id, id));
-    return article;
+  async getNewsArticle(id: string): Promise<INewsArticle | null> {
+    return await NewsArticle.findById(id);
   }
 
-  async createNewsArticle(articleData: InsertNewsArticle): Promise<NewsArticle> {
-    const [article] = await db
-      .insert(newsArticles)
-      .values({
-        ...articleData,
-        publishedAt: new Date(),
-      })
-      .returning();
-    return article;
+  async createNewsArticle(articleData: InsertNewsArticle): Promise<INewsArticle> {
+    const article = new NewsArticle(articleData);
+    return await article.save();
   }
 
-  async updateNewsArticle(id: string, articleData: Partial<InsertNewsArticle>): Promise<NewsArticle> {
-    const [article] = await db
-      .update(newsArticles)
-      .set(articleData)
-      .where(eq(newsArticles.id, id))
-      .returning();
-    return article;
+  async updateNewsArticle(id: string, articleData: Partial<InsertNewsArticle>): Promise<INewsArticle | null> {
+    return await NewsArticle.findByIdAndUpdate(id, articleData, { new: true });
   }
 
   async deleteNewsArticle(id: string): Promise<void> {
-    await db.delete(newsArticles).where(eq(newsArticles.id, id));
+    await NewsArticle.findByIdAndDelete(id);
   }
 
-  async getGalleryImages(): Promise<GalleryImage[]> {
-    return await db.select().from(galleryImages).orderBy(galleryImages.createdAt);
+  async incrementReadCount(id: string): Promise<void> {
+    await NewsArticle.findByIdAndUpdate(id, { $inc: { readCount: 1 } });
   }
 
-  async createGalleryImage(imageData: InsertGalleryImage): Promise<GalleryImage> {
-    const [image] = await db
-      .insert(galleryImages)
-      .values(imageData)
-      .returning();
-    return image;
+  // Gallery operations
+  async getGalleryImages(): Promise<IGalleryImage[]> {
+    return await GalleryImage.find({ status: 'approved' }).sort({ createdAt: -1 });
+  }
+
+  async createGalleryImage(imageData: InsertGalleryImage): Promise<IGalleryImage> {
+    const image = new GalleryImage(imageData);
+    return await image.save();
   }
 
   async deleteGalleryImage(id: string): Promise<void> {
-    await db.delete(galleryImages).where(eq(galleryImages.id, id));
+    await GalleryImage.findByIdAndDelete(id);
   }
 
-  async createContactMessage(messageData: InsertContactMessage): Promise<ContactMessage> {
-    const [message] = await db
-      .insert(contactMessages)
-      .values(messageData)
-      .returning();
-    return message;
+  // Contact operations
+  async createContactMessage(messageData: InsertContactMessage): Promise<IContactMessage> {
+    const message = new ContactMessage(messageData);
+    return await message.save();
   }
 
-  async getRegistrations(): Promise<Registration[]> {
-    return await db.select().from(registrations).orderBy(registrations.createdAt);
+  // Registration operations
+  async getRegistrations(): Promise<IRegistration[]> {
+    return await Registration.find().sort({ createdAt: -1 });
   }
 
-  async getRegistration(id: string): Promise<Registration | undefined> {
-    const [registration] = await db.select().from(registrations).where(eq(registrations.id, id));
-    return registration;
+  async getRegistration(id: string): Promise<IRegistration | null> {
+    return await Registration.findById(id);
   }
 
-  async createRegistration(registrationData: InsertRegistration): Promise<Registration> {
-    const [registration] = await db
-      .insert(registrations)
-      .values(registrationData)
-      .returning();
-    return registration;
+  async createRegistration(registrationData: InsertRegistration): Promise<IRegistration> {
+    const registration = new Registration(registrationData);
+    return await registration.save();
   }
 
-  async updateRegistrationStatus(id: string, status: string, reviewedBy: string): Promise<Registration> {
-    const [registration] = await db
-      .update(registrations)
-      .set({
-        status,
-        reviewedBy,
-        reviewedAt: new Date(),
-      })
-      .where(eq(registrations.id, id))
-      .returning();
-    return registration;
+  async updateRegistrationStatus(id: string, status: ApplicationStatus, reviewedBy: string): Promise<IRegistration | null> {
+    return await Registration.findByIdAndUpdate(
+      id,
+      { 
+        status, 
+        reviewedBy, 
+        reviewedAt: new Date() 
+      },
+      { new: true }
+    );
   }
 
-  // Approval operations
-  async approveContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void> {
-    const reviewData = {
-      approvalStatus: "approved",
-      reviewedBy,
-      reviewedAt: new Date(),
-    };
-
-    switch (contentType) {
-      case "news":
-        await db.update(newsArticles).set(reviewData).where(eq(newsArticles.id, id));
-        break;
-      case "project":
-        await db.update(projects).set(reviewData).where(eq(projects.id, id));
-        break;
-      case "gallery":
-        await db.update(galleryImages).set(reviewData).where(eq(galleryImages.id, id));
-        break;
-    }
-  }
-
-  async rejectContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void> {
-    const reviewData = {
-      approvalStatus: "rejected",
-      reviewedBy,
-      reviewedAt: new Date(),
-    };
-
-    switch (contentType) {
-      case "news":
-        await db.update(newsArticles).set(reviewData).where(eq(newsArticles.id, id));
-        break;
-      case "project":
-        await db.update(projects).set(reviewData).where(eq(projects.id, id));
-        break;
-      case "gallery":
-        await db.update(galleryImages).set(reviewData).where(eq(galleryImages.id, id));
-        break;
-    }
-  }
-
+  // Content approval operations
   async getPendingContent(): Promise<{
-    news: NewsArticle[];
-    projects: Project[];
-    gallery: GalleryImage[];
+    projects: IProject[];
+    news: INewsArticle[];
+    members: IMember[];
+    gallery: IGalleryImage[];
   }> {
-    const [pendingNews, pendingProjects, pendingGallery] = await Promise.all([
-      db.select().from(newsArticles).where(eq(newsArticles.approvalStatus, "pending")),
-      db.select().from(projects).where(eq(projects.approvalStatus, "pending")),
-      db.select().from(galleryImages).where(eq(galleryImages.approvalStatus, "pending")),
+    const [projects, news, members, gallery] = await Promise.all([
+      Project.find({ status: 'pending' }).sort({ createdAt: -1 }),
+      NewsArticle.find({ status: 'pending' }).sort({ createdAt: -1 }),
+      Member.find({ status: 'pending' }).sort({ createdAt: -1 }),
+      GalleryImage.find({ status: 'pending' }).sort({ createdAt: -1 })
     ]);
 
-    return {
-      news: pendingNews,
-      projects: pendingProjects,
-      gallery: pendingGallery,
+    return { projects, news, members, gallery };
+  }
+
+  async approveContent(type: string, id: string, approvedBy: string): Promise<void> {
+    const updateData = { 
+      status: 'approved' as ContentStatus, 
+      approvedBy,
+      ...(type === 'user' ? { approvedAt: new Date() } : {})
     };
+
+    switch (type) {
+      case 'project':
+        await Project.findByIdAndUpdate(id, updateData);
+        break;
+      case 'news':
+        await NewsArticle.findByIdAndUpdate(id, updateData);
+        break;
+      case 'member':
+        await Member.findByIdAndUpdate(id, updateData);
+        break;
+      case 'gallery':
+        await GalleryImage.findByIdAndUpdate(id, updateData);
+        break;
+      case 'user':
+        await User.findByIdAndUpdate(id, { 
+          ...updateData, 
+          role: 'member' as UserRole,
+          applicationStatus: 'approved' as ApplicationStatus 
+        });
+        break;
+    }
   }
 
-  // Role management operations
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(users.createdAt);
-  }
+  async rejectContent(type: string, id: string, approvedBy: string): Promise<void> {
+    const updateData = { 
+      status: 'rejected' as ContentStatus, 
+      approvedBy 
+    };
 
-  async updateUserRole(id: string, role: string, permissions: string[]): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        role: role as "super_admin" | "admin" | "member",
-        permissions,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
-
-  async updateUserStatus(id: string, isActive: boolean): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        isActive,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
+    switch (type) {
+      case 'project':
+        await Project.findByIdAndUpdate(id, updateData);
+        break;
+      case 'news':
+        await NewsArticle.findByIdAndUpdate(id, updateData);
+        break;
+      case 'member':
+        await Member.findByIdAndUpdate(id, updateData);
+        break;
+      case 'gallery':
+        await GalleryImage.findByIdAndUpdate(id, updateData);
+        break;
+      case 'user':
+        await User.findByIdAndUpdate(id, { 
+          ...updateData, 
+          applicationStatus: 'rejected' as ApplicationStatus 
+        });
+        break;
+    }
   }
 }
 
-export const storage = new DatabaseStorage();
+// Use memory storage for now - easily switch to MongoDB for production
+import { memoryStorage } from './memoryStorage';
+export const storage = memoryStorage;

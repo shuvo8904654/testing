@@ -11,7 +11,7 @@ import {
   insertGalleryImageSchema,
   insertRegistrationSchema,
   insertUserSchema
-} from "@shared/schema";
+} from "@shared/validation";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -96,9 +96,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: firstName || null,
         lastName: lastName || null,
         authType: "email",
-        role: "member",
+        role: "applicant",
         permissions: [],
         isActive: true,
+        applicationStatus: "pending",
       });
 
       // Set up session

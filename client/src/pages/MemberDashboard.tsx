@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertNewsArticleSchema, insertProjectSchema, insertGalleryImageSchema } from "@shared/schema";
-import type { NewsArticle, Project, GalleryImage } from "@shared/schema";
+import { insertNewsArticleSchema, insertProjectSchema, insertGalleryImageSchema } from "@shared/validation";
+import type { INewsArticle, IProject, IGalleryImage } from "@shared/models";
 import { z } from "zod";
 import { FileText, FolderOpen, Image, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -59,17 +59,17 @@ export default function MemberDashboard() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: news = [] } = useQuery<NewsArticle[]>({
+  const { data: news = [] } = useQuery<INewsArticle[]>({
     queryKey: ["/api/news"],
     enabled: isAuthenticated,
   });
 
-  const { data: projects = [] } = useQuery<Project[]>({
+  const { data: projects = [] } = useQuery<IProject[]>({
     queryKey: ["/api/projects"],
     enabled: isAuthenticated,
   });
 
-  const { data: gallery = [] } = useQuery<GalleryImage[]>({
+  const { data: gallery = [] } = useQuery<IGalleryImage[]>({
     queryKey: ["/api/gallery"],
     enabled: isAuthenticated,
   });
@@ -107,7 +107,15 @@ export default function MemberDashboard() {
 
   const createNewsMutation = useMutation({
     mutationFn: async (data: z.infer<typeof newsFormSchema>) => {
-      return await apiRequest("POST", "/api/news", data);
+      const newsData = {
+        ...data,
+        author: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+        createdBy: user?._id || '',
+        status: 'pending' as const,
+        readCount: 0,
+        imageUrl: data.image || undefined,
+      };
+      return await apiRequest("POST", "/api/news", newsData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
@@ -140,7 +148,12 @@ export default function MemberDashboard() {
 
   const createProjectMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
-      return await apiRequest("POST", "/api/dashboard/projects", data);
+      const projectData = {
+        ...data,
+        createdBy: user?._id || '',
+        status: 'pending' as const,
+      };
+      return await apiRequest("POST", "/api/dashboard/projects", projectData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
