@@ -9,8 +9,17 @@ import type {
   InsertGalleryImage, InsertContactMessage, InsertRegistration, InsertEvent
 } from '@shared/validation';
 
-// Connect to MongoDB when storage is imported
-connectToMongoDB().catch(console.error);
+// Connect to MongoDB when storage is imported - with fallback
+let mongoConnected = false;
+connectToMongoDB()
+  .then(() => {
+    mongoConnected = true;
+    console.log('✅ MongoDB Atlas connected successfully');
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection failed, using memory storage as fallback');
+    mongoConnected = false;
+  });
 
 export interface IStorage {
   // User operations
@@ -351,5 +360,208 @@ export class MongoStorage implements IStorage {
   }
 }
 
-// Use MongoDB storage
-export const storage = new MongoStorage();
+// Hybrid storage - automatically switches between MongoDB and memory storage
+import { memoryStorage } from './memoryStorage';
+
+class HybridStorage implements IStorage {
+  private mongoStorage = new MongoStorage();
+  private memoryStorage = memoryStorage;
+
+  private async useStorage<T>(operation: (storage: IStorage) => Promise<T>): Promise<T> {
+    try {
+      // Try MongoDB first if connected
+      if (mongoConnected) {
+        return await operation(this.mongoStorage);
+      }
+    } catch (error) {
+      console.warn('MongoDB operation failed, falling back to memory storage:', error.message);
+    }
+    
+    // Fallback to memory storage
+    return await operation(this.memoryStorage);
+  }
+
+  // User operations
+  async getUser(id: string): Promise<IUser | null> {
+    return this.useStorage(storage => storage.getUser(id));
+  }
+
+  async getUserByEmail(email: string): Promise<IUser | null> {
+    return this.useStorage(storage => storage.getUserByEmail(email));
+  }
+
+  async createUser(userData: InsertUser): Promise<IUser> {
+    return this.useStorage(storage => storage.createUser(userData));
+  }
+
+  async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
+    return this.useStorage(storage => storage.updateUser(id, userData));
+  }
+
+  async getAllUsers(): Promise<IUser[]> {
+    return this.useStorage(storage => storage.getAllUsers());
+  }
+
+  async getUsersByRole(role: string): Promise<IUser[]> {
+    return this.useStorage(storage => storage.getUsersByRole(role));
+  }
+
+  async updateUserRole(id: string, role: string, permissions: string[]): Promise<IUser | null> {
+    return this.useStorage(storage => storage.updateUserRole(id, role, permissions));
+  }
+
+  async updateUserStatus(id: string, isActive: boolean): Promise<IUser | null> {
+    return this.useStorage(storage => storage.updateUserStatus(id, isActive));
+  }
+
+  async updateUserApplicationStatus(id: string, updateData: any): Promise<IUser | null> {
+    return this.useStorage(storage => storage.updateUserApplicationStatus(id, updateData));
+  }
+
+  // Member operations
+  async getMembers(): Promise<IMember[]> {
+    return this.useStorage(storage => storage.getMembers());
+  }
+
+  async getMember(id: string): Promise<IMember | null> {
+    return this.useStorage(storage => storage.getMember(id));
+  }
+
+  async createMember(memberData: InsertMember): Promise<IMember> {
+    return this.useStorage(storage => storage.createMember(memberData));
+  }
+
+  async updateMember(id: string, memberData: Partial<InsertMember>): Promise<IMember | null> {
+    return this.useStorage(storage => storage.updateMember(id, memberData));
+  }
+
+  async deleteMember(id: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteMember(id));
+  }
+
+  // Project operations
+  async getProjects(): Promise<IProject[]> {
+    return this.useStorage(storage => storage.getProjects());
+  }
+
+  async getProject(id: string): Promise<IProject | null> {
+    return this.useStorage(storage => storage.getProject(id));
+  }
+
+  async createProject(projectData: InsertProject, createdBy?: string): Promise<IProject> {
+    return this.useStorage(storage => storage.createProject(projectData, createdBy));
+  }
+
+  async updateProject(id: string, projectData: Partial<InsertProject>): Promise<IProject | null> {
+    return this.useStorage(storage => storage.updateProject(id, projectData));
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteProject(id));
+  }
+
+  // News operations
+  async getNewsArticles(): Promise<INewsArticle[]> {
+    return this.useStorage(storage => storage.getNewsArticles());
+  }
+
+  async getNewsArticle(id: string): Promise<INewsArticle | null> {
+    return this.useStorage(storage => storage.getNewsArticle(id));
+  }
+
+  async createNewsArticle(articleData: InsertNewsArticle): Promise<INewsArticle> {
+    return this.useStorage(storage => storage.createNewsArticle(articleData));
+  }
+
+  async updateNewsArticle(id: string, articleData: Partial<InsertNewsArticle>): Promise<INewsArticle | null> {
+    return this.useStorage(storage => storage.updateNewsArticle(id, articleData));
+  }
+
+  async deleteNewsArticle(id: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteNewsArticle(id));
+  }
+
+  async incrementReadCount(id: string): Promise<void> {
+    return this.useStorage(storage => storage.incrementReadCount(id));
+  }
+
+  // Gallery operations
+  async getGalleryImages(): Promise<IGalleryImage[]> {
+    return this.useStorage(storage => storage.getGalleryImages());
+  }
+
+  async createGalleryImage(imageData: InsertGalleryImage): Promise<IGalleryImage> {
+    return this.useStorage(storage => storage.createGalleryImage(imageData));
+  }
+
+  async deleteGalleryImage(id: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteGalleryImage(id));
+  }
+
+  // Contact operations
+  async createContactMessage(messageData: InsertContactMessage): Promise<IContactMessage> {
+    return this.useStorage(storage => storage.createContactMessage(messageData));
+  }
+
+  // Registration operations
+  async getRegistrations(): Promise<IRegistration[]> {
+    return this.useStorage(storage => storage.getRegistrations());
+  }
+
+  async getRegistration(id: string): Promise<IRegistration | null> {
+    return this.useStorage(storage => storage.getRegistration(id));
+  }
+
+  async createRegistration(registrationData: InsertRegistration): Promise<IRegistration> {
+    return this.useStorage(storage => storage.createRegistration(registrationData));
+  }
+
+  async updateRegistrationStatus(id: string, status: ApplicationStatus, reviewedBy: string): Promise<IRegistration | null> {
+    return this.useStorage(storage => storage.updateRegistrationStatus(id, status, reviewedBy));
+  }
+
+  // Event operations
+  async getEvents(): Promise<IEvent[]> {
+    return this.useStorage(storage => storage.getEvents());
+  }
+
+  async getUpcomingEvents(): Promise<IEvent[]> {
+    return this.useStorage(storage => storage.getUpcomingEvents());
+  }
+
+  async getEvent(id: string): Promise<IEvent | null> {
+    return this.useStorage(storage => storage.getEvent(id));
+  }
+
+  async createEvent(eventData: InsertEvent): Promise<IEvent> {
+    return this.useStorage(storage => storage.createEvent(eventData));
+  }
+
+  async updateEvent(id: string, eventData: Partial<InsertEvent>): Promise<IEvent | null> {
+    return this.useStorage(storage => storage.updateEvent(id, eventData));
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteEvent(id));
+  }
+
+  // Content approval operations
+  async getPendingContent(): Promise<{
+    projects: IProject[];
+    news: INewsArticle[];
+    members: IMember[];
+    gallery: IGalleryImage[];
+  }> {
+    return this.useStorage(storage => storage.getPendingContent());
+  }
+
+  async approveContent(type: string, id: string, approvedBy: string): Promise<void> {
+    return this.useStorage(storage => storage.approveContent(type, id, approvedBy));
+  }
+
+  async rejectContent(type: string, id: string, approvedBy: string): Promise<void> {
+    return this.useStorage(storage => storage.rejectContent(type, id, approvedBy));
+  }
+}
+
+export const storage = new HybridStorage();
