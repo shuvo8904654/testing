@@ -22,8 +22,9 @@ Preferred communication style: Simple, everyday language.
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript for the REST API server
 - **Database ORM**: Drizzle ORM for type-safe database operations with PostgreSQL
-- **Development Setup**: In-memory storage implementation for development/testing with sample data
-- **API Structure**: RESTful endpoints for members, projects, news articles, gallery images, and contact messages
+- **Authentication**: Replit Auth integration with OpenID Connect for secure user authentication
+- **Authorization**: Role-based access control with admin and member permission levels
+- **API Structure**: RESTful endpoints for members, projects, news articles, gallery images, registrations, and content management
 - **Error Handling**: Centralized error handling middleware with structured JSON responses
 - **Request Logging**: Custom middleware for API request/response logging
 
@@ -34,9 +35,10 @@ Preferred communication style: Simple, everyday language.
 - **File Storage**: Static assets served through Vite's development server
 
 ### Authentication and Authorization
-- **Current State**: No authentication system implemented
-- **Session Management**: Basic session middleware configured but not actively used
-- **Security**: Basic CORS and request validation through Zod schemas
+- **Authentication System**: Replit Auth with OpenID Connect integration for secure user login/logout
+- **Session Management**: PostgreSQL-based session storage with automatic cleanup and refresh token handling
+- **Authorization**: Role-based access control (admin/member) with protected routes and API endpoints
+- **Security**: Comprehensive CORS configuration, Zod schema validation, and secure session management
 
 ### API Design Patterns
 - **REST Endpoints**: Standard CRUD operations following REST conventions

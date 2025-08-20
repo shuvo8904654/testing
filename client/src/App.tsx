@@ -58,6 +58,8 @@ function Router() {
               <Route path="/news" component={News} />
               <Route path="/join" component={Join} />
               <Route path="/contact" component={Contact} />
+              <Route path="/admin-dashboard" component={AdminDashboard} />
+              <Route path="/member-dashboard" component={MemberDashboard} />
               <Route component={NotFound} />
             </Switch>
           </main>
