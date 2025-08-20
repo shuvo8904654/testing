@@ -351,9 +351,5 @@ export class MongoStorage implements IStorage {
   }
 }
 
-// Use memory storage as fallback until MongoDB Atlas IP is whitelisted
-import { memoryStorage } from './memoryStorage';
-export const storage = memoryStorage;
-
-// Once your IP is whitelisted in MongoDB Atlas, uncomment the line below and comment out the line above
-// export const storage = new MongoStorage();
+// Use MongoDB storage
+export const storage = new MongoStorage();
