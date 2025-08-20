@@ -72,13 +72,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email/Password authentication routes
+  // Enhanced registration with intelligent validation and auto-approval
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { email, password, firstName, lastName, phone, age, address, motivation } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // Enhanced validation
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
       }
 
       // Check if user already exists
@@ -89,6 +94,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Calculate application quality for smart processing
+      let qualityScore = 0;
+      if (firstName && lastName) qualityScore += 20;
+      if (phone) qualityScore += 15;
+      if (address) qualityScore += 10;
+      if (motivation && motivation.length > 50) qualityScore += 25;
+      if (motivation && motivation.length > 150) qualityScore += 20;
+      if (age) qualityScore += 10;
+
+      // Determine initial status based on quality
+      let initialStatus: 'pending' | 'approved' | 'rejected' = "pending";
+      let initialRole: 'applicant' | 'member' | 'admin' | 'super_admin' = "applicant";
+      
+      // Auto-approve high-quality applications (score >= 80)
+      if (qualityScore >= 80) {
+        initialStatus = "approved";
+        initialRole = "member";
+      }
 
       // Create user
       const user = await storage.createUser({
@@ -101,11 +125,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         address: address || null,
         motivation: motivation || null,
         authType: "email",
-        role: "applicant",
+        role: initialRole,
         permissions: [],
         isActive: true,
-        applicationStatus: "pending",
+        applicationStatus: initialStatus,
+        appliedAt: new Date(),
+        ...(initialStatus === "approved" && { approvedAt: new Date() })
       });
+
+      // Auto-create member profile for auto-approved users
+      if (initialStatus === "approved") {
+        try {
+          const memberData = {
+            name: `${firstName || ''} ${lastName || ''}`.trim() || email,
+            email: email,
+            role: 'member',
+            bio: motivation || 'New member of 3ZERO Club',
+            status: 'approved' as const,
+            createdBy: user._id,
+            approvedBy: user._id
+          };
+          
+          await storage.createMember(memberData);
+          console.log(`✅ Auto-approved and created member: ${email} (Quality Score: ${qualityScore})`);
+        } catch (memberError) {
+          console.warn(`Auto-member creation failed for ${email}:`, memberError);
+        }
+      }
 
       // Set up session
       (req.session as any).user = { 
@@ -114,7 +160,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       (req as any).user = (req.session as any).user;
 
-      res.status(201).json({ user: { ...user, password: undefined } });
+      res.status(201).json({ 
+        user: { ...user, password: undefined },
+        qualityScore,
+        autoApproved: initialStatus === "approved",
+        message: initialStatus === "approved" 
+          ? "Registration successful! You have been automatically approved as a member."
+          : "Registration successful! Your application is under review."
+      });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
@@ -296,6 +349,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced bulk operations for admin efficiency
+  app.post("/api/users/bulk-approve", isAdmin, async (req: any, res) => {
+    try {
+      const { userIds, role = 'member', autoCreateMember = true } = req.body;
+      const reviewedBy = req.user.claims.sub;
+      
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ message: "User IDs array is required" });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      for (const userId of userIds) {
+        try {
+          const updateData = {
+            applicationStatus: 'approved' as const,
+            role,
+            approvedAt: new Date(),
+            reviewedBy,
+            reviewedAt: new Date()
+          };
+          
+          const user = await storage.updateUserApplicationStatus(userId, updateData);
+          
+          // Auto-create member profile
+          if (autoCreateMember && user) {
+            try {
+              const memberData = {
+                name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+                email: user.email,
+                role: role,
+                bio: user.motivation || 'New member of 3ZERO Club',
+                profileImageUrl: user.profileImageUrl,
+                status: 'approved' as const,
+                createdBy: reviewedBy,
+                approvedBy: reviewedBy
+              };
+              
+              await storage.createMember(memberData);
+            } catch (memberError) {
+              console.warn(`Failed to create member for ${user.email}:`, memberError);
+            }
+          }
+          
+          results.push({ userId, status: 'success', user });
+        } catch (error) {
+          errors.push({ userId, error: error.message });
+        }
+      }
+      
+      res.json({ 
+        message: `Bulk approval completed: ${results.length} successful, ${errors.length} failed`,
+        results,
+        errors 
+      });
+    } catch (error) {
+      console.error("Bulk approval error:", error);
+      res.status(500).json({ message: "Bulk approval failed" });
+    }
+  });
+
   // Admin-only endpoint to create new users
   app.post("/api/users", isAdmin, async (req: any, res) => {
     try {
@@ -319,29 +434,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin-only endpoint to get all applicant users
+  // Enhanced applicants endpoint with analytics and smart sorting
   app.get("/api/users/applicants", isAdmin, async (req, res) => {
     try {
-      const applicants = await storage.getUsersByRole("applicant");
-      res.json(applicants);
-    } catch (error) {
+      const { sortBy = 'appliedAt', order = 'desc', filter = 'all' } = req.query;
+      
+      let applicants = await storage.getUsersByRole("applicant");
+      
+      // Add application quality scoring
+      const enhancedApplicants = applicants.map(user => {
+        let qualityScore = 0;
+        
+        // Score based on profile completeness
+        if (user.firstName && user.lastName) qualityScore += 20;
+        if (user.phone) qualityScore += 15;
+        if (user.address) qualityScore += 10;
+        if (user.motivation && user.motivation.length > 50) qualityScore += 25;
+        if (user.motivation && user.motivation.length > 150) qualityScore += 20;
+        if (user.age) qualityScore += 10;
+        
+        return {
+          ...user.toObject ? user.toObject() : user,
+          qualityScore,
+          daysSinceApplication: Math.floor((new Date().getTime() - new Date(user.appliedAt || user.createdAt).getTime()) / (1000 * 3600 * 24))
+        };
+      });
+      
+      // Filter applications
+      let filteredApplicants = enhancedApplicants;
+      if (filter === 'high-quality') {
+        filteredApplicants = enhancedApplicants.filter(user => user.qualityScore >= 70);
+      } else if (filter === 'urgent') {
+        filteredApplicants = enhancedApplicants.filter(user => user.daysSinceApplication >= 7);
+      } else if (filter === 'incomplete') {
+        filteredApplicants = enhancedApplicants.filter(user => user.qualityScore < 50);
+      }
+      
+      // Smart sorting
+      filteredApplicants.sort((a, b) => {
+        if (sortBy === 'quality') {
+          return order === 'desc' ? b.qualityScore - a.qualityScore : a.qualityScore - b.qualityScore;
+        } else if (sortBy === 'appliedAt') {
+          const aDate = new Date(a.appliedAt || a.createdAt).getTime();
+          const bDate = new Date(b.appliedAt || b.createdAt).getTime();
+          return order === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return 0;
+      });
+      
+      // Analytics
+      const analytics = {
+        total: enhancedApplicants.length,
+        highQuality: enhancedApplicants.filter(u => u.qualityScore >= 70).length,
+        urgent: enhancedApplicants.filter(u => u.daysSinceApplication >= 7).length,
+        averageQualityScore: enhancedApplicants.length > 0 ? Math.round(enhancedApplicants.reduce((sum, u) => sum + u.qualityScore, 0) / enhancedApplicants.length) : 0,
+        averageDaysWaiting: enhancedApplicants.length > 0 ? Math.round(enhancedApplicants.reduce((sum, u) => sum + u.daysSinceApplication, 0) / enhancedApplicants.length) : 0
+      };
+      
+      res.json({ applicants: filteredApplicants, analytics });
+    } catch (error: any) {
       console.error("Error fetching applicants:", error);
       res.status(500).json({ message: "Failed to fetch applicants" });
     }
   });
 
-  // Admin-only endpoint to update user application status
+  // Enhanced application status update with smart automation
   app.patch("/api/users/:id/application-status", isAdmin, async (req: any, res) => {
     try {
-      const { applicationStatus, role, approvedAt } = req.body;
+      const { applicationStatus, role, approvedAt, autoCreateMember = true } = req.body;
       const userId = req.params.id;
+      const reviewedBy = req.user.claims.sub;
       
-      const updateData: any = { applicationStatus };
-      if (role) updateData.role = role;
-      if (approvedAt) updateData.approvedAt = new Date(approvedAt);
+      const updateData: any = { 
+        applicationStatus,
+        approvedAt: applicationStatus === 'approved' ? new Date(approvedAt || new Date()) : undefined,
+        reviewedBy,
+        reviewedAt: new Date()
+      };
+      
+      // Smart role assignment based on application data
+      if (role) {
+        updateData.role = role;
+      } else if (applicationStatus === 'approved') {
+        // Auto-assign role based on user profile
+        const user = await storage.getUser(userId);
+        if (user?.motivation && user.motivation.length > 100) {
+          updateData.role = 'member'; // Detailed motivation gets member role
+        } else {
+          updateData.role = 'member'; // Default to member for approved users
+        }
+      }
 
       const user = await storage.updateUserApplicationStatus(userId, updateData);
-      res.json(user);
+      
+      // Auto-create member profile when approved
+      if (applicationStatus === 'approved' && autoCreateMember && user) {
+        try {
+          const memberData = {
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+            email: user.email,
+            role: updateData.role || 'member',
+            bio: user.motivation || 'New member of 3ZERO Club',
+            profileImageUrl: user.profileImageUrl,
+            status: 'approved' as const,
+            createdBy: reviewedBy,
+            approvedBy: reviewedBy
+          };
+          
+          await storage.createMember(memberData);
+          console.log(`✅ Auto-created member profile for ${user.email}`);
+        } catch (memberError) {
+          console.warn(`Failed to auto-create member for ${user?.email}:`, memberError);
+        }
+      }
+      
+      res.json({ 
+        user, 
+        message: `Application ${applicationStatus} successfully`,
+        autoMemberCreated: applicationStatus === 'approved' && autoCreateMember
+      });
     } catch (error) {
       console.error("Error updating application status:", error);
       res.status(500).json({ message: "Failed to update application status" });
