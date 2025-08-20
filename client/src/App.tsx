@@ -13,6 +13,7 @@ import Members from "@/pages/Members";
 import Projects from "@/pages/Projects";
 import Gallery from "@/pages/Gallery";
 import News from "@/pages/News";
+import NewsArticle from "@/pages/NewsArticle";
 import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -59,6 +60,7 @@ function Router() {
               <Route path="/projects" component={Projects} />
               <Route path="/gallery" component={Gallery} />
               <Route path="/news" component={News} />
+              <Route path="/news/:id" component={NewsArticle} />
               <Route path="/join" component={Join} />
               <Route path="/contact" component={Contact} />
               <Route path="/login" component={Login} />

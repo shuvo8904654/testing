@@ -124,8 +124,12 @@ export default function AdminDashboard() {
       });
     },
     onSuccess: () => {
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/users/applicants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
+      
       toast({
         title: "Success",
         description: "Application status updated successfully",

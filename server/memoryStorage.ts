@@ -458,6 +458,50 @@ export class MemoryStorage implements IStorage {
     }
   }
 
+  // Image storage operations (memory fallback)
+  private imageStore = new Map<string, { buffer: Buffer; contentType: string }>();
+
+  async uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string> {
+    this.imageStore.set(filename, { buffer, contentType });
+    return `/api/images/${filename}`;
+  }
+
+  async getImage(filename: string): Promise<{ stream: any; contentType: string } | null> {
+    const image = this.imageStore.get(filename);
+    if (!image) return null;
+    
+    // Create a readable stream from buffer
+    const { Readable } = require('stream');
+    const stream = new Readable();
+    stream.push(image.buffer);
+    stream.push(null);
+    
+    return {
+      stream,
+      contentType: image.contentType
+    };
+  }
+
+  async deleteImage(filename: string): Promise<void> {
+    this.imageStore.delete(filename);
+  }
+
+  // Approval history (memory fallback)
+  private approvalHistory: any[] = [];
+
+  async createApprovalHistory(historyData: any): Promise<any> {
+    const record = { ...historyData, id: Date.now().toString() };
+    this.approvalHistory.unshift(record);
+    if (this.approvalHistory.length > 100) {
+      this.approvalHistory = this.approvalHistory.slice(0, 100);
+    }
+    return record;
+  }
+
+  async getApprovalHistory(): Promise<any[]> {
+    return [...this.approvalHistory];
+  }
+
   async rejectContent(type: string, id: string, approvedBy: string): Promise<void> {
     const updateData = { 
       status: 'rejected' as ContentStatus, 

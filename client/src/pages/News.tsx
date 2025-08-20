@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
+import { Link } from "wouter";
 import type { NewsArticle } from "../../../shared/schema";
 
 export default function News() {
@@ -71,9 +72,11 @@ export default function News() {
                     {new Date(article.publishedAt).toLocaleDateString()}
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-3" data-testid={`news-title-${index}`}>
-                  {article.title}
-                </h2>
+                <Link href={`/news/${article.id}`}>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-eco-green transition-colors cursor-pointer" data-testid={`news-title-${index}`}>
+                    {article.title}
+                  </h2>
+                </Link>
                 <p className="text-gray-600 mb-4" data-testid={`news-excerpt-${index}`}>
                   {article.excerpt}
                 </p>

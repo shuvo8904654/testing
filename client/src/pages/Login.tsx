@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -34,12 +34,20 @@ export default function Login() {
     setIsLoading(true);
     try {
       await apiRequest("POST", "/api/auth/login", data);
+      
+      // Invalidate and refetch user data immediately after successful login
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Success",
         description: "Login successful",
       });
-      // Redirect to dashboard or home
-      setLocation("/");
+      
+      // Small delay to ensure queries are updated before redirect
+      setTimeout(() => {
+        setLocation("/");
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Login failed",

@@ -245,6 +245,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload and management endpoints
+  app.post("/api/images/upload", isAuthenticated, multer().single('image'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const { buffer, originalname, mimetype } = req.file;
+      
+      // Generate unique filename
+      const ext = originalname.split('.').pop();
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      
+      const imageUrl = await storage.uploadImage(buffer, filename, mimetype);
+      
+      res.json({ 
+        message: "Image uploaded successfully",
+        url: imageUrl,
+        filename 
+      });
+    } catch (error) {
+      console.error("Image upload error:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  app.get("/api/images/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const imageData = await storage.getImage(filename);
+      
+      if (!imageData) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.setHeader('Content-Type', imageData.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+      
+      imageData.stream.pipe(res);
+    } catch (error) {
+      console.error("Image retrieval error:", error);
+      res.status(500).json({ message: "Failed to retrieve image" });
+    }
+  });
+
+  app.delete("/api/images/:filename", isAdmin, async (req, res) => {
+    try {
+      const { filename } = req.params;
+      await storage.deleteImage(filename);
+      res.json({ message: "Image deleted successfully" });
+    } catch (error) {
+      console.error("Image deletion error:", error);
+      res.status(500).json({ message: "Failed to delete image" });
+    }
+  });
+
   // Enhanced projects endpoint with smart filtering and analytics
   app.get("/api/projects", async (req, res) => {
     try {
@@ -925,6 +981,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Approval history endpoint
+  app.get("/api/admin/approval-history", isAdmin, async (req, res) => {
+    try {
+      const history = await storage.getApprovalHistory();
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching approval history:", error);
+      res.status(500).json({ message: "Failed to fetch approval history" });
+    }
+  });
+
   // Enhanced application status update with smart automation
   app.patch("/api/users/:id/application-status", isAdmin, async (req: any, res) => {
     try {
@@ -975,6 +1042,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Create approval history record
+      if (applicationStatus === 'approved' || applicationStatus === 'rejected') {
+        try {
+          const historyData = {
+            userId,
+            reviewedBy,
+            status: applicationStatus,
+            reviewedAt: new Date(),
+            userEmail: user?.email,
+            userFirstName: user?.firstName,
+            userLastName: user?.lastName
+          };
+          
+          await storage.createApprovalHistory(historyData);
+        } catch (historyError) {
+          console.warn(`Failed to create approval history for ${user?.email}:`, historyError);
+        }
+      }
+
       res.json({ 
         user, 
         message: `Application ${applicationStatus} successfully`,

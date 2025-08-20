@@ -1,4 +1,6 @@
 import { connectToMongoDB } from './mongodb';
+import { GridFSBucket } from 'mongodb';
+import mongoose from 'mongoose';
 import {
   User, Member, Project, NewsArticle, GalleryImage, ContactMessage, Registration, Event,
   IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration, IEvent,
@@ -86,6 +88,15 @@ export interface IStorage {
   }>;
   approveContent(type: string, id: string, approvedBy: string): Promise<void>;
   rejectContent(type: string, id: string, approvedBy: string): Promise<void>;
+  
+  // Image storage operations
+  uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string>;
+  getImage(filename: string): Promise<{ stream: any; contentType: string } | null>;
+  deleteImage(filename: string): Promise<void>;
+  
+  // Approval history
+  createApprovalHistory(historyData: any): Promise<any>;
+  getApprovalHistory(): Promise<any[]>;
 }
 
 export class MongoStorage implements IStorage {
@@ -137,6 +148,72 @@ export class MongoStorage implements IStorage {
       { ...updateData, updatedAt: new Date() }, 
       { new: true }
     ).select('-password');
+  }
+
+  async createApprovalHistory(historyData: any): Promise<any> {
+    // Store in a simple approval history collection
+    const approvalHistory = mongoose.model('ApprovalHistory', new mongoose.Schema({
+      userId: String,
+      reviewedBy: String,
+      status: String,
+      reviewedAt: Date,
+      userEmail: String,
+      userFirstName: String,
+      userLastName: String
+    }, { timestamps: true }));
+    
+    return await approvalHistory.create(historyData);
+  }
+
+  async getApprovalHistory(): Promise<any[]> {
+    const approvalHistory = mongoose.model('ApprovalHistory');
+    return await approvalHistory.find().sort({ reviewedAt: -1 }).limit(100);
+  }
+
+  // Image storage operations using MongoDB GridFS
+  async uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string> {
+    const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
+    const uploadStream = bucket.openUploadStream(filename, { contentType });
+    
+    return new Promise((resolve, reject) => {
+      uploadStream.on('error', reject);
+      uploadStream.on('finish', () => {
+        resolve(`/api/images/${filename}`);
+      });
+      uploadStream.end(buffer);
+    });
+  }
+
+  async getImage(filename: string): Promise<{ stream: any; contentType: string } | null> {
+    try {
+      const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
+      const file = await bucket.find({ filename }).toArray();
+      
+      if (file.length === 0) return null;
+      
+      const downloadStream = bucket.openDownloadStreamByName(filename);
+      return {
+        stream: downloadStream,
+        contentType: file[0].contentType || 'application/octet-stream'
+      };
+    } catch (error) {
+      console.error('Error retrieving image:', error);
+      return null;
+    }
+  }
+
+  async deleteImage(filename: string): Promise<void> {
+    try {
+      const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
+      const files = await bucket.find({ filename }).toArray();
+      
+      if (files.length > 0) {
+        await bucket.delete(files[0]._id);
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      throw error;
+    }
   }
 
   // Member operations
@@ -561,6 +638,28 @@ class HybridStorage implements IStorage {
 
   async rejectContent(type: string, id: string, approvedBy: string): Promise<void> {
     return this.useStorage(storage => storage.rejectContent(type, id, approvedBy));
+  }
+
+  // Image storage operations
+  async uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string> {
+    return this.useStorage(storage => storage.uploadImage(buffer, filename, contentType));
+  }
+
+  async getImage(filename: string): Promise<{ stream: any; contentType: string } | null> {
+    return this.useStorage(storage => storage.getImage(filename));
+  }
+
+  async deleteImage(filename: string): Promise<void> {
+    return this.useStorage(storage => storage.deleteImage(filename));
+  }
+
+  // Approval history
+  async createApprovalHistory(historyData: any): Promise<any> {
+    return this.useStorage(storage => storage.createApprovalHistory(historyData));
+  }
+
+  async getApprovalHistory(): Promise<any[]> {
+    return this.useStorage(storage => storage.getApprovalHistory());
   }
 }
 
