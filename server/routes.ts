@@ -105,7 +105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         permissions: [],
         isActive: true,
         applicationStatus: "pending",
-        appliedAt: new Date(),
       });
 
       // Set up session

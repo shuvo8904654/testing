@@ -152,6 +152,21 @@ export class MemoryStorage implements IStorage {
     return updatedUser;
   }
 
+  async getUsersByRole(role: string): Promise<IUser[]> {
+    return Array.from(users.values())
+      .filter(user => user.role === role)
+      .map(user => ({ ...user, password: undefined } as IUser));
+  }
+
+  async updateUserApplicationStatus(id: string, updateData: any): Promise<IUser | null> {
+    const user = users.get(id);
+    if (!user) return null;
+    
+    const updatedUser = { ...user, ...updateData, updatedAt: new Date() };
+    users.set(id, updatedUser);
+    return updatedUser;
+  }
+
   // Member operations
   async getMembers(): Promise<IMember[]> {
     return Array.from(members.values()).filter(member => member.status === 'approved');
