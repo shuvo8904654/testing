@@ -19,6 +19,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import MemberDashboard from "@/pages/MemberDashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ApplicationStatus from "@/pages/ApplicationStatus";
 
 function DashboardRouter() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
@@ -64,6 +65,7 @@ function Router() {
               <Route path="/register" component={Register} />
               <Route path="/admin-dashboard" component={AdminDashboard} />
               <Route path="/member-dashboard" component={MemberDashboard} />
+              <Route path="/application-status" component={ApplicationStatus} />
               <Route component={NotFound} />
             </Switch>
           </main>

@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Users, GraduationCap, Rocket, UserPlus } from "lucide-react";
 
-const registrationFormSchema = insertRegistrationSchema.extend({
+const registrationFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Valid email is required"),
@@ -22,6 +22,11 @@ const registrationFormSchema = insertRegistrationSchema.extend({
   age: z.string().min(1, "Age is required"),
   address: z.string().min(1, "Address is required"),
   motivation: z.string().min(1, "Please tell us your motivation"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 export default function Join() {
@@ -38,25 +43,30 @@ export default function Join() {
       age: "",
       address: "",
       motivation: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
   const createRegistrationMutation = useMutation({
     mutationFn: async (data: z.infer<typeof registrationFormSchema>) => {
-      return await apiRequest("POST", "/api/registrations", data);
+      // Remove confirmPassword from the data sent to the API
+      const { confirmPassword, ...registrationData } = data;
+      return await apiRequest("POST", "/api/auth/register", registrationData);
     },
     onSuccess: () => {
       toast({
-        title: "Registration Submitted!",
-        description: "Thank you for joining us. We'll review your application and get back to you soon.",
+        title: "Account Created Successfully!",
+        description: "Your 3ZERO Club account has been created. You can now log in to check your application status.",
       });
       form.reset();
       setIsDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const message = error?.message || "There was an error creating your account. Please try again.";
       toast({
         title: "Registration Failed",
-        description: "There was an error submitting your registration. Please try again.",
+        description: message,
         variant: "destructive",
       });
     },
@@ -212,6 +222,32 @@ export default function Join() {
                           <FormLabel>Why do you want to join 3ZERO Club?</FormLabel>
                           <FormControl>
                             <Textarea {...field} placeholder="Tell us about your motivation to create positive change..." data-testid="input-motivation" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" placeholder="Create a secure password" data-testid="input-password" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" placeholder="Re-enter your password" data-testid="input-confirm-password" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

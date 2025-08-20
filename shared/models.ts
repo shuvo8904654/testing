@@ -12,6 +12,10 @@ export interface IUser extends Document {
   password?: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
+  age?: string;
+  address?: string;
+  motivation?: string;
   profileImageUrl?: string;
   role: UserRole;
   permissions: string[];
@@ -29,6 +33,10 @@ const userSchema = new Schema<IUser>({
   password: { type: String },
   firstName: { type: String },
   lastName: { type: String },
+  phone: { type: String },
+  age: { type: String },
+  address: { type: String },
+  motivation: { type: String },
   profileImageUrl: { type: String },
   role: { type: String, enum: ['member', 'admin', 'super_admin', 'applicant'], default: 'applicant' },
   permissions: [{ type: String }],
@@ -207,3 +215,39 @@ const registrationSchema = new Schema<IRegistration>({
 });
 
 export const Registration = mongoose.model<IRegistration>('Registration', registrationSchema);
+
+// Event Model
+export interface IEvent extends Document {
+  _id: string;
+  title: string;
+  description: string;
+  date: Date;
+  time: string;
+  location: string;
+  category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'other';
+  maxParticipants?: number;
+  registrationRequired: boolean;
+  contactInfo?: string;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const eventSchema = new Schema<IEvent>({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  date: { type: Date, required: true },
+  time: { type: String, required: true },
+  location: { type: String, required: true },
+  category: { type: String, enum: ['workshop', 'meeting', 'training', 'volunteer', 'other'], required: true },
+  maxParticipants: { type: Number },
+  registrationRequired: { type: Boolean, default: false },
+  contactInfo: { type: String },
+  status: { type: String, enum: ['upcoming', 'ongoing', 'completed', 'cancelled'], default: 'upcoming' },
+  createdBy: { type: String, required: true },
+}, {
+  timestamps: true,
+});
+
+export const Event = mongoose.model<IEvent>('Event', eventSchema);

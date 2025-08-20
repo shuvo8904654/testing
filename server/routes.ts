@@ -10,7 +10,8 @@ import {
   insertProjectSchema,
   insertGalleryImageSchema,
   insertRegistrationSchema,
-  insertUserSchema
+  insertUserSchema,
+  insertEventSchema
 } from "@shared/validation";
 import { z } from "zod";
 import multer from "multer";
@@ -74,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Email/Password authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName, phone, age, address, motivation } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
@@ -95,11 +96,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
         firstName: firstName || null,
         lastName: lastName || null,
+        phone: phone || null,
+        age: age || null,
+        address: address || null,
+        motivation: motivation || null,
         authType: "email",
         role: "applicant",
         permissions: [],
         isActive: true,
         applicationStatus: "pending",
+        appliedAt: new Date(),
       });
 
       // Set up session
@@ -314,6 +320,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin-only endpoint to get all applicant users
+  app.get("/api/users/applicants", isAdmin, async (req, res) => {
+    try {
+      const applicants = await storage.getUsersByRole("applicant");
+      res.json(applicants);
+    } catch (error) {
+      console.error("Error fetching applicants:", error);
+      res.status(500).json({ message: "Failed to fetch applicants" });
+    }
+  });
+
+  // Admin-only endpoint to update user application status
+  app.patch("/api/users/:id/application-status", isAdmin, async (req: any, res) => {
+    try {
+      const { applicationStatus, role, approvedAt } = req.body;
+      const userId = req.params.id;
+      
+      const updateData: any = { applicationStatus };
+      if (role) updateData.role = role;
+      if (approvedAt) updateData.approvedAt = new Date(approvedAt);
+
+      const user = await storage.updateUserApplicationStatus(userId, updateData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      res.status(500).json({ message: "Failed to update application status" });
+    }
+  });
+
   app.patch("/api/registrations/:id/status", isAdmin, async (req: any, res) => {
     try {
       const { status } = req.body;
@@ -442,6 +477,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Gallery image deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete gallery image" });
+    }
+  });
+
+  // Events management routes
+  app.get("/api/events", async (req, res) => {
+    try {
+      const events = await storage.getEvents();
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  app.post("/api/events", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertEventSchema.parse(req.body);
+      const event = await storage.createEvent(validatedData);
+      res.status(201).json(event);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  app.delete("/api/events/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteEvent(req.params.id);
+      res.json({ message: "Event deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete event" });
     }
   });
 

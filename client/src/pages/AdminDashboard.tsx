@@ -7,24 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus } from "lucide-react";
+import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect, useState } from "react";
-import type { IRegistration, INewsArticle, IProject, IGalleryImage, IUser } from "@shared/models";
+import type { IRegistration, INewsArticle, IProject, IGalleryImage, IUser, IEvent } from "@shared/models";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema } from "@shared/validation";
+import { insertUserSchema, insertEventSchema } from "@shared/validation";
 import { z } from "zod";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
   const { toast } = useToast();
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
 
   // Form for creating new user
   const createUserForm = useForm<z.infer<typeof insertUserSchema>>({
@@ -41,6 +43,23 @@ export default function AdminDashboard() {
       role: "member",
       permissions: [],
       isActive: true,
+    },
+  });
+
+  // Form for creating new event
+  const createEventForm = useForm<z.infer<typeof insertEventSchema>>({
+    resolver: zodResolver(insertEventSchema.omit({ createdBy: true })),
+    defaultValues: {
+      title: "",
+      description: "",
+      date: "",
+      time: "",
+      location: "",
+      category: "workshop",
+      maxParticipants: undefined,
+      registrationRequired: false,
+      contactInfo: "",
+      status: "upcoming",
     },
   });
 
@@ -70,8 +89,8 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isLoading, isAdmin, toast]);
 
-  const { data: registrations = [] } = useQuery<IRegistration[]>({
-    queryKey: ["/api/registrations"],
+  const { data: applicants = [] } = useQuery<IUser[]>({
+    queryKey: ["/api/users/applicants"],
     enabled: isAdmin,
   });
 
@@ -89,15 +108,24 @@ export default function AdminDashboard() {
     enabled: isAdmin,
   });
 
-  const updateRegistrationMutation = useMutation({
+  const { data: allEvents = [] } = useQuery<IEvent[]>({
+    queryKey: ["/api/events"],
+    enabled: isAdmin,
+  });
+
+  const updateApplicantStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return await apiRequest("PATCH", `/api/registrations/${id}/status`, { status });
+      return await apiRequest("PATCH", `/api/users/${id}/application-status`, { 
+        applicationStatus: status,
+        ...(status === 'approved' && { role: 'member', approvedAt: new Date() })
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/applicants"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
         title: "Success",
-        description: "Registration status updated",
+        description: "Application status updated successfully",
       });
     },
     onError: (error) => {
@@ -114,14 +142,14 @@ export default function AdminDashboard() {
       }
       toast({
         title: "Error",
-        description: "Failed to update registration status",
+        description: "Failed to update application status",
         variant: "destructive",
       });
     },
   });
 
-  const handleRegistrationAction = (id: string, status: string) => {
-    updateRegistrationMutation.mutate({ id, status });
+  const handleApplicantAction = (id: string, status: string) => {
+    updateApplicantStatusMutation.mutate({ id, status });
   };
 
   const approveContentMutation = useMutation({
@@ -289,6 +317,70 @@ export default function AdminDashboard() {
     },
   });
 
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: z.infer<typeof insertEventSchema>) => {
+      return await apiRequest("POST", "/api/events", { ...eventData, createdBy: user?._id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      createEventForm.reset();
+      setCreateEventDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create event",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      return await apiRequest("DELETE", `/api/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUserRoleMutation.mutate({ userId, role: newRole, permissions: [] });
   };
@@ -350,7 +442,7 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Tabs defaultValue="registrations" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-1 h-auto">
               <TabsTrigger value="registrations" data-testid="tab-registrations" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
                 <UserCheck className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
                 <span className="hidden lg:inline">Registrations</span>
@@ -371,6 +463,11 @@ export default function AdminDashboard() {
                 <span className="hidden lg:inline">Gallery</span>
                 <span className="lg:hidden text-center">Gallery</span>
               </TabsTrigger>
+              <TabsTrigger value="events" data-testid="tab-events" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <Calendar className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Events</span>
+                <span className="lg:hidden text-center">Events</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="registrations" className="space-y-4">
@@ -382,52 +479,52 @@ export default function AdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {registrations.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-registrations">
-                      No pending registrations
+                  {applicants.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8" data-testid="text-no-applicants">
+                      No pending applications
                     </p>
                   ) : (
                     <div className="space-y-4">
-                      {registrations.map((registration) => (
+                      {applicants.map((applicant) => (
                         <div
-                          key={registration.id}
+                          key={applicant._id}
                           className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-registration-${registration.id}`}
+                          data-testid={`card-applicant-${applicant._id}`}
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium" data-testid={`text-name-${registration.id}`}>
-                                {registration.firstName} {registration.lastName}
+                              <h3 className="font-medium" data-testid={`text-name-${applicant._id}`}>
+                                {applicant.firstName} {applicant.lastName}
                               </h3>
-                              <p className="text-sm text-gray-600" data-testid={`text-email-${registration.id}`}>
-                                {registration.email}
+                              <p className="text-sm text-gray-600" data-testid={`text-email-${applicant._id}`}>
+                                {applicant.email}
                               </p>
-                              <p className="text-sm text-gray-600" data-testid={`text-phone-${registration.id}`}>
-                                {registration.phone}
+                              <p className="text-sm text-gray-600" data-testid={`text-phone-${applicant._id}`}>
+                                {applicant.phone}
                               </p>
                             </div>
                             <Badge
                               variant={
-                                registration.status === "approved"
+                                applicant.applicationStatus === "approved"
                                   ? "default"
-                                  : registration.status === "rejected"
+                                  : applicant.applicationStatus === "rejected"
                                   ? "destructive"
                                   : "secondary"
                               }
-                              data-testid={`badge-status-${registration.id}`}
+                              data-testid={`badge-status-${applicant._id}`}
                             >
-                              {registration.status}
+                              {applicant.applicationStatus}
                             </Badge>
                           </div>
                           <div>
                             <p className="text-sm">
-                              <span className="font-medium">Age:</span> {registration.age}
+                              <span className="font-medium">Age:</span> {applicant.age}
                             </p>
                             <p className="text-sm">
-                              <span className="font-medium">Occupation:</span> {registration.occupation}
+                              <span className="font-medium">Role:</span> {applicant.role}
                             </p>
                             <p className="text-sm">
-                              <span className="font-medium">Address:</span> {registration.address}
+                              <span className="font-medium">Address:</span> {applicant.address}
                             </p>
                           </div>
                           <div>
@@ -435,27 +532,24 @@ export default function AdminDashboard() {
                               <span className="font-medium">Motivation:</span>
                             </p>
                             <p className="text-sm text-gray-700 mt-1">
-                              {registration.motivation}
+                              {applicant.motivation}
                             </p>
                           </div>
-                          {registration.skills && (
+                          {applicant.appliedAt && (
                             <div>
                               <p className="text-sm">
-                                <span className="font-medium">Skills:</span>
-                              </p>
-                              <p className="text-sm text-gray-700 mt-1">
-                                {registration.skills}
+                                <span className="font-medium">Applied:</span> {new Date(applicant.appliedAt).toLocaleDateString()}
                               </p>
                             </div>
                           )}
-                          {registration.status === "pending" && (
+                          {applicant.applicationStatus === "pending" && (
                             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                               <Button
                                 size="sm"
                                 className="w-full sm:w-auto"
-                                onClick={() => handleRegistrationAction(registration.id, "approved")}
-                                disabled={updateRegistrationMutation.isPending}
-                                data-testid={`button-approve-${registration.id}`}
+                                onClick={() => handleApplicantAction(applicant._id, "approved")}
+                                disabled={updateApplicantStatusMutation.isPending}
+                                data-testid={`button-approve-${applicant._id}`}
                               >
                                 Approve
                               </Button>
@@ -463,9 +557,9 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="destructive"
                                 className="w-full sm:w-auto"
-                                onClick={() => handleRegistrationAction(registration.id, "rejected")}
-                                disabled={updateRegistrationMutation.isPending}
-                                data-testid={`button-reject-${registration.id}`}
+                                onClick={() => handleApplicantAction(applicant._id, "rejected")}
+                                disabled={updateApplicantStatusMutation.isPending}
+                                data-testid={`button-reject-${applicant._id}`}
                               >
                                 Reject
                               </Button>
@@ -940,6 +1034,238 @@ export default function AdminDashboard() {
                                 </Button>
                               </div>
                             )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="events" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                    <div>
+                      <CardTitle>Events Management</CardTitle>
+                      <CardDescription>
+                        Create and manage upcoming events for the organization
+                      </CardDescription>
+                    </div>
+                    <Dialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button data-testid="button-create-event" className="w-full sm:w-auto">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Event
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+                        <DialogHeader>
+                          <DialogTitle>Create New Event</DialogTitle>
+                        </DialogHeader>
+                        <Form {...createEventForm}>
+                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate(data))} className="space-y-4">
+                            <FormField
+                              control={createEventForm.control}
+                              name="title"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Event Title</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} data-testid="input-event-title" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={createEventForm.control}
+                              name="description"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Description</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} data-testid="input-event-description" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <FormField
+                                control={createEventForm.control}
+                                name="date"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Date</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} type="date" data-testid="input-event-date" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={createEventForm.control}
+                                name="time"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Time</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} type="time" data-testid="input-event-time" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <FormField
+                                control={createEventForm.control}
+                                name="location"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Location</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} data-testid="input-event-location" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={createEventForm.control}
+                                name="category"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Category</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-category">
+                                          <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="workshop">Workshop</SelectItem>
+                                        <SelectItem value="meeting">Meeting</SelectItem>
+                                        <SelectItem value="training">Training</SelectItem>
+                                        <SelectItem value="volunteer">Volunteer</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={createEventForm.control}
+                              name="maxParticipants"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Max Participants (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} type="number" data-testid="input-event-max-participants" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={createEventForm.control}
+                              name="contactInfo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Contact Information (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} data-testid="input-event-contact" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button 
+                              type="submit" 
+                              className="w-full"
+                              disabled={createEventMutation.isPending}
+                              data-testid="button-submit-event"
+                            >
+                              {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                            </Button>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {allEvents.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8" data-testid="text-no-events">
+                      No events created yet
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {allEvents.map((event) => (
+                        <div
+                          key={event.id}
+                          className="border rounded-lg p-4 space-y-3"
+                          data-testid={`card-event-${event.id}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-lg" data-testid={`text-event-title-${event.id}`}>
+                                {event.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mt-1" data-testid={`text-event-description-${event.id}`}>
+                                {event.description}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <Badge variant="outline">
+                                  {event.category}
+                                </Badge>
+                                <Badge 
+                                  variant={event.status === 'upcoming' ? 'default' : 
+                                          event.status === 'ongoing' ? 'secondary' : 
+                                          event.status === 'completed' ? 'outline' : 'destructive'}
+                                >
+                                  {event.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">{new Date(event.date).toLocaleDateString()}</p>
+                              <p className="text-xs text-gray-500">{event.time}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium">Location:</span> {event.location}
+                            </div>
+                            {event.maxParticipants && (
+                              <div>
+                                <span className="font-medium">Max Participants:</span> {event.maxParticipants}
+                              </div>
+                            )}
+                            {event.contactInfo && (
+                              <div className="sm:col-span-2">
+                                <span className="font-medium">Contact:</span> {event.contactInfo}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-gray-500">
+                            <span>Created: {new Date(event.createdAt).toLocaleDateString()}</span>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteEventMutation.mutate(event.id)}
+                                disabled={deleteEventMutation.isPending}
+                                data-testid={`button-delete-event-${event.id}`}
+                              >
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}

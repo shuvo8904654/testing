@@ -1,12 +1,12 @@
 import { connectToMongoDB } from './mongodb';
 import {
-  User, Member, Project, NewsArticle, GalleryImage, ContactMessage, Registration,
-  IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration,
+  User, Member, Project, NewsArticle, GalleryImage, ContactMessage, Registration, Event,
+  IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration, IEvent,
   UserRole, ContentStatus, ApplicationStatus
 } from '@shared/models';
 import type {
   InsertUser, InsertMember, InsertProject, InsertNewsArticle, 
-  InsertGalleryImage, InsertContactMessage, InsertRegistration
+  InsertGalleryImage, InsertContactMessage, InsertRegistration, InsertEvent
 } from '@shared/validation';
 
 // Connect to MongoDB when storage is imported
@@ -19,8 +19,10 @@ export interface IStorage {
   createUser(userData: InsertUser): Promise<IUser>;
   updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null>;
   getAllUsers(): Promise<IUser[]>;
+  getUsersByRole(role: string): Promise<IUser[]>;
   updateUserRole(id: string, role: string, permissions: string[]): Promise<IUser | null>;
   updateUserStatus(id: string, isActive: boolean): Promise<IUser | null>;
+  updateUserApplicationStatus(id: string, updateData: any): Promise<IUser | null>;
   
   // Member operations
   getMembers(): Promise<IMember[]>;
@@ -57,6 +59,14 @@ export interface IStorage {
   getRegistration(id: string): Promise<IRegistration | null>;
   createRegistration(registrationData: InsertRegistration): Promise<IRegistration>;
   updateRegistrationStatus(id: string, status: ApplicationStatus, reviewedBy: string): Promise<IRegistration | null>;
+  
+  // Event operations
+  getEvents(): Promise<IEvent[]>;
+  getUpcomingEvents(): Promise<IEvent[]>;
+  getEvent(id: string): Promise<IEvent | null>;
+  createEvent(eventData: InsertEvent): Promise<IEvent>;
+  updateEvent(id: string, eventData: Partial<InsertEvent>): Promise<IEvent | null>;
+  deleteEvent(id: string): Promise<void>;
   
   // Content approval operations
   getPendingContent(): Promise<{
@@ -106,6 +116,18 @@ export class MongoStorage implements IStorage {
       { isActive, updatedAt: new Date() }, 
       { new: true }
     );
+  }
+
+  async getUsersByRole(role: string): Promise<IUser[]> {
+    return await User.find({ role }).select('-password').sort({ createdAt: -1 });
+  }
+
+  async updateUserApplicationStatus(id: string, updateData: any): Promise<IUser | null> {
+    return await User.findByIdAndUpdate(
+      id, 
+      { ...updateData, updatedAt: new Date() }, 
+      { new: true }
+    ).select('-password');
   }
 
   // Member operations
@@ -222,6 +244,35 @@ export class MongoStorage implements IStorage {
       },
       { new: true }
     );
+  }
+
+  // Event operations
+  async getEvents(): Promise<IEvent[]> {
+    return await Event.find().sort({ date: 1 });
+  }
+
+  async getUpcomingEvents(): Promise<IEvent[]> {
+    return await Event.find({ 
+      status: 'upcoming',
+      date: { $gte: new Date() }
+    }).sort({ date: 1 }).limit(10);
+  }
+
+  async getEvent(id: string): Promise<IEvent | null> {
+    return await Event.findById(id);
+  }
+
+  async createEvent(eventData: InsertEvent): Promise<IEvent> {
+    const event = new Event(eventData);
+    return await event.save();
+  }
+
+  async updateEvent(id: string, eventData: Partial<InsertEvent>): Promise<IEvent | null> {
+    return await Event.findByIdAndUpdate(id, eventData, { new: true });
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await Event.findByIdAndDelete(id);
   }
 
   // Content approval operations

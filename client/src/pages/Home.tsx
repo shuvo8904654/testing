@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Rocket, Play, Users, Briefcase, Leaf, Calendar, Handshake } from "lucide-react";
-import type { Project, NewsArticle, Member } from "../../../shared/schema";
+import type { Project, NewsArticle, Member, Event } from "../../../shared/schema";
 
 export default function Home() {
   const { data: projects } = useQuery<Project[]>({
@@ -18,9 +18,14 @@ export default function Home() {
     queryKey: ["/api/members"],
   });
 
+  const { data: events } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+  });
+
   const featuredProjects = projects?.slice(0, 3) || [];
   const latestNews = news?.slice(0, 2) || [];
   const teamMembers = members?.slice(0, 4) || [];
+  const upcomingEvents = events?.filter(event => event.status === 'upcoming').slice(0, 4) || [];
 
   return (
     <div data-testid="home-page">
@@ -196,40 +201,60 @@ export default function Home() {
           {/* Upcoming Events */}
           <div className="bg-white rounded-3xl p-8 lg:p-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center" data-testid="upcoming-events-title">Upcoming Events</h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="shadow-lg" data-testid="event-card-olympiad">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-eco-green text-white p-3 rounded-lg mr-4">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900" data-testid="event-title-olympiad">3ZERO Youth Olympiad 2024</h4>
-                      <p className="text-gray-600 text-sm" data-testid="event-date-olympiad">December 15-17, 2024</p>
-                    </div>
-                  </div>
-                  <p className="text-gray-600" data-testid="event-description-olympiad">
-                    Three-day event featuring competitions, workshops, and networking sessions for young changemakers.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="shadow-lg" data-testid="event-card-campaign">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-youth-blue text-white p-3 rounded-lg mr-4">
-                      <Handshake className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900" data-testid="event-title-campaign">Community Impact Campaign</h4>
-                      <p className="text-gray-600 text-sm" data-testid="event-date-campaign">January 2025</p>
-                    </div>
-                  </div>
-                  <p className="text-gray-600" data-testid="event-description-campaign">
-                    Month-long campaign focusing on poverty alleviation and sustainable livelihood creation.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg" data-testid="no-events-message">
+                  No upcoming events at the moment. Stay tuned for future activities!
+                </p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-8">
+                {upcomingEvents.map((event, index) => {
+                  const categoryColors = {
+                    'workshop': 'bg-eco-green',
+                    'meeting': 'bg-youth-blue',
+                    'training': 'bg-yellow-600',
+                    'volunteer': 'bg-green-600',
+                    'other': 'bg-gray-600'
+                  };
+                  const bgColor = categoryColors[event.category as keyof typeof categoryColors] || 'bg-eco-green';
+
+                  return (
+                    <Card key={event.id} className="shadow-lg" data-testid={`event-card-${index}`}>
+                      <CardContent className="p-6">
+                        <div className="flex items-center mb-4">
+                          <div className={`${bgColor} text-white p-3 rounded-lg mr-4`}>
+                            <Calendar className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900" data-testid={`event-title-${index}`}>
+                              {event.title}
+                            </h4>
+                            <p className="text-gray-600 text-sm" data-testid={`event-date-${index}`}>
+                              {new Date(event.date).toLocaleDateString()} {event.time && `at ${event.time}`}
+                            </p>
+                            {event.location && (
+                              <p className="text-gray-500 text-xs" data-testid={`event-location-${index}`}>
+                                📍 {event.location}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-gray-600" data-testid={`event-description-${index}`}>
+                          {event.description}
+                        </p>
+                        {event.maxParticipants && (
+                          <p className="text-sm text-gray-500 mt-2" data-testid={`event-capacity-${index}`}>
+                            Max participants: {event.maxParticipants}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>

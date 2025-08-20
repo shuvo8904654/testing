@@ -7,6 +7,10 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
+  age?: string;
+  address?: string;
+  motivation?: string;
   profileImageUrl?: string;
   role: 'member' | 'admin' | 'super_admin' | 'applicant';
   permissions: string[];
@@ -100,6 +104,24 @@ export interface Registration {
   status: 'pending' | 'approved' | 'rejected';
   reviewedBy?: string;
   reviewedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Event {
+  id: string;
+  _id?: string;
+  title: string;
+  description: string;
+  date: Date;
+  time: string;
+  location: string;
+  category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'other';
+  maxParticipants?: number;
+  registrationRequired: boolean;
+  contactInfo?: string;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,10 +1,10 @@
 import {
-  IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration,
+  IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration, IEvent,
   UserRole, ContentStatus, ApplicationStatus
 } from '@shared/models';
 import type {
   InsertUser, InsertMember, InsertProject, InsertNewsArticle, 
-  InsertGalleryImage, InsertContactMessage, InsertRegistration
+  InsertGalleryImage, InsertContactMessage, InsertRegistration, InsertEvent
 } from '@shared/validation';
 import { IStorage } from './storage';
 import bcrypt from 'bcrypt';
@@ -17,6 +17,7 @@ const newsArticles = new Map<string, INewsArticle>();
 const galleryImages = new Map<string, IGalleryImage>();
 const contactMessages = new Map<string, IContactMessage>();
 const registrations = new Map<string, IRegistration>();
+const events = new Map<string, IEvent>();
 
 // Helper function to generate ID
 function generateId(): string {
@@ -332,6 +333,52 @@ export class MemoryStorage implements IStorage {
     };
     registrations.set(id, updatedRegistration);
     return updatedRegistration;
+  }
+
+  // Event operations
+  async getEvents(): Promise<IEvent[]> {
+    return Array.from(events.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+
+  async getUpcomingEvents(): Promise<IEvent[]> {
+    const now = new Date();
+    return Array.from(events.values())
+      .filter(event => event.status === 'upcoming' && event.date >= now)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 10);
+  }
+
+  async getEvent(id: string): Promise<IEvent | null> {
+    return events.get(id) || null;
+  }
+
+  async createEvent(eventData: InsertEvent): Promise<IEvent> {
+    const id = generateId();
+    const event: IEvent = {
+      _id: id,
+      ...eventData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as IEvent;
+    events.set(id, event);
+    return event;
+  }
+
+  async updateEvent(id: string, eventData: Partial<InsertEvent>): Promise<IEvent | null> {
+    const event = events.get(id);
+    if (!event) return null;
+    
+    const updatedEvent = { 
+      ...event, 
+      ...eventData, 
+      updatedAt: new Date()
+    };
+    events.set(id, updatedEvent);
+    return updatedEvent;
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    events.delete(id);
   }
 
   // Content approval operations

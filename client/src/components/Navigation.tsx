@@ -27,6 +27,8 @@ export default function Navigation() {
       dashboardNavigation.push({ name: "Admin Dashboard", href: "/admin-dashboard", icon: Settings });
     } else if (user.role === "member") {
       dashboardNavigation.push({ name: "Member Dashboard", href: "/member-dashboard", icon: User });
+    } else if (user.role === "applicant") {
+      dashboardNavigation.push({ name: "Application Status", href: "/application-status", icon: User });
     }
   }
 
@@ -102,9 +104,9 @@ export default function Navigation() {
                     Login
                   </Button>
                 </Link>
-                <Link href="/register" data-testid="link-register">
+                <Link href="/join" data-testid="link-join">
                   <Button size="sm" className="bg-eco-green text-white hover:bg-eco-green-dark">
-                    Sign Up
+                    Join Us
                   </Button>
                 </Link>
               </div>

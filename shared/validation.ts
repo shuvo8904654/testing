@@ -6,6 +6,10 @@ export const insertUserSchema = z.object({
   password: z.string().min(8).optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  phone: z.string().optional(),
+  age: z.string().optional(),
+  address: z.string().optional(),
+  motivation: z.string().optional(),
   profileImageUrl: z.string().url().optional(),
   role: z.enum(['member', 'admin', 'super_admin', 'applicant']).default('applicant'),
   permissions: z.array(z.string()).default([]),
@@ -80,6 +84,21 @@ export const insertRegistrationSchema = z.object({
   reviewedBy: z.string().optional(),
 });
 
+// Event validation schemas
+export const insertEventSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  date: z.string().transform((str) => new Date(str)),
+  time: z.string().min(1),
+  location: z.string().min(1),
+  category: z.enum(['workshop', 'meeting', 'training', 'volunteer', 'other']),
+  maxParticipants: z.number().optional(),
+  registrationRequired: z.boolean().default(false),
+  contactInfo: z.string().optional(),
+  status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
+  createdBy: z.string(),
+});
+
 // Types derived from schemas
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
@@ -89,3 +108,4 @@ export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
 export type InsertGalleryImage = z.infer<typeof insertGalleryImageSchema>;
 export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
 export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
