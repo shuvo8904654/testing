@@ -290,7 +290,7 @@ export default function MemberDashboard() {
                           Add Story
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                      <DialogContent className="max-w-xs sm:max-w-md md:max-w-2xl mx-2 sm:mx-4 max-h-[95vh] overflow-y-auto p-4 sm:p-6">
                         <DialogHeader>
                           <DialogTitle>Create New Story</DialogTitle>
                         </DialogHeader>
@@ -434,7 +434,7 @@ export default function MemberDashboard() {
                           Add Project
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                      <DialogContent className="max-w-xs sm:max-w-md md:max-w-2xl mx-2 sm:mx-4 max-h-[95vh] overflow-y-auto p-4 sm:p-6">
                         <DialogHeader>
                           <DialogTitle>Create New Project</DialogTitle>
                         </DialogHeader>
@@ -587,7 +587,7 @@ export default function MemberDashboard() {
                           Add Image
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                      <DialogContent className="max-w-xs sm:max-w-md md:max-w-2xl mx-2 sm:mx-4 max-h-[95vh] overflow-y-auto p-4 sm:p-6">
                         <DialogHeader>
                           <DialogTitle>Add Gallery Image</DialogTitle>
                         </DialogHeader>

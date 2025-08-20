@@ -7,15 +7,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon } from "lucide-react";
+import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Registration, NewsArticle, Project, GalleryImage, User } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertUserSchema } from "@shared/schema";
+import { z } from "zod";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
   const { toast } = useToast();
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
+
+  // Form for creating new user
+  const createUserForm = useForm<z.infer<typeof insertUserSchema>>({
+    resolver: zodResolver(insertUserSchema),
+    defaultValues: {
+      email: "",
+      firstName: "",
+      lastName: "",
+      profileImageUrl: "",
+      role: "member",
+      permissions: [],
+      isActive: true,
+    },
+  });
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -229,6 +251,39 @@ export default function AdminDashboard() {
     },
   });
 
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: z.infer<typeof insertUserSchema>) => {
+      return await apiRequest("POST", "/api/users", userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      createUserForm.reset();
+      setCreateUserDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to create user",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUserRoleMutation.mutate({ userId, role: newRole, permissions: [] });
   };
@@ -422,10 +477,128 @@ export default function AdminDashboard() {
             <TabsContent value="members" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>User Role Management</CardTitle>
-                  <CardDescription>
-                    Manage user roles and permissions {!isSuperAdmin && "(View Only - Super Admin access required to modify roles)"}
-                  </CardDescription>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                    <div>
+                      <CardTitle>User Role Management</CardTitle>
+                      <CardDescription>
+                        Manage user roles and permissions {!isSuperAdmin && "(View Only - Super Admin access required to modify roles)"}
+                      </CardDescription>
+                    </div>
+                    {isSuperAdmin && (
+                      <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button data-testid="button-create-user" className="w-full sm:w-auto">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create User
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-xs sm:max-w-md md:max-w-2xl mx-2 sm:mx-4 max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+                          <DialogHeader>
+                            <DialogTitle>Create New User</DialogTitle>
+                          </DialogHeader>
+                          <Form {...createUserForm}>
+                            <form onSubmit={createUserForm.handleSubmit((data) => createUserMutation.mutate(data))} className="space-y-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField
+                                  control={createUserForm.control}
+                                  name="firstName"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>First Name</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} value={field.value || ""} data-testid="input-user-firstname" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={createUserForm.control}
+                                  name="lastName"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Last Name</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} value={field.value || ""} data-testid="input-user-lastname" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <FormField
+                                control={createUserForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Email *</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} value={field.value || ""} type="email" data-testid="input-user-email" required />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={createUserForm.control}
+                                name="profileImageUrl"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Profile Image URL</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} value={field.value || ""} data-testid="input-user-image" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={createUserForm.control}
+                                name="role"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select value={field.value} onValueChange={field.onChange}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-user-role">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="member">Member</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                                <Button
+                                  type="submit"
+                                  disabled={createUserMutation.isPending}
+                                  className="w-full sm:w-auto"
+                                  data-testid="button-submit-user"
+                                >
+                                  {createUserMutation.isPending ? "Creating..." : "Create User"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setCreateUserDialogOpen(false)}
+                                  className="w-full sm:w-auto"
+                                  data-testid="button-cancel-user"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {allUsers.length === 0 ? (

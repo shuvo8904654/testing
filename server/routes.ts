@@ -8,7 +8,8 @@ import {
   insertMemberSchema,
   insertProjectSchema,
   insertGalleryImageSchema,
-  insertRegistrationSchema
+  insertRegistrationSchema,
+  insertUserSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -150,6 +151,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid input data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create registration" });
+    }
+  });
+
+  // Admin-only endpoint to create new users
+  app.post("/api/users", isAdmin, async (req: any, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
     }
   });
 
