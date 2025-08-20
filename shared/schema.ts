@@ -45,7 +45,12 @@ export interface Project {
   description: string;
   imageUrl?: string;
   completedAt?: string; // For display purposes
-  status: 'pending' | 'approved' | 'rejected';
+  category?: string; // Auto-categorized: environmental, educational, community, technology, general
+  status: 'active' | 'completed' | 'on-hold' | 'cancelled';
+  priorityScore?: number;
+  impactLevel?: 'low' | 'medium' | 'high';
+  autoCategory?: string;
+  daysActive?: number;
   createdBy: string;
   approvedBy?: string;
   createdAt: Date;
@@ -59,9 +64,16 @@ export interface NewsArticle {
   content: string;
   excerpt?: string;
   image: string; // Maps to 'imageUrl' in MongoDB
-  category: string; // Add category field
+  imageUrl?: string; // Alternative field name
+  category?: string; // Auto-categorized: environmental, events, community, announcements, general
+  contentCategory?: string;
   author: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'draft' | 'published' | 'archived';
+  contentScore?: number;
+  readabilityLevel?: 'simple' | 'medium' | 'complex';
+  estimatedReadTime?: number;
+  engagement?: number;
+  daysOld?: number;
   createdBy: string;
   approvedBy?: string;
   readCount: number;
@@ -75,7 +87,12 @@ export interface GalleryImage {
   _id?: string;
   title: string;
   description?: string;
+  alt?: string;
+  url?: string; // Alternative field name
   imageUrl: string;
+  category?: string; // Auto-categorized: events, people, projects, environmental, general
+  qualityScore?: number;
+  daysOld?: number;
   status: 'pending' | 'approved' | 'rejected';
   createdBy: string;
   approvedBy?: string;
@@ -121,6 +138,14 @@ export interface Event {
   registrationRequired: boolean;
   contactInfo?: string;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  urgency?: 'urgent' | 'soon' | 'normal' | 'past';
+  capacity?: 'limited' | 'moderate' | 'large' | 'available';
+  popularity?: number;
+  smartStatus?: string;
+  daysUntilEvent?: number;
+  isUpcoming?: boolean;
+  isPast?: boolean;
+  isToday?: boolean;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;

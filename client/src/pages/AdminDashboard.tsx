@@ -46,20 +46,19 @@ export default function AdminDashboard() {
     },
   });
 
-  // Form for creating new event
-  const createEventForm = useForm<z.infer<typeof insertEventSchema>>({
-    resolver: zodResolver(insertEventSchema.omit({ createdBy: true })),
+  // Form for creating new event  
+  const createEventForm = useForm({
     defaultValues: {
       title: "",
       description: "",
       date: "",
       time: "",
       location: "",
-      category: "workshop",
-      maxParticipants: undefined,
+      category: "workshop" as const,
+      maxParticipants: undefined as number | undefined,
       registrationRequired: false,
       contactInfo: "",
-      status: "upcoming",
+      status: "upcoming" as const,
     },
   });
 
@@ -851,7 +850,7 @@ export default function AdminDashboard() {
                               variant="secondary"
                               data-testid={`badge-news-status-${article.id}`}
                             >
-                              {article.approvalStatus}
+                              {article.status}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-700">
@@ -861,7 +860,7 @@ export default function AdminDashboard() {
                             <span>Created: {new Date(article.createdAt!).toLocaleDateString()}</span>
                             <span>By: {article.createdBy || 'Unknown'}</span>
                           </div>
-                          {article.approvalStatus === "pending" && (
+                          {article.status === "draft" && (
                             <div className="flex space-x-2 pt-2">
                               <Button
                                 size="sm"
@@ -931,14 +930,14 @@ export default function AdminDashboard() {
                               variant="secondary"
                               data-testid={`badge-project-status-${project.id}`}
                             >
-                              {project.approvalStatus}
+                              {project.status}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center text-xs text-gray-500">
                             <span>Created: {new Date(project.createdAt!).toLocaleDateString()}</span>
                             <span>By: {project.createdBy || 'Unknown'}</span>
                           </div>
-                          {project.approvalStatus === "pending" && (
+                          {project.status === "active" && (
                             <div className="flex space-x-2 pt-2">
                               <Button
                                 size="sm"
@@ -990,7 +989,7 @@ export default function AdminDashboard() {
                         >
                           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                             <img
-                              src={image.url}
+                              src={image.url || image.imageUrl}
                               alt={image.title}
                               className="w-full h-full object-cover"
                               data-testid={`img-gallery-${image.id}`}
@@ -1005,7 +1004,7 @@ export default function AdminDashboard() {
                                 variant="secondary"
                                 data-testid={`badge-gallery-status-${image.id}`}
                               >
-                                {image.approvalStatus}
+                                {image.status}
                               </Badge>
                             </div>
                             {image.description && (
@@ -1017,7 +1016,7 @@ export default function AdminDashboard() {
                               <span>Created: {new Date(image.createdAt!).toLocaleDateString()}</span>
                               <span>By: {image.createdBy || 'Unknown'}</span>
                             </div>
-                            {image.approvalStatus === "pending" && (
+                            {image.status === "pending" && (
                               <div className="flex space-x-2 pt-2">
                                 <Button
                                   size="sm"

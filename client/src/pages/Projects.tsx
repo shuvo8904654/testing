@@ -74,12 +74,12 @@ export default function Projects() {
           {projects.map((project, index) => (
             <Card 
               key={project.id} 
-              className={`hover-scale ${getProjectBgColor(project.category)}`}
+              className={`hover-scale ${getProjectBgColor(project.category || 'general')}`}
               data-testid={`project-card-${index}`}
             >
               <CardContent className="p-8">
-                <div className={`${getIconBgColor(project.category)} p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6`}>
-                  {getProjectIcon(project.category)}
+                <div className={`${getIconBgColor(project.category || 'general')} p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6`}>
+                  {getProjectIcon(project.category || 'general')}
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid={`project-title-${index}`}>
                   {project.title}
@@ -90,8 +90,8 @@ export default function Projects() {
                 <div className="flex items-center justify-between">
                   <span 
                     className={`text-sm font-medium ${
-                      project.category.toLowerCase() === 'environment' ? 'text-eco-green' :
-                      project.category.toLowerCase() === 'innovation' ? 'text-youth-blue' :
+                      project.category?.toLowerCase() === 'environment' ? 'text-eco-green' :
+                      project.category?.toLowerCase() === 'innovation' ? 'text-youth-blue' :
                       'text-yellow-600'
                     }`}
                     data-testid={`project-status-${index}`}
