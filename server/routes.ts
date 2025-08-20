@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import { 
   insertContactMessageSchema, 
   insertNewsArticleSchema, 
@@ -54,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(uploadsDir));
 
   // Auth middleware
-  await setupAuth(app);
+  setupAuth(app);
 
   // File upload endpoint
   app.post("/api/upload", isAuthenticated, upload.single('file'), (req: any, res) => {
@@ -102,10 +102,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Set up session
-      (req as any).user = { 
+      (req.session as any).user = { 
         claims: { sub: user.id, email: user.email },
         authType: "email"
       };
+      (req as any).user = (req.session as any).user;
 
       res.status(201).json({ user: { ...user, password: undefined } });
     } catch (error) {
@@ -139,10 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Set up session
-      (req as any).user = { 
+      (req.session as any).user = { 
         claims: { sub: user.id, email: user.email },
         authType: "email"
       };
+      (req as any).user = (req.session as any).user;
 
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
