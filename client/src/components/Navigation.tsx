@@ -57,26 +57,26 @@ export default function Navigation() {
           <div className="hidden md:flex space-x-8">
             {navigation.map((item) => (
               <Link key={item.name} href={item.href} data-testid={`link-${item.name.toLowerCase()}`}>
-                <a className={`transition-colors ${
+                <span className={`transition-colors cursor-pointer ${
                   isActive(item.href)
                     ? "text-eco-green"
                     : "text-gray-700 hover:text-eco-green"
                 }`}>
                   {item.name}
-                </a>
+                </span>
               </Link>
             ))}
             {/* Dashboard Links for Authenticated Users */}
             {dashboardNavigation.map((item) => (
               <Link key={item.name} href={item.href} data-testid={`link-dashboard`}>
-                <a className={`flex items-center space-x-1 transition-colors ${
+                <span className={`flex items-center space-x-1 transition-colors cursor-pointer ${
                   isActive(item.href)
                     ? "text-eco-green"
                     : "text-gray-700 hover:text-eco-green"
                 }`}>
                   <item.icon className="w-4 h-4" />
                   <span>{item.name}</span>
-                </a>
+                </span>
               </Link>
             ))}
           </div>
@@ -123,8 +123,8 @@ export default function Navigation() {
                 <div className="flex flex-col space-y-4 mt-8">
                   {navigation.map((item) => (
                     <Link key={item.name} href={item.href} data-testid={`mobile-link-${item.name.toLowerCase()}`}>
-                      <a 
-                        className={`block p-2 rounded-lg transition-colors ${
+                      <span 
+                        className={`block p-2 rounded-lg transition-colors cursor-pointer ${
                           isActive(item.href)
                             ? "text-eco-green bg-eco-green/10"
                             : "text-gray-700 hover:text-eco-green hover:bg-gray-100"
@@ -132,15 +132,15 @@ export default function Navigation() {
                         onClick={() => setOpen(false)}
                       >
                         {item.name}
-                      </a>
+                      </span>
                     </Link>
                   ))}
                   
                   {/* Mobile Dashboard Links */}
                   {dashboardNavigation.map((item) => (
                     <Link key={item.name} href={item.href} data-testid={`mobile-link-dashboard`}>
-                      <a 
-                        className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
+                      <span 
+                        className={`flex items-center space-x-2 p-2 rounded-lg transition-colors cursor-pointer ${
                           isActive(item.href)
                             ? "text-eco-green bg-eco-green/10"
                             : "text-gray-700 hover:text-eco-green hover:bg-gray-100"
@@ -149,7 +149,7 @@ export default function Navigation() {
                       >
                         <item.icon className="w-4 h-4" />
                         <span>{item.name}</span>
-                      </a>
+                      </span>
                     </Link>
                   ))}
 

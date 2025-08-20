@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Rocket, Play, Users, Briefcase, Leaf, Calendar, Handshake } from "lucide-react";
-import type { Project, NewsArticle, Member } from "@shared/schema";
+import type { Project, NewsArticle, Member } from "../../../shared/schema";
 
 export default function Home() {
   const { data: projects } = useQuery<Project[]>({

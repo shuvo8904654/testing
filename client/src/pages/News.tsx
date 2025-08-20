@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
-import type { NewsArticle } from "@shared/schema";
+import type { NewsArticle } from "../../../shared/schema";
 
 export default function News() {
   const { data: articles, isLoading } = useQuery<NewsArticle[]>({
@@ -20,7 +20,7 @@ export default function News() {
   }
 
   const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
+    switch (category?.toLowerCase()) {
       case 'success story':
         return 'bg-eco-green/10 text-eco-green';
       case 'update':
