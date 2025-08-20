@@ -167,7 +167,7 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
 
   try {
     const dbUser = await storage.getUser(user.claims.sub);
-    if (!dbUser || dbUser.role !== "admin") {
+    if (!dbUser || (dbUser.role !== "admin" && dbUser.role !== "super_admin")) {
       return res.status(403).json({ message: "Admin access required" });
     }
     next();
