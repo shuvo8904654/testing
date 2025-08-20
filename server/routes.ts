@@ -245,12 +245,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Projects endpoints
+  // Enhanced projects endpoint with smart filtering and analytics
   app.get("/api/projects", async (req, res) => {
     try {
-      const projects = await storage.getProjects();
-      res.json(projects);
-    } catch (error) {
+      const { sortBy = 'createdAt', order = 'desc', filter = 'all', category = 'all' } = req.query;
+      
+      let projects = await storage.getProjects();
+      
+      // Enhanced project analytics
+      const enhancedProjects = projects.map(project => {
+        let priorityScore = 0;
+        let impactLevel = 'medium';
+        
+        // Calculate priority based on project attributes
+        if (project.description && project.description.length > 200) priorityScore += 30;
+        if (project.title && (project.title.includes('urgent') || project.title.includes('critical'))) priorityScore += 40;
+        if (project.imageUrl) priorityScore += 20;
+        
+        // Determine impact level
+        if (priorityScore >= 70) impactLevel = 'high';
+        else if (priorityScore <= 30) impactLevel = 'low';
+        
+        // Auto-categorize projects
+        const title = project.title?.toLowerCase() || '';
+        const desc = project.description?.toLowerCase() || '';
+        let autoCategory = 'general';
+        
+        if (title.includes('environment') || desc.includes('environment') || title.includes('carbon')) {
+          autoCategory = 'environmental';
+        } else if (title.includes('education') || desc.includes('education') || title.includes('training')) {
+          autoCategory = 'educational';
+        } else if (title.includes('community') || desc.includes('community') || title.includes('social')) {
+          autoCategory = 'community';
+        } else if (title.includes('technology') || desc.includes('tech') || title.includes('digital')) {
+          autoCategory = 'technology';
+        }
+        
+        return {
+          ...project.toObject ? project.toObject() : project,
+          priorityScore,
+          impactLevel,
+          autoCategory,
+          daysActive: Math.floor((new Date().getTime() - new Date(project.createdAt).getTime()) / (1000 * 3600 * 24))
+        };
+      });
+      
+      // Apply filters
+      let filteredProjects = enhancedProjects;
+      if (filter === 'high-priority') {
+        filteredProjects = enhancedProjects.filter(p => p.priorityScore >= 70);
+      } else if (filter === 'recent') {
+        filteredProjects = enhancedProjects.filter(p => p.daysActive <= 30);
+      } else if (filter === 'high-impact') {
+        filteredProjects = enhancedProjects.filter(p => p.impactLevel === 'high');
+      }
+      
+      if (category !== 'all') {
+        filteredProjects = filteredProjects.filter(p => p.autoCategory === category);
+      }
+      
+      // Smart sorting
+      filteredProjects.sort((a, b) => {
+        if (sortBy === 'priority') {
+          return order === 'desc' ? b.priorityScore - a.priorityScore : a.priorityScore - b.priorityScore;
+        } else if (sortBy === 'impact') {
+          const impactOrder = { high: 3, medium: 2, low: 1 };
+          return order === 'desc' ? impactOrder[b.impactLevel] - impactOrder[a.impactLevel] : impactOrder[a.impactLevel] - impactOrder[b.impactLevel];
+        } else if (sortBy === 'createdAt') {
+          const aDate = new Date(a.createdAt).getTime();
+          const bDate = new Date(b.createdAt).getTime();
+          return order === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return 0;
+      });
+      
+      // Analytics
+      const analytics = {
+        total: enhancedProjects.length,
+        highPriority: enhancedProjects.filter(p => p.priorityScore >= 70).length,
+        highImpact: enhancedProjects.filter(p => p.impactLevel === 'high').length,
+        categories: {
+          environmental: enhancedProjects.filter(p => p.autoCategory === 'environmental').length,
+          educational: enhancedProjects.filter(p => p.autoCategory === 'educational').length,
+          community: enhancedProjects.filter(p => p.autoCategory === 'community').length,
+          technology: enhancedProjects.filter(p => p.autoCategory === 'technology').length,
+          general: enhancedProjects.filter(p => p.autoCategory === 'general').length
+        },
+        averagePriority: enhancedProjects.length > 0 ? Math.round(enhancedProjects.reduce((sum, p) => sum + p.priorityScore, 0) / enhancedProjects.length) : 0
+      };
+      
+      res.json({ projects: filteredProjects, analytics });
+    } catch (error: any) {
+      console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
@@ -267,12 +353,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // News endpoints
+  // Enhanced news endpoint with content analysis and recommendations
   app.get("/api/news", async (req, res) => {
     try {
-      const articles = await storage.getNewsArticles();
-      res.json(articles);
-    } catch (error) {
+      const { sortBy = 'createdAt', order = 'desc', filter = 'all', limit = 50 } = req.query;
+      
+      let articles = await storage.getNewsArticles();
+      
+      // Enhanced content analysis
+      const enhancedArticles = articles.map(article => {
+        let contentScore = 0;
+        let readabilityLevel = 'medium';
+        let estimatedReadTime = 0;
+        
+        // Content quality scoring
+        if (article.title && article.title.length >= 20 && article.title.length <= 80) contentScore += 25;
+        if (article.excerpt && article.excerpt.length >= 50) contentScore += 20;
+        if (article.content && article.content.length >= 300) contentScore += 25;
+        if (article.imageUrl) contentScore += 15;
+        if (article.content && article.content.length >= 800) contentScore += 15;
+        
+        // Calculate estimated read time (average 200 words per minute)
+        if (article.content) {
+          const wordCount = article.content.split(/\s+/).length;
+          estimatedReadTime = Math.ceil(wordCount / 200);
+        }
+        
+        // Determine readability
+        if (article.content) {
+          const avgSentenceLength = article.content.split('.').length;
+          if (avgSentenceLength > 20) readabilityLevel = 'complex';
+          else if (avgSentenceLength < 10) readabilityLevel = 'simple';
+        }
+        
+        // Auto-categorize content
+        const title = article.title?.toLowerCase() || '';
+        const content = article.content?.toLowerCase() || '';
+        let contentCategory = 'general';
+        
+        if (title.includes('environment') || content.includes('sustainability')) {
+          contentCategory = 'environmental';
+        } else if (title.includes('event') || content.includes('workshop')) {
+          contentCategory = 'events';
+        } else if (title.includes('member') || content.includes('achievement')) {
+          contentCategory = 'community';
+        } else if (title.includes('announcement') || content.includes('important')) {
+          contentCategory = 'announcements';
+        }
+        
+        return {
+          ...article.toObject ? article.toObject() : article,
+          contentScore,
+          readabilityLevel,
+          estimatedReadTime,
+          contentCategory,
+          engagement: article.readCount || 0,
+          daysOld: Math.floor((new Date().getTime() - new Date(article.createdAt).getTime()) / (1000 * 3600 * 24))
+        };
+      });
+      
+      // Apply filters
+      let filteredArticles = enhancedArticles;
+      if (filter === 'popular') {
+        filteredArticles = enhancedArticles.filter(a => a.engagement >= 10);
+      } else if (filter === 'recent') {
+        filteredArticles = enhancedArticles.filter(a => a.daysOld <= 7);
+      } else if (filter === 'high-quality') {
+        filteredArticles = enhancedArticles.filter(a => a.contentScore >= 80);
+      }
+      
+      // Smart sorting
+      filteredArticles.sort((a, b) => {
+        if (sortBy === 'popularity') {
+          return order === 'desc' ? b.engagement - a.engagement : a.engagement - b.engagement;
+        } else if (sortBy === 'quality') {
+          return order === 'desc' ? b.contentScore - a.contentScore : a.contentScore - b.contentScore;
+        } else if (sortBy === 'createdAt') {
+          const aDate = new Date(a.createdAt).getTime();
+          const bDate = new Date(b.createdAt).getTime();
+          return order === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return 0;
+      });
+      
+      // Limit results
+      filteredArticles = filteredArticles.slice(0, parseInt(limit as string));
+      
+      // Analytics
+      const analytics = {
+        total: enhancedArticles.length,
+        highQuality: enhancedArticles.filter(a => a.contentScore >= 80).length,
+        popular: enhancedArticles.filter(a => a.engagement >= 10).length,
+        categories: {
+          environmental: enhancedArticles.filter(a => a.contentCategory === 'environmental').length,
+          events: enhancedArticles.filter(a => a.contentCategory === 'events').length,
+          community: enhancedArticles.filter(a => a.contentCategory === 'community').length,
+          announcements: enhancedArticles.filter(a => a.contentCategory === 'announcements').length,
+          general: enhancedArticles.filter(a => a.contentCategory === 'general').length
+        },
+        avgReadTime: enhancedArticles.length > 0 ? Math.round(enhancedArticles.reduce((sum, a) => sum + a.estimatedReadTime, 0) / enhancedArticles.length) : 0,
+        totalReads: enhancedArticles.reduce((sum, a) => sum + a.engagement, 0)
+      };
+      
+      res.json({ articles: filteredArticles, analytics });
+    } catch (error: any) {
+      console.error("Error fetching news articles:", error);
       res.status(500).json({ message: "Failed to fetch news articles" });
     }
   });
@@ -289,25 +474,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced news creation with content analysis and smart features
   app.post("/api/news", async (req, res) => {
     try {
       const validatedData = insertNewsArticleSchema.parse(req.body);
-      const article = await storage.createNewsArticle(validatedData);
-      res.status(201).json(article);
+      
+      // Content quality analysis
+      let contentScore = 0;
+      if (validatedData.title && validatedData.title.length >= 20 && validatedData.title.length <= 80) contentScore += 25;
+      if (validatedData.excerpt && validatedData.excerpt.length >= 50) contentScore += 20;
+      if (validatedData.content && validatedData.content.length >= 300) contentScore += 25;
+      if (validatedData.imageUrl) contentScore += 15;
+      if (validatedData.content && validatedData.content.length >= 800) contentScore += 15;
+      
+      // Auto-categorize content
+      const title = validatedData.title?.toLowerCase() || '';
+      const content = validatedData.content?.toLowerCase() || '';
+      let contentCategory = 'general';
+      
+      if (title.includes('environment') || content.includes('sustainability')) {
+        contentCategory = 'environmental';
+      } else if (title.includes('event') || content.includes('workshop')) {
+        contentCategory = 'events';
+      } else if (title.includes('member') || content.includes('achievement')) {
+        contentCategory = 'community';
+      } else if (title.includes('announcement') || content.includes('important')) {
+        contentCategory = 'announcements';
+      }
+      
+      // Calculate estimated read time
+      let estimatedReadTime = 0;
+      if (validatedData.content) {
+        const wordCount = validatedData.content.split(/\s+/).length;
+        estimatedReadTime = Math.ceil(wordCount / 200);
+      }
+      
+      // Auto-generate SEO-friendly excerpt if not provided
+      let excerpt = validatedData.excerpt;
+      if (!excerpt && validatedData.content) {
+        excerpt = validatedData.content.substring(0, 150) + (validatedData.content.length > 150 ? '...' : '');
+      }
+      
+      const enhancedArticleData = {
+        ...validatedData,
+        excerpt,
+        contentScore,
+        category: contentCategory,
+        estimatedReadTime,
+        readCount: 0,
+        status: contentScore >= 70 ? 'published' : 'draft' as const
+      };
+      
+      const article = await storage.createNewsArticle(enhancedArticleData);
+      
+      console.log(`✅ Article created: "${validatedData.title}" (Score: ${contentScore}, Category: ${contentCategory})`);
+      
+      res.status(201).json({ 
+        article, 
+        contentScore,
+        contentCategory,
+        estimatedReadTime,
+        autoApproved: contentScore >= 70,
+        message: "Article created with smart content analysis"
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input data", errors: error.errors });
       }
+      console.error("Error creating article:", error);
       res.status(500).json({ message: "Failed to create article" });
     }
   });
 
-  // Gallery endpoints
+  // Enhanced gallery endpoint with smart organization and analytics
   app.get("/api/gallery", async (req, res) => {
     try {
-      const images = await storage.getGalleryImages();
-      res.json(images);
-    } catch (error) {
+      const { sortBy = 'createdAt', order = 'desc', filter = 'all', limit = 100 } = req.query;
+      
+      let images = await storage.getGalleryImages();
+      
+      // Enhanced image analysis
+      const enhancedImages = images.map(image => {
+        let qualityScore = 0;
+        let category = 'general';
+        
+        // Quality scoring based on metadata
+        if (image.title && image.title.length >= 10) qualityScore += 30;
+        if (image.description && image.description.length >= 20) qualityScore += 25;
+        if (image.alt && image.alt.length >= 10) qualityScore += 20;
+        if (image.url) qualityScore += 25;
+        
+        // Auto-categorize images
+        const title = image.title?.toLowerCase() || '';
+        const desc = image.description?.toLowerCase() || '';
+        
+        if (title.includes('event') || desc.includes('event') || title.includes('workshop')) {
+          category = 'events';
+        } else if (title.includes('member') || desc.includes('team') || title.includes('staff')) {
+          category = 'people';
+        } else if (title.includes('project') || desc.includes('project') || title.includes('activity')) {
+          category = 'projects';
+        } else if (title.includes('environment') || desc.includes('nature') || title.includes('green')) {
+          category = 'environmental';
+        }
+        
+        return {
+          ...image.toObject ? image.toObject() : image,
+          qualityScore,
+          category,
+          daysOld: Math.floor((new Date().getTime() - new Date(image.createdAt).getTime()) / (1000 * 3600 * 24))
+        };
+      });
+      
+      // Apply filters
+      let filteredImages = enhancedImages;
+      if (filter === 'recent') {
+        filteredImages = enhancedImages.filter(img => img.daysOld <= 30);
+      } else if (filter === 'high-quality') {
+        filteredImages = enhancedImages.filter(img => img.qualityScore >= 70);
+      } else if (filter === 'events') {
+        filteredImages = enhancedImages.filter(img => img.category === 'events');
+      } else if (filter === 'people') {
+        filteredImages = enhancedImages.filter(img => img.category === 'people');
+      }
+      
+      // Smart sorting
+      filteredImages.sort((a, b) => {
+        if (sortBy === 'quality') {
+          return order === 'desc' ? b.qualityScore - a.qualityScore : a.qualityScore - b.qualityScore;
+        } else if (sortBy === 'createdAt') {
+          const aDate = new Date(a.createdAt).getTime();
+          const bDate = new Date(b.createdAt).getTime();
+          return order === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return 0;
+      });
+      
+      // Limit results
+      filteredImages = filteredImages.slice(0, parseInt(limit as string));
+      
+      // Analytics
+      const analytics = {
+        total: enhancedImages.length,
+        highQuality: enhancedImages.filter(img => img.qualityScore >= 70).length,
+        recent: enhancedImages.filter(img => img.daysOld <= 30).length,
+        categories: {
+          events: enhancedImages.filter(img => img.category === 'events').length,
+          people: enhancedImages.filter(img => img.category === 'people').length,
+          projects: enhancedImages.filter(img => img.category === 'projects').length,
+          environmental: enhancedImages.filter(img => img.category === 'environmental').length,
+          general: enhancedImages.filter(img => img.category === 'general').length
+        },
+        averageQuality: enhancedImages.length > 0 ? Math.round(enhancedImages.reduce((sum, img) => sum + img.qualityScore, 0) / enhancedImages.length) : 0
+      };
+      
+      res.json({ images: filteredImages, analytics });
+    } catch (error: any) {
+      console.error("Error fetching gallery images:", error);
       res.status(500).json({ message: "Failed to fetch gallery images" });
     }
   });
@@ -346,6 +669,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid input data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create registration" });
+    }
+  });
+
+  // Enhanced bulk content operations for admin efficiency
+  app.post("/api/admin/bulk-publish", isAdmin, async (req: any, res) => {
+    try {
+      const { articleIds, projectIds } = req.body;
+      const publishedBy = req.user.claims.sub;
+      
+      const results = [];
+      const errors = [];
+      
+      // Bulk publish articles
+      if (articleIds && Array.isArray(articleIds)) {
+        for (const articleId of articleIds) {
+          try {
+            const updateData = { status: 'published' as const, publishedBy, publishedAt: new Date() };
+            const article = await storage.updateNewsArticle(articleId, updateData);
+            results.push({ type: 'article', id: articleId, status: 'published' });
+          } catch (error) {
+            errors.push({ type: 'article', id: articleId, error: error.message });
+          }
+        }
+      }
+      
+      // Bulk activate projects
+      if (projectIds && Array.isArray(projectIds)) {
+        for (const projectId of projectIds) {
+          try {
+            const updateData = { status: 'active' as const, activatedBy: publishedBy, activatedAt: new Date() };
+            const project = await storage.updateProject(projectId, updateData);
+            results.push({ type: 'project', id: projectId, status: 'active' });
+          } catch (error) {
+            errors.push({ type: 'project', id: projectId, error: error.message });
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Bulk operation completed: ${results.length} successful, ${errors.length} failed`,
+        results,
+        errors 
+      });
+    } catch (error: any) {
+      console.error("Bulk operation error:", error);
+      res.status(500).json({ message: "Bulk operation failed" });
+    }
+  });
+
+  app.get("/api/admin/analytics", isAdmin, async (req, res) => {
+    try {
+      // Comprehensive analytics across all content types
+      const [users, projects, articles, events, members, gallery] = await Promise.all([
+        storage.getUsers(),
+        storage.getProjects(),
+        storage.getNewsArticles(),
+        storage.getEvents(),
+        storage.getMembers(),
+        storage.getGalleryImages()
+      ]);
+      
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const analytics = {
+        overview: {
+          totalUsers: users.length,
+          totalProjects: projects.length,
+          totalArticles: articles.length,
+          totalEvents: events.length,
+          totalMembers: members.length,
+          totalGalleryImages: gallery.length
+        },
+        growth: {
+          newUsersThisMonth: users.filter(u => new Date(u.createdAt) >= thirtyDaysAgo).length,
+          newProjectsThisMonth: projects.filter(p => new Date(p.createdAt) >= thirtyDaysAgo).length,
+          newArticlesThisMonth: articles.filter(a => new Date(a.createdAt) >= thirtyDaysAgo).length,
+          newUsersThisWeek: users.filter(u => new Date(u.createdAt) >= sevenDaysAgo).length
+        },
+        userStats: {
+          applicants: users.filter(u => u.role === 'applicant').length,
+          members: users.filter(u => u.role === 'member').length,
+          admins: users.filter(u => u.role === 'admin').length,
+          pending: users.filter(u => u.applicationStatus === 'pending').length,
+          approved: users.filter(u => u.applicationStatus === 'approved').length
+        },
+        contentHealth: {
+          draftArticles: articles.filter(a => a.status === 'draft').length,
+          publishedArticles: articles.filter(a => a.status === 'published').length,
+          activeProjects: projects.filter(p => p.status === 'active').length,
+          upcomingEvents: events.filter(e => new Date(e.date) > now).length
+        },
+        engagement: {
+          totalArticleReads: articles.reduce((sum, a) => sum + (a.readCount || 0), 0),
+          averageArticleReads: articles.length > 0 ? Math.round(articles.reduce((sum, a) => sum + (a.readCount || 0), 0) / articles.length) : 0,
+          popularArticles: articles.filter(a => (a.readCount || 0) >= 10).length
+        }
+      };
+      
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
 
@@ -609,15 +1036,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Projects management (Members can create, Admins can modify all)
+  // Enhanced project creation with smart validation and auto-categorization
   app.post("/api/dashboard/projects", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject(validatedData);
-      res.status(201).json(project);
+      const createdBy = req.user.claims.sub;
+      
+      // Auto-categorize project
+      const title = validatedData.title?.toLowerCase() || '';
+      const description = validatedData.description?.toLowerCase() || '';
+      let autoCategory = 'general';
+      
+      if (title.includes('environment') || description.includes('environment') || title.includes('carbon')) {
+        autoCategory = 'environmental';
+      } else if (title.includes('education') || description.includes('education') || title.includes('training')) {
+        autoCategory = 'educational';
+      } else if (title.includes('community') || description.includes('community') || title.includes('social')) {
+        autoCategory = 'community';
+      } else if (title.includes('technology') || description.includes('tech') || title.includes('digital')) {
+        autoCategory = 'technology';
+      }
+      
+      // Calculate initial priority score
+      let priorityScore = 0;
+      if (validatedData.description && validatedData.description.length > 200) priorityScore += 30;
+      if (title.includes('urgent') || title.includes('critical')) priorityScore += 40;
+      if (validatedData.imageUrl) priorityScore += 20;
+      
+      const enhancedProjectData = {
+        ...validatedData,
+        createdBy,
+        category: autoCategory,
+        priorityScore,
+        status: 'active' as const
+      };
+      
+      const project = await storage.createProject(enhancedProjectData);
+      
+      console.log(`✅ Project created: "${validatedData.title}" (Category: ${autoCategory}, Priority: ${priorityScore})`);
+      
+      res.status(201).json({ 
+        project, 
+        autoCategory,
+        priorityScore,
+        message: "Project created successfully with smart categorization"
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input data", errors: error.errors });
       }
+      console.error("Error creating project:", error);
       res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -690,25 +1158,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Events management routes
+  // Enhanced events endpoint with smart scheduling and management
   app.get("/api/events", async (req, res) => {
     try {
-      const events = await storage.getEvents();
-      res.json(events);
-    } catch (error) {
+      const { filter = 'all', sortBy = 'date', order = 'asc', upcoming = false } = req.query;
+      
+      let events = await storage.getEvents();
+      
+      // Enhanced event analysis
+      const enhancedEvents = events.map(event => {
+        const eventDate = new Date(event.date);
+        const now = new Date();
+        const daysUntilEvent = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+        
+        let urgency = 'normal';
+        let capacity = 'available';
+        let popularity = 0;
+        
+        // Determine urgency
+        if (daysUntilEvent <= 3 && daysUntilEvent > 0) urgency = 'urgent';
+        else if (daysUntilEvent <= 7 && daysUntilEvent > 3) urgency = 'soon';
+        else if (daysUntilEvent < 0) urgency = 'past';
+        
+        // Estimate popularity based on description and category
+        if (event.description && event.description.length > 100) popularity += 20;
+        if (event.category === 'workshop' || event.category === 'training') popularity += 30;
+        if (event.registrationRequired) popularity += 25;
+        if (event.maxParticipants && event.maxParticipants <= 20) popularity += 25;
+        
+        // Determine capacity status
+        if (event.maxParticipants) {
+          if (event.maxParticipants <= 10) capacity = 'limited';
+          else if (event.maxParticipants <= 30) capacity = 'moderate';
+          else capacity = 'large';
+        }
+        
+        // Smart status updates based on date
+        let smartStatus = event.status;
+        if (daysUntilEvent < 0 && event.status === 'upcoming') {
+          smartStatus = 'completed';
+        } else if (daysUntilEvent === 0 && event.status === 'upcoming') {
+          smartStatus = 'ongoing';
+        }
+        
+        return {
+          ...event.toObject ? event.toObject() : event,
+          daysUntilEvent,
+          urgency,
+          capacity,
+          popularity,
+          smartStatus,
+          isUpcoming: daysUntilEvent > 0,
+          isPast: daysUntilEvent < 0,
+          isToday: daysUntilEvent === 0
+        };
+      });
+      
+      // Apply filters
+      let filteredEvents = enhancedEvents;
+      if (upcoming === 'true') {
+        filteredEvents = enhancedEvents.filter(e => e.isUpcoming);
+      } else if (filter === 'urgent') {
+        filteredEvents = enhancedEvents.filter(e => e.urgency === 'urgent');
+      } else if (filter === 'popular') {
+        filteredEvents = enhancedEvents.filter(e => e.popularity >= 70);
+      } else if (filter === 'this-week') {
+        filteredEvents = enhancedEvents.filter(e => e.daysUntilEvent >= 0 && e.daysUntilEvent <= 7);
+      }
+      
+      // Smart sorting
+      filteredEvents.sort((a, b) => {
+        if (sortBy === 'urgency') {
+          const urgencyOrder = { urgent: 3, soon: 2, normal: 1, past: 0 };
+          return order === 'desc' ? urgencyOrder[b.urgency] - urgencyOrder[a.urgency] : urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+        } else if (sortBy === 'popularity') {
+          return order === 'desc' ? b.popularity - a.popularity : a.popularity - b.popularity;
+        } else if (sortBy === 'date') {
+          const aDate = new Date(a.date).getTime();
+          const bDate = new Date(b.date).getTime();
+          return order === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+        return 0;
+      });
+      
+      // Analytics
+      const analytics = {
+        total: enhancedEvents.length,
+        upcoming: enhancedEvents.filter(e => e.isUpcoming).length,
+        thisWeek: enhancedEvents.filter(e => e.daysUntilEvent >= 0 && e.daysUntilEvent <= 7).length,
+        urgent: enhancedEvents.filter(e => e.urgency === 'urgent').length,
+        popular: enhancedEvents.filter(e => e.popularity >= 70).length,
+        categories: {
+          workshop: enhancedEvents.filter(e => e.category === 'workshop').length,
+          meeting: enhancedEvents.filter(e => e.category === 'meeting').length,
+          training: enhancedEvents.filter(e => e.category === 'training').length,
+          volunteer: enhancedEvents.filter(e => e.category === 'volunteer').length,
+          other: enhancedEvents.filter(e => e.category === 'other').length
+        },
+        capacity: {
+          limited: enhancedEvents.filter(e => e.capacity === 'limited').length,
+          moderate: enhancedEvents.filter(e => e.capacity === 'moderate').length,
+          large: enhancedEvents.filter(e => e.capacity === 'large').length
+        }
+      };
+      
+      res.json({ events: filteredEvents, analytics });
+    } catch (error: any) {
+      console.error("Error fetching events:", error);
       res.status(500).json({ message: "Failed to fetch events" });
     }
   });
 
+  // Enhanced event creation with smart scheduling and validation
   app.post("/api/events", isAdmin, async (req, res) => {
     try {
       const validatedData = insertEventSchema.parse(req.body);
-      const event = await storage.createEvent(validatedData);
-      res.status(201).json(event);
+      const createdBy = req.user.claims.sub;
+      
+      const eventDate = new Date(validatedData.date);
+      const now = new Date();
+      const daysUntilEvent = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+      
+      // Smart event validation
+      let urgency = 'normal';
+      let capacity = 'available';
+      let popularity = 0;
+      
+      if (daysUntilEvent <= 3 && daysUntilEvent > 0) urgency = 'urgent';
+      else if (daysUntilEvent <= 7 && daysUntilEvent > 3) urgency = 'soon';
+      
+      // Estimate popularity
+      if (validatedData.description && validatedData.description.length > 100) popularity += 20;
+      if (validatedData.category === 'workshop' || validatedData.category === 'training') popularity += 30;
+      if (validatedData.registrationRequired) popularity += 25;
+      if (validatedData.maxParticipants && validatedData.maxParticipants <= 20) popularity += 25;
+      
+      // Determine capacity
+      if (validatedData.maxParticipants) {
+        if (validatedData.maxParticipants <= 10) capacity = 'limited';
+        else if (validatedData.maxParticipants <= 30) capacity = 'moderate';
+        else capacity = 'large';
+      }
+      
+      // Auto-set status based on date
+      let status = 'upcoming';
+      if (daysUntilEvent <= 0) status = 'completed';
+      
+      const enhancedEventData = {
+        ...validatedData,
+        createdBy,
+        status,
+        urgency,
+        popularity,
+        capacity
+      };
+      
+      const event = await storage.createEvent(enhancedEventData);
+      
+      console.log(`✅ Event created: "${validatedData.title}" (${urgency}, ${capacity} capacity, ${popularity} popularity score)`);
+      
+      res.status(201).json({ 
+        event,
+        urgency,
+        capacity,
+        popularity,
+        daysUntilEvent,
+        message: "Event created with smart scheduling analysis"
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input data", errors: error.errors });
       }
+      console.error("Error creating event:", error);
       res.status(500).json({ message: "Failed to create event" });
     }
   });

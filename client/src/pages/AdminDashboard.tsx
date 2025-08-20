@@ -89,10 +89,12 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isLoading, isAdmin, toast]);
 
-  const { data: applicants = [] } = useQuery<IUser[]>({
+  const { data: applicantsData } = useQuery<{applicants: IUser[], analytics: any}>({
     queryKey: ["/api/users/applicants"],
     enabled: isAdmin,
   });
+
+  const applicants = applicantsData?.applicants || [];
 
   const { data: pendingContent } = useQuery<{
     news: INewsArticle[];
@@ -108,10 +110,12 @@ export default function AdminDashboard() {
     enabled: isAdmin,
   });
 
-  const { data: allEvents = [] } = useQuery<IEvent[]>({
+  const { data: allEventsData } = useQuery<{events: IEvent[], analytics: any}>({
     queryKey: ["/api/events"],
     enabled: isAdmin,
   });
+
+  const allEvents = allEventsData?.events || [];
 
   const updateApplicantStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {

@@ -4,9 +4,11 @@ import { CalendarDays } from "lucide-react";
 import type { NewsArticle } from "../../../shared/schema";
 
 export default function News() {
-  const { data: articles, isLoading } = useQuery<NewsArticle[]>({
+  const { data: newsData, isLoading } = useQuery<{articles: NewsArticle[], analytics: any}>({
     queryKey: ["/api/news"],
   });
+
+  const articles = newsData?.articles || [];
 
   if (isLoading) {
     return (
@@ -43,7 +45,7 @@ export default function News() {
         </div>
 
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-          {articles?.map((article, index) => (
+          {articles.map((article, index) => (
             <Card 
               key={article.id} 
               className="bg-white shadow-lg overflow-hidden hover-scale"

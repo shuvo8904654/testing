@@ -4,9 +4,11 @@ import { Leaf, Lightbulb, GraduationCap, Calendar, Handshake } from "lucide-reac
 import type { Project } from "@shared/schema";
 
 export default function Projects() {
-  const { data: projects, isLoading } = useQuery<Project[]>({
+  const { data: projectsData, isLoading } = useQuery<{projects: Project[], analytics: any}>({
     queryKey: ["/api/projects"],
   });
+
+  const projects = projectsData?.projects || [];
 
   if (isLoading) {
     return (
@@ -69,7 +71,7 @@ export default function Projects() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 mb-16">
-          {projects?.map((project, index) => (
+          {projects.map((project, index) => (
             <Card 
               key={project.id} 
               className={`hover-scale ${getProjectBgColor(project.category)}`}

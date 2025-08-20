@@ -6,11 +6,11 @@ import { CheckCircle, Rocket, Play, Users, Briefcase, Leaf, Calendar, Handshake 
 import type { Project, NewsArticle, Member, Event } from "../../../shared/schema";
 
 export default function Home() {
-  const { data: projects } = useQuery<Project[]>({
+  const { data: projectsData } = useQuery<{projects: Project[], analytics: any}>({
     queryKey: ["/api/projects"],
   });
 
-  const { data: news } = useQuery<NewsArticle[]>({
+  const { data: newsData } = useQuery<{articles: NewsArticle[], analytics: any}>({
     queryKey: ["/api/news"],
   });
 
@@ -18,14 +18,18 @@ export default function Home() {
     queryKey: ["/api/members"],
   });
 
-  const { data: events } = useQuery<Event[]>({
+  const { data: eventsData } = useQuery<{events: Event[], analytics: any}>({
     queryKey: ["/api/events"],
   });
 
-  const featuredProjects = projects?.slice(0, 3) || [];
-  const latestNews = news?.slice(0, 2) || [];
+  const projects = projectsData?.projects || [];
+  const news = newsData?.articles || [];
+  const events = eventsData?.events || [];
+
+  const featuredProjects = projects.slice(0, 3) || [];
+  const latestNews = news.slice(0, 2) || [];
   const teamMembers = members?.slice(0, 4) || [];
-  const upcomingEvents = events?.filter(event => event.status === 'upcoming').slice(0, 4) || [];
+  const upcomingEvents = events.filter(event => event.status === 'upcoming').slice(0, 4) || [];
 
   return (
     <div data-testid="home-page">
