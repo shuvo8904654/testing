@@ -31,7 +31,7 @@ export interface IStorage {
   
   getProjects(): Promise<Project[]>;
   getProject(id: string): Promise<Project | undefined>;
-  createProject(project: InsertProject): Promise<Project>;
+  createProject(project: InsertProject, createdBy?: string): Promise<Project>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<Project>;
   deleteProject(id: string): Promise<void>;
   
@@ -52,6 +52,20 @@ export interface IStorage {
   getRegistration(id: string): Promise<Registration | undefined>;
   createRegistration(registration: InsertRegistration): Promise<Registration>;
   updateRegistrationStatus(id: string, status: string, reviewedBy: string): Promise<Registration>;
+  
+  // Approval operations
+  approveContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void>;
+  rejectContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void>;
+  getPendingContent(): Promise<{
+    news: NewsArticle[];
+    projects: Project[];
+    gallery: GalleryImage[];
+  }>;
+  
+  // Role management operations
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(id: string, role: string, permissions: string[]): Promise<User>;
+  updateUserStatus(id: string, isActive: boolean): Promise<User>;
 }
 
 
@@ -137,10 +151,10 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async createProject(projectData: InsertProject): Promise<Project> {
+  async createProject(projectData: InsertProject, createdBy?: string): Promise<Project> {
     const [project] = await db
       .insert(projects)
-      .values(projectData)
+      .values({ ...projectData, createdBy })
       .returning();
     return project;
   }
@@ -243,6 +257,95 @@ export class DatabaseStorage implements IStorage {
       .where(eq(registrations.id, id))
       .returning();
     return registration;
+  }
+
+  // Approval operations
+  async approveContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void> {
+    const reviewData = {
+      approvalStatus: "approved",
+      reviewedBy,
+      reviewedAt: new Date(),
+    };
+
+    switch (contentType) {
+      case "news":
+        await db.update(newsArticles).set(reviewData).where(eq(newsArticles.id, id));
+        break;
+      case "project":
+        await db.update(projects).set(reviewData).where(eq(projects.id, id));
+        break;
+      case "gallery":
+        await db.update(galleryImages).set(reviewData).where(eq(galleryImages.id, id));
+        break;
+    }
+  }
+
+  async rejectContent(contentType: "news" | "project" | "gallery", id: string, reviewedBy: string): Promise<void> {
+    const reviewData = {
+      approvalStatus: "rejected",
+      reviewedBy,
+      reviewedAt: new Date(),
+    };
+
+    switch (contentType) {
+      case "news":
+        await db.update(newsArticles).set(reviewData).where(eq(newsArticles.id, id));
+        break;
+      case "project":
+        await db.update(projects).set(reviewData).where(eq(projects.id, id));
+        break;
+      case "gallery":
+        await db.update(galleryImages).set(reviewData).where(eq(galleryImages.id, id));
+        break;
+    }
+  }
+
+  async getPendingContent(): Promise<{
+    news: NewsArticle[];
+    projects: Project[];
+    gallery: GalleryImage[];
+  }> {
+    const [pendingNews, pendingProjects, pendingGallery] = await Promise.all([
+      db.select().from(newsArticles).where(eq(newsArticles.approvalStatus, "pending")),
+      db.select().from(projects).where(eq(projects.approvalStatus, "pending")),
+      db.select().from(galleryImages).where(eq(galleryImages.approvalStatus, "pending")),
+    ]);
+
+    return {
+      news: pendingNews,
+      projects: pendingProjects,
+      gallery: pendingGallery,
+    };
+  }
+
+  // Role management operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async updateUserRole(id: string, role: string, permissions: string[]): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        role: role as "super_admin" | "admin" | "member",
+        permissions,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserStatus(id: string, isActive: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 }
 

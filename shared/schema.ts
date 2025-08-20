@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, json, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, json, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -19,7 +19,8 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").default("member").notNull(), // "admin", "member"
+  role: varchar("role", { enum: ["super_admin", "admin", "member"] }).default("member").notNull(),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -46,6 +47,10 @@ export const projects = pgTable("projects", {
   status: text("status").notNull().default("ongoing"),
   category: text("category").notNull(),
   completedAt: text("completed_at"),
+  approvalStatus: text("approval_status").default("pending").notNull(), // "pending", "approved", "rejected"
+  createdBy: varchar("created_by"),
+  reviewedBy: varchar("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -56,7 +61,11 @@ export const newsArticles = pgTable("news_articles", {
   excerpt: text("excerpt").notNull(),
   category: text("category").notNull(),
   image: text("image").notNull(),
-  publishedAt: timestamp("published_at").defaultNow(),
+  approvalStatus: text("approval_status").default("pending").notNull(), // "pending", "approved", "rejected"
+  createdBy: varchar("created_by"),
+  reviewedBy: varchar("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -65,6 +74,10 @@ export const galleryImages = pgTable("gallery_images", {
   title: text("title").notNull(),
   url: text("url").notNull(),
   description: text("description"),
+  approvalStatus: text("approval_status").default("pending").notNull(), // "pending", "approved", "rejected"
+  createdBy: varchar("created_by"),
+  reviewedBy: varchar("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -85,17 +98,29 @@ export const insertMemberSchema = createInsertSchema(members).omit({
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
+  approvalStatus: true,
+  createdBy: true,
+  reviewedBy: true,
+  reviewedAt: true,
   createdAt: true,
 });
 
 export const insertNewsArticleSchema = createInsertSchema(newsArticles).omit({
   id: true,
-  createdAt: true,
+  approvalStatus: true,
+  createdBy: true,
+  reviewedBy: true,
+  reviewedAt: true,
   publishedAt: true,
+  createdAt: true,
 });
 
 export const insertGalleryImageSchema = createInsertSchema(galleryImages).omit({
   id: true,
+  approvalStatus: true,
+  createdBy: true,
+  reviewedBy: true,
+  reviewedAt: true,
   createdAt: true,
 });
 
