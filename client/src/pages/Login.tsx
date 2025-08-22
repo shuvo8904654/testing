@@ -37,16 +37,23 @@ export default function Login() {
       
       // Invalidate and refetch user data immediately after successful login
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      const userData = await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Success",
         description: "Login successful",
       });
       
-      // Small delay to ensure queries are updated before redirect
+      // Redirect to appropriate dashboard based on user role
       setTimeout(() => {
-        setLocation("/");
+        const user = userData[0]?.data;
+        if (user?.role === "admin" || user?.role === "super_admin") {
+          setLocation("/admin-dashboard");
+        } else if (user?.role === "member") {
+          setLocation("/member-dashboard");
+        } else {
+          setLocation("/");
+        }
       }, 100);
     } catch (error: any) {
       toast({

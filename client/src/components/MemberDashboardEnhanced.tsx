@@ -99,15 +99,6 @@ export default function MemberDashboardEnhanced() {
     }
   });
 
-  const profileForm = useForm({
-    defaultValues: {
-      name: memberData?.name || "",
-      bio: memberData?.bio || "",
-      profileImageUrl: memberData?.profileImageUrl || "",
-      position: memberData?.position || ""
-    }
-  });
-
   // Fetch user data and activities
   const { data: memberData } = useQuery<Member>({
     queryKey: ["/api/member-profile", user?.id],
@@ -150,6 +141,15 @@ export default function MemberDashboardEnhanced() {
   const achievements: Achievement[] = userAnalyticsData?.achievements || [];
 
   const recentActivities: Activity[] = userAnalyticsData?.activities || [];
+
+  const profileForm = useForm({
+    defaultValues: {
+      name: memberData?.name || "",
+      bio: memberData?.bio || "",
+      profileImageUrl: memberData?.profileImageUrl || "",
+      position: memberData?.position || ""
+    }
+  });
 
   const upcomingEvents = eventsData?.events?.filter(event => 
     event.status === 'upcoming' && 
@@ -469,7 +469,7 @@ export default function MemberDashboardEnhanced() {
                       <p className="text-sm text-gray-600">{activity.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500">
-                          {activity.date.toLocaleDateString()}
+                          {new Date(activity.date).toLocaleDateString()}
                         </span>
                         {activity.points && (
                           <Badge variant="outline" className="text-xs">
@@ -585,7 +585,7 @@ export default function MemberDashboardEnhanced() {
                     <div className="space-y-2">
                       {upcomingEvents.length > 0 ? (
                         upcomingEvents.map((event) => (
-                          <div key={event._id} className="p-3 border rounded-lg">
+                          <div key={event.id} className="p-3 border rounded-lg">
                             <h4 className="font-medium">{event.title}</h4>
                             <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString()} - {event.description}</p>
                             <Button size="sm" className="mt-2">RSVP</Button>

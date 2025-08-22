@@ -7,7 +7,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus, Calendar, Settings, Search, Bell } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Users, 
+  FileText, 
+  Image, 
+  UserCheck, 
+  Crown, 
+  Shield, 
+  User as UserIcon, 
+  Plus, 
+  Calendar, 
+  Settings, 
+  Search, 
+  Bell,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
+  Activity,
+  Edit,
+  Eye
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect, useState } from "react";
@@ -16,20 +38,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileUpload } from "@/components/ui/file-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, insertEventSchema } from "@shared/validation";
+import { insertUserSchema, eventFormSchema } from "@shared/validation";
 import { z } from "zod";
 import AdminContentManager from "@/components/AdminContentManager";
 import NoticeManagement from "@/components/NoticeManagement";
-import { NotificationPanel } from "@/components/NotificationPanel";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
   const { toast } = useToast();
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Form for creating new user
   const createUserForm = useForm<z.infer<typeof insertUserSchema>>({
@@ -50,18 +71,19 @@ export default function AdminDashboard() {
   });
 
   // Form for creating new event  
-  const createEventForm = useForm({
+  const createEventForm = useForm<z.infer<typeof eventFormSchema>>({
+    resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
       description: "",
       date: "",
       time: "",
       location: "",
-      category: "workshop" as const,
-      maxParticipants: undefined as number | undefined,
+      category: "workshop",
+      maxParticipants: undefined,
       registrationRequired: false,
       contactInfo: "",
-      status: "upcoming" as const,
+      status: "upcoming",
     },
   });
 
@@ -91,12 +113,11 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isLoading, isAdmin, toast]);
 
+  // Data fetching
   const { data: applicantsData } = useQuery<{applicants: IUser[], analytics: any}>({
     queryKey: ["/api/users/applicants"],
     enabled: isAdmin,
   });
-
-  const applicants = applicantsData?.applicants || [];
 
   const { data: pendingContent } = useQuery<{
     news: INewsArticle[];
@@ -118,185 +139,47 @@ export default function AdminDashboard() {
   });
 
   const allEvents = allEventsData?.events || [];
+  const applicants = applicantsData?.applicants || [];
 
+  // Stats calculations
+  const stats = {
+    totalUsers: allUsers.length,
+    activeMembers: allUsers.filter(u => u.role === 'member' && u.isActive).length,
+    pendingApplicants: applicants.length,
+    totalEvents: allEvents.length,
+    upcomingEvents: allEvents.filter(e => e.status === 'upcoming').length,
+    pendingContent: (pendingContent?.news?.length || 0) + 
+                   (pendingContent?.projects?.length || 0) + 
+                   (pendingContent?.gallery?.length || 0),
+  };
+
+  // Mutations
   const updateApplicantStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       return await apiRequest("PATCH", `/api/users/${id}/application-status`, { 
         applicationStatus: status,
-        ...(status === 'approved' && { role: 'member', approvedAt: new Date() })
       });
     },
-    onSuccess: () => {
-      // Invalidate all relevant queries to refresh data
+    onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/users/applicants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
-      
       toast({
         title: "Success",
-        description: "Application status updated successfully",
+        description: `Application ${status}`,
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
       toast({
         title: "Error",
-        description: "Failed to update application status",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleApplicantAction = (id: string, status: string) => {
-    updateApplicantStatusMutation.mutate({ id, status });
-  };
-
-  const approveContentMutation = useMutation({
-    mutationFn: async ({ contentType, id }: { contentType: string; id: string }) => {
-      return await apiRequest("POST", `/api/approve-content/${contentType}/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
-      toast({
-        title: "Success",
-        description: "Content approved successfully",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to approve content",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const rejectContentMutation = useMutation({
-    mutationFn: async ({ contentType, id }: { contentType: string; id: string }) => {
-      return await apiRequest("POST", `/api/reject-content/${contentType}/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
-      toast({
-        title: "Success",
-        description: "Content rejected successfully",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to reject content",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleContentAction = (contentType: string, id: string, action: 'approve' | 'reject') => {
-    if (action === 'approve') {
-      approveContentMutation.mutate({ contentType, id });
-    } else {
-      rejectContentMutation.mutate({ contentType, id });
-    }
-  };
-
-  const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, role, permissions }: { userId: string; role: string; permissions: string[] }) => {
-      return await apiRequest("PUT", `/api/users/${userId}`, { role, permissions });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({
-        title: "Success",
-        description: "User role updated successfully",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update user role",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateUserStatusMutation = useMutation({
-    mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      return await apiRequest("PUT", `/api/users/${userId}`, { isActive });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({
-        title: "Success",
-        description: "User status updated successfully",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update user status",
+        description: isUnauthorizedError(error) ? "Unauthorized" : "Failed to update status",
         variant: "destructive",
       });
     },
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async (userData: z.infer<typeof insertUserSchema>) => {
-      return await apiRequest("POST", "/api/users", userData);
+    mutationFn: async (data: z.infer<typeof insertUserSchema> & { password: string }) => {
+      return await apiRequest("POST", "/api/users", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -307,18 +190,7 @@ export default function AdminDashboard() {
         description: "User created successfully",
       });
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to create user",
@@ -328,8 +200,8 @@ export default function AdminDashboard() {
   });
 
   const createEventMutation = useMutation({
-    mutationFn: async (eventData: z.infer<typeof insertEventSchema>) => {
-      return await apiRequest("POST", "/api/events", { ...eventData, createdBy: user?.id });
+    mutationFn: async (data: z.infer<typeof eventFormSchema>) => {
+      return await apiRequest("POST", "/api/events", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
@@ -340,18 +212,7 @@ export default function AdminDashboard() {
         description: "Event created successfully",
       });
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to create event",
@@ -360,53 +221,25 @@ export default function AdminDashboard() {
     },
   });
 
-  const deleteEventMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      return await apiRequest("DELETE", `/api/events/${eventId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      toast({
-        title: "Success",
-        description: "Event deleted successfully",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to delete event",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleRoleChange = (userId: string, newRole: string) => {
-    updateUserRoleMutation.mutate({ userId, role: newRole, permissions: [] });
+  const getUrgentNotifications = () => {
+    const notifications = [];
+    if (stats.pendingApplicants > 0) {
+      notifications.push(`${stats.pendingApplicants} pending applications`);
+    }
+    if (stats.pendingContent > 0) {
+      notifications.push(`${stats.pendingContent} content awaiting review`);
+    }
+    return notifications;
   };
 
-  const handleStatusToggle = (userId: string, isActive: boolean) => {
-    updateUserStatusMutation.mutate({ userId, isActive });
-  };
-
-  const isSuperAdmin = user?.role === "super_admin";
+  const urgentNotifications = getUrgentNotifications();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-eco-green"></div>
-          <p className="mt-4 text-lg">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -417,890 +250,529 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Admin Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                Welcome back, {user?.firstName || user?.email}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = "/"}
-                data-testid="button-home"
-              >
-                Back to Website
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={() => window.location.href = "/api/logout"}
-                data-testid="button-logout"
-              >
-                Logout
-              </Button>
-            </div>
+    <div className="space-y-6 p-6" data-testid="admin-dashboard">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={user?.profileImageUrl} alt={user?.firstName} />
+            <AvatarFallback>
+              <Crown className="h-8 w-8 text-yellow-600" />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <p className="text-gray-600">Welcome back, {user?.firstName || user?.email}</p>
+            <Badge variant="outline" className="mt-1">
+              <Shield className="h-3 w-3 mr-1" />
+              Administrator
+            </Badge>
           </div>
         </div>
-      </header>
-
-      {/* Real-time Notifications Panel */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <NotificationPanel />
+        
+        <div className="flex items-center gap-2">
+          {urgentNotifications.length > 0 && (
+            <Badge variant="destructive" className="animate-pulse">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {urgentNotifications.length} urgent
+            </Badge>
+          )}
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </div>
       </div>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <Tabs defaultValue="registrations" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1 h-auto">
-              <TabsTrigger value="registrations" data-testid="tab-registrations" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <UserCheck className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Registrations</span>
-                <span className="lg:hidden text-center">Reg.</span>
-              </TabsTrigger>
-              <TabsTrigger value="members" data-testid="tab-members" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <Users className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Members</span>
-                <span className="lg:hidden text-center">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="content" data-testid="tab-content" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <FileText className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Content</span>
-                <span className="lg:hidden text-center">Content</span>
-              </TabsTrigger>
-              <TabsTrigger value="gallery" data-testid="tab-gallery" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <Image className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Gallery</span>
-                <span className="lg:hidden text-center">Gallery</span>
-              </TabsTrigger>
-              <TabsTrigger value="events" data-testid="tab-events" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <Calendar className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Events</span>
-                <span className="lg:hidden text-center">Events</span>
-              </TabsTrigger>
-              <TabsTrigger value="notices" data-testid="tab-notices" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
-                <Bell className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
-                <span className="hidden lg:inline">Notices</span>
-                <span className="lg:hidden text-center">Notices</span>
-              </TabsTrigger>
-            </TabsList>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Total Users</p>
+                <p className="text-2xl font-bold">{stats.totalUsers}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <UserCheck className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Active Members</p>
+                <p className="text-2xl font-bold">{stats.activeMembers}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium">Events</p>
+                <p className="text-2xl font-bold">{stats.totalEvents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Pending Items</p>
+                <p className="text-2xl font-bold">{stats.pendingApplicants + stats.pendingContent}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            <TabsContent value="registrations" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Membership Registrations</CardTitle>
-                  <CardDescription>
-                    Review and approve membership applications
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {applicants.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-applicants">
-                      No pending applications
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {applicants.map((applicant) => (
-                        <div
-                          key={applicant.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-applicant-${applicant.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-medium" data-testid={`text-name-${applicant.id}`}>
-                                {applicant.firstName} {applicant.lastName}
-                              </h3>
-                              <p className="text-sm text-gray-600" data-testid={`text-email-${applicant.id}`}>
-                                {applicant.email}
-                              </p>
-                              <p className="text-sm text-gray-600" data-testid={`text-phone-${applicant.id}`}>
-                                {applicant.phone}
-                              </p>
-                            </div>
-                            <Badge
-                              variant={
-                                applicant.applicationStatus === "approved"
-                                  ? "default"
-                                  : applicant.applicationStatus === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                              data-testid={`badge-status-${applicant.id}`}
-                            >
-                              {applicant.applicationStatus}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-sm">
-                              <span className="font-medium">Age:</span> {applicant.age}
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Role:</span> {applicant.role}
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Address:</span> {applicant.address}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm">
-                              <span className="font-medium">Motivation:</span>
-                            </p>
-                            <p className="text-sm text-gray-700 mt-1">
-                              {applicant.motivation}
-                            </p>
-                          </div>
-                          {applicant.appliedAt && (
-                            <div>
-                              <p className="text-sm">
-                                <span className="font-medium">Applied:</span> {new Date(applicant.appliedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          )}
-                          {applicant.applicationStatus === "pending" && (
-                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
-                              <Button
-                                size="sm"
-                                className="w-full sm:w-auto"
-                                onClick={() => handleApplicantAction(applicant.id, "approved")}
-                                disabled={updateApplicantStatusMutation.isPending}
-                                data-testid={`button-approve-${applicant.id}`}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="w-full sm:w-auto"
-                                onClick={() => handleApplicantAction(applicant.id, "rejected")}
-                                disabled={updateApplicantStatusMutation.isPending}
-                                data-testid={`button-reject-${applicant.id}`}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          )}
+      {/* Urgent Notifications */}
+      {urgentNotifications.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <h3 className="font-semibold text-orange-800">Attention Required</h3>
+            </div>
+            <div className="space-y-1">
+              {urgentNotifications.map((notification, index) => (
+                <p key={index} className="text-sm text-orange-700">• {notification}</p>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="notices">Notices</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Applications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Applications</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {applicants.slice(0, 5).map((applicant) => (
+                  <div key={applicant.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={applicant.profileImageUrl} />
+                        <AvatarFallback>
+                          {applicant.firstName?.[0] || applicant.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {applicant.firstName && applicant.lastName 
+                            ? `${applicant.firstName} ${applicant.lastName}` 
+                            : applicant.email}
+                        </p>
+                        <p className="text-xs text-gray-500">{applicant.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        onClick={() => updateApplicantStatusMutation.mutate({
+                          id: applicant.id!,
+                          status: "approved"
+                        })}
+                        disabled={updateApplicantStatusMutation.isPending}
+                        className="h-7 px-2"
+                        data-testid={`approve-applicant-${applicant.id}`}
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => updateApplicantStatusMutation.mutate({
+                          id: applicant.id!,
+                          status: "rejected"
+                        })}
+                        disabled={updateApplicantStatusMutation.isPending}
+                        className="h-7 px-2"
+                        data-testid={`reject-applicant-${applicant.id}`}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {applicants.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <UserIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>No pending applications</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Events */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Upcoming Events</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {allEvents.filter(e => e.status === 'upcoming').slice(0, 5).map((event) => (
+                  <div key={event.id} className="border-l-4 border-blue-500 pl-4">
+                    <h4 className="font-medium">{event.title}</h4>
+                    <p className="text-sm text-gray-600">{event.description}</p>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(event.date).toLocaleDateString()}
+                      <Clock className="h-3 w-3 ml-2" />
+                      {event.time}
+                    </div>
+                  </div>
+                ))}
+                {allEvents.filter(e => e.status === 'upcoming').length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>No upcoming events</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <Plus className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Add User</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                    </DialogHeader>
+                    <Form {...createUserForm}>
+                      <form onSubmit={createUserForm.handleSubmit((data) => createUserMutation.mutate(data))} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={createUserForm.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>First Name</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="John" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createUserForm.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Doe" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="members" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-                    <div>
-                      <CardTitle>User Role Management</CardTitle>
-                      <CardDescription>
-                        Manage user roles and permissions {!isSuperAdmin && "(View Only - Super Admin access required to modify roles)"}
-                      </CardDescription>
-                    </div>
-                    {isSuperAdmin && (
-                      <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button data-testid="button-create-user" className="w-full sm:w-auto">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Create User
+                        <FormField
+                          control={createUserForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" placeholder="john@example.com" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={createUserForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Password</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="password" placeholder="••••••••" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={createUserForm.control}
+                          name="role"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Role</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select role" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
+                            Cancel
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto max-h-[90vh] overflow-y-auto p-3 sm:p-6">
-                          <DialogHeader>
-                            <DialogTitle>Create New User</DialogTitle>
-                          </DialogHeader>
-                          <Form {...createUserForm}>
-                            <form onSubmit={createUserForm.handleSubmit((data) => createUserMutation.mutate(data))} className="space-y-4">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField
-                                  control={createUserForm.control}
-                                  name="firstName"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>First Name</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} value={field.value || ""} data-testid="input-user-firstname" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <FormField
-                                  control={createUserForm.control}
-                                  name="lastName"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Last Name</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} value={field.value || ""} data-testid="input-user-lastname" />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                              <FormField
-                                control={createUserForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Email *</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} value={field.value || ""} type="email" data-testid="input-user-email" required />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={createUserForm.control}
-                                name="profileImageUrl"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Profile Image</FormLabel>
-                                    <FormControl>
-                                      <FileUpload
-                                        onFileUpload={field.onChange}
-                                        currentValue={field.value || ""}
-                                        placeholder="Upload profile image"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={createUserForm.control}
-                                name="password"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Password *</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} value={field.value || ""} type="password" data-testid="input-user-password" required />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={createUserForm.control}
-                                name="role"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Role</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                      <FormControl>
-                                        <SelectTrigger data-testid="select-user-role">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="member">Member</SelectItem>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
-                                <Button
-                                  type="submit"
-                                  disabled={createUserMutation.isPending}
-                                  className="w-full sm:w-auto"
-                                  data-testid="button-submit-user"
-                                >
-                                  {createUserMutation.isPending ? "Creating..." : "Create User"}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => setCreateUserDialogOpen(false)}
-                                  className="w-full sm:w-auto"
-                                  data-testid="button-cancel-user"
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {allUsers.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-users">
-                      No users found
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {allUsers.map((targetUser) => (
-                        <div
-                          key={targetUser.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-user-${targetUser.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                {targetUser.role === "super_admin" && <Crown className="w-4 h-4 text-yellow-500" />}
-                                {targetUser.role === "admin" && <Shield className="w-4 h-4 text-blue-500" />}
-                                {targetUser.role === "member" && <UserIcon className="w-4 h-4 text-gray-500" />}
-                                <h3 className="font-medium" data-testid={`text-user-name-${targetUser.id}`}>
-                                  {targetUser.firstName && targetUser.lastName 
-                                    ? `${targetUser.firstName} ${targetUser.lastName}` 
-                                    : targetUser.email}
-                                  {targetUser.id === user?.id && " (You)"}
-                                </h3>
-                              </div>
-                              <p className="text-sm text-gray-600" data-testid={`text-user-email-${targetUser.id}`}>
-                                {targetUser.email}
-                              </p>
-                              <div className="flex items-center space-x-4 mt-2">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium">Role:</span>
-                                  {isSuperAdmin && targetUser.id !== user?.id ? (
-                                    <Select
-                                      value={targetUser.role}
-                                      onValueChange={(newRole) => handleRoleChange(targetUser.id, newRole)}
-                                      disabled={updateUserRoleMutation.isPending}
-                                    >
-                                      <SelectTrigger className="w-32" data-testid={`select-role-${targetUser.id}`}>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="member">Member</SelectItem>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <Badge
-                                      variant={
-                                        targetUser.role === "super_admin"
-                                          ? "default"
-                                          : targetUser.role === "admin"
-                                          ? "secondary"
-                                          : "outline"
-                                      }
-                                      data-testid={`badge-role-${targetUser.id}`}
-                                    >
-                                      {targetUser.role === "super_admin" ? "Super Admin" : 
-                                       targetUser.role === "admin" ? "Admin" : "Member"}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium">Status:</span>
-                                  {isSuperAdmin && targetUser.id !== user?.id ? (
-                                    <Switch
-                                      checked={targetUser.isActive ?? false}
-                                      onCheckedChange={(checked) => handleStatusToggle(targetUser.id, checked)}
-                                      disabled={updateUserStatusMutation.isPending}
-                                      data-testid={`switch-status-${targetUser.id}`}
-                                    />
-                                  ) : (
-                                    <Badge variant={targetUser.isActive ? "default" : "destructive"}>
-                                      {targetUser.isActive ? "Active" : "Inactive"}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            <span>Joined: {new Date(targetUser.createdAt!).toLocaleDateString()}</span>
-                            <span>Last Updated: {new Date(targetUser.updatedAt!).toLocaleDateString()}</span>
-                          </div>
+                          <Button type="submit" disabled={createUserMutation.isPending}>
+                            {createUserMutation.isPending ? "Creating..." : "Create User"}
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="content" className="space-y-4">
-              {/* News Articles */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pending News Articles</CardTitle>
-                  <CardDescription>
-                    Review and approve news articles submitted by members
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!pendingContent?.news || pendingContent.news.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-pending-news">
-                      No pending news articles
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {pendingContent.news.map((article) => (
-                        <div
-                          key={article.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-news-${article.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="font-medium text-lg" data-testid={`text-news-title-${article.id}`}>
-                                {article.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 mt-1" data-testid={`text-news-excerpt-${article.id}`}>
-                                {article.excerpt}
-                              </p>
-                              <Badge variant="outline" className="mt-2">
-                                News
-                              </Badge>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              data-testid={`badge-news-status-${article.id}`}
-                            >
-                              {article.status}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-gray-700">
-                            <p className="line-clamp-3">{article.content}</p>
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            <span>Created: {new Date(article.createdAt!).toLocaleDateString()}</span>
-                            <span>By: {article.createdBy || 'Unknown'}</span>
-                          </div>
-                          {article.status === "pending" && (
-                            <div className="flex space-x-2 pt-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleContentAction('news', article.id, 'approve')}
-                                disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                data-testid={`button-approve-news-${article.id}`}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleContentAction('news', article.id, 'reject')}
-                                disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                data-testid={`button-reject-news-${article.id}`}
-                              >
-                                Reject
-                              </Button>
-                            </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <Calendar className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Create Event</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Create New Event</DialogTitle>
+                    </DialogHeader>
+                    <Form {...createEventForm}>
+                      <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={createEventForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Event Title</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Event name" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Projects */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pending Projects</CardTitle>
-                  <CardDescription>
-                    Review and approve project proposals submitted by members
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!pendingContent?.projects || pendingContent.projects.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-pending-projects">
-                      No pending projects
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {pendingContent.projects.map((project) => (
-                        <div
-                          key={project.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-project-${project.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="font-medium text-lg" data-testid={`text-project-title-${project.id}`}>
-                                {project.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 mt-1" data-testid={`text-project-description-${project.id}`}>
-                                {project.description}
-                              </p>
-                              <div className="flex space-x-2 mt-2">
-                                <Badge variant="outline">
-                                  Project
-                                </Badge>
-                                <Badge variant={project.status === 'approved' ? 'default' : 'secondary'}>
-                                  {project.status}
-                                </Badge>
-                              </div>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              data-testid={`badge-project-status-${project.id}`}
-                            >
-                              {project.status}
-                            </Badge>
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            <span>Created: {new Date(project.createdAt!).toLocaleDateString()}</span>
-                            <span>By: {project.createdBy || 'Unknown'}</span>
-                          </div>
-                          {project.status === "pending" && (
-                            <div className="flex space-x-2 pt-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleContentAction('project', project.id, 'approve')}
-                                disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                data-testid={`button-approve-project-${project.id}`}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleContentAction('project', project.id, 'reject')}
-                                disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                data-testid={`button-reject-project-${project.id}`}
-                              >
-                                Reject
-                              </Button>
-                            </div>
+                        />
+                        <FormField
+                          control={createEventForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Event description" rows={3} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="gallery" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pending Gallery Images</CardTitle>
-                  <CardDescription>
-                    Review and approve gallery images submitted by members
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!pendingContent?.gallery || pendingContent.gallery.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-pending-gallery">
-                      No pending gallery images
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {pendingContent.gallery.map((image) => (
-                        <div
-                          key={image.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-gallery-${image.id}`}
-                        >
-                          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                              src={image.imageUrl}
-                              alt={image.title}
-                              className="w-full h-full object-cover"
-                              data-testid={`img-gallery-${image.id}`}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-medium" data-testid={`text-gallery-title-${image.id}`}>
-                                {image.title}
-                              </h3>
-                              <Badge
-                                variant="secondary"
-                                data-testid={`badge-gallery-status-${image.id}`}
-                              >
-                                {image.status}
-                              </Badge>
-                            </div>
-                            {image.description && (
-                              <p className="text-sm text-gray-600" data-testid={`text-gallery-description-${image.id}`}>
-                                {image.description}
-                              </p>
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={createEventForm.control}
+                            name="date"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Date</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="date" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
                             )}
-                            <div className="flex justify-between items-center text-xs text-gray-500">
-                              <span>Created: {new Date(image.createdAt!).toLocaleDateString()}</span>
-                              <span>By: {image.createdBy || 'Unknown'}</span>
-                            </div>
-                            {image.status === "pending" && (
-                              <div className="flex space-x-2 pt-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleContentAction('gallery', image.id, 'approve')}
-                                  disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                  data-testid={`button-approve-gallery-${image.id}`}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleContentAction('gallery', image.id, 'reject')}
-                                  disabled={approveContentMutation.isPending || rejectContentMutation.isPending}
-                                  data-testid={`button-reject-gallery-${image.id}`}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
+                          />
+                          <FormField
+                            control={createEventForm.control}
+                            name="time"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Time</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="time" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
                             )}
-                          </div>
+                          />
                         </div>
-                      ))}
+                        <FormField
+                          control={createEventForm.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Location</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Event location" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={createEventForm.control}
+                            name="category"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Category</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="workshop">Workshop</SelectItem>
+                                    <SelectItem value="meeting">Meeting</SelectItem>
+                                    <SelectItem value="training">Training</SelectItem>
+                                    <SelectItem value="volunteer">Volunteer</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={createEventForm.control}
+                            name="maxParticipants"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Max Participants (optional)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="number" 
+                                    placeholder="50"
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      field.onChange(value ? parseInt(value) : undefined);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setCreateEventDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={createEventMutation.isPending}>
+                            {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+                
+                <Button variant="outline" className="h-20 flex-col">
+                  <FileText className="h-6 w-6 mb-2" />
+                  <span className="text-sm">View Reports</span>
+                </Button>
+                
+                <Button variant="outline" className="h-20 flex-col">
+                  <Settings className="h-6 w-6 mb-2" />
+                  <span className="text-sm">System Settings</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="members" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {allUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={user.profileImageUrl} />
+                        <AvatarFallback>
+                          {user.firstName?.[0] || user.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">
+                          {user.firstName && user.lastName 
+                            ? `${user.firstName} ${user.lastName}` 
+                            : user.email}
+                        </p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                          <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="events" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-                    <div>
-                      <CardTitle>Events Management</CardTitle>
-                      <CardDescription>
-                        Create and manage upcoming events for the organization
-                      </CardDescription>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Dialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button data-testid="button-create-event" className="w-full sm:w-auto">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create Event
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto max-h-[90vh] overflow-y-auto p-3 sm:p-6">
-                        <DialogHeader>
-                          <DialogTitle>Create New Event</DialogTitle>
-                        </DialogHeader>
-                        <Form {...createEventForm}>
-                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate({...data, date: new Date(data.date), createdBy: user?.id || 'unknown'}))} className="space-y-4">
-                            <FormField
-                              control={createEventForm.control}
-                              name="title"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Event Title</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} data-testid="input-event-title" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={createEventForm.control}
-                              name="description"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Description</FormLabel>
-                                  <FormControl>
-                                    <Textarea {...field} data-testid="input-event-description" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <FormField
-                                control={createEventForm.control}
-                                name="date"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Date</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} type="date" data-testid="input-event-date" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={createEventForm.control}
-                                name="time"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Time</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} type="time" data-testid="input-event-time" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <FormField
-                                control={createEventForm.control}
-                                name="location"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Location</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} data-testid="input-event-location" />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={createEventForm.control}
-                                name="category"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Category</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger data-testid="select-event-category">
-                                          <SelectValue placeholder="Select category" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="workshop">Workshop</SelectItem>
-                                        <SelectItem value="meeting">Meeting</SelectItem>
-                                        <SelectItem value="training">Training</SelectItem>
-                                        <SelectItem value="volunteer">Volunteer</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            <FormField
-                              control={createEventForm.control}
-                              name="maxParticipants"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Max Participants (Optional)</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} type="number" data-testid="input-event-max-participants" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={createEventForm.control}
-                              name="contactInfo"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Contact Information (Optional)</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} data-testid="input-event-contact" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <Button 
-                              type="submit" 
-                              className="w-full"
-                              disabled={createEventMutation.isPending}
-                              data-testid="button-submit-event"
-                            >
-                              {createEventMutation.isPending ? "Creating..." : "Create Event"}
-                            </Button>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {allEvents.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8" data-testid="text-no-events">
-                      No events created yet
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {allEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-event-${event.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="font-medium text-lg" data-testid={`text-event-title-${event.id}`}>
-                                {event.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 mt-1" data-testid={`text-event-description-${event.id}`}>
-                                {event.description}
-                              </p>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                <Badge variant="outline">
-                                  {event.category}
-                                </Badge>
-                                <Badge 
-                                  variant={event.status === 'upcoming' ? 'default' : 
-                                          event.status === 'ongoing' ? 'secondary' : 
-                                          event.status === 'completed' ? 'outline' : 'destructive'}
-                                >
-                                  {event.status}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">{new Date(event.date).toLocaleDateString()}</p>
-                              <p className="text-xs text-gray-500">{event.time}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-medium">Location:</span> {event.location}
-                            </div>
-                            {event.maxParticipants && (
-                              <div>
-                                <span className="font-medium">Max Participants:</span> {event.maxParticipants}
-                              </div>
-                            )}
-                            {event.contactInfo && (
-                              <div className="sm:col-span-2">
-                                <span className="font-medium">Contact:</span> {event.contactInfo}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex justify-between items-center text-xs text-gray-500">
-                            <span>Created: {new Date(event.createdAt).toLocaleDateString()}</span>
-                            <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => deleteEventMutation.mutate(event.id)}
-                                disabled={deleteEventMutation.isPending}
-                                data-testid={`button-delete-event-${event.id}`}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="notices" className="space-y-4">
-              <NoticeManagement />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="content" className="space-y-6">
+          <AdminContentManager />
+        </TabsContent>
+        
+        <TabsContent value="notices" className="space-y-6">
+          <NoticeManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

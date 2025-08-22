@@ -96,7 +96,6 @@ export const eventFormSchema = z.object({
   registrationRequired: z.boolean().default(false),
   contactInfo: z.string().optional(),
   status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
-  createdBy: z.number(),
 });
 
 export const insertEventSchema = eventFormSchema.extend({

@@ -1668,7 +1668,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         registrationRequired: z.boolean().default(false),
         contactInfo: z.string().optional(),
         status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
-        createdBy: z.string(),
       }).parse(req.body);
       const createdBy = req.user.claims.sub;
       

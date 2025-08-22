@@ -113,41 +113,43 @@ export default function HeaderNoticeBoard() {
 
   return (
     <div className="w-full border-b bg-gradient-to-r from-blue-50 to-green-50" data-testid="header-notice-board">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <Card className={`border-0 shadow-none ${getNoticeColor(currentNotice.priority)}`}>
-          <CardContent className="py-3 px-0">
-            <div className="flex items-center justify-between gap-4">
+          <CardContent className="py-2 sm:py-3 px-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
               {/* Notice Content */}
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="flex-shrink-0">
+              <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0 w-full">
+                <div className="flex-shrink-0 mt-0.5">
                   {getNoticeIcon(currentNotice.type)}
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold text-sm truncate">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                    <h4 className="font-semibold text-sm sm:text-base leading-tight">
                       {currentNotice.title}
                     </h4>
-                    <Badge className={`text-xs ${getBadgeColor(currentNotice.priority)}`}>
-                      {currentNotice.priority}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {currentNotice.type}
-                    </Badge>
+                    <div className="flex gap-1 sm:gap-2">
+                      <Badge className={`text-xs ${getBadgeColor(currentNotice.priority)}`}>
+                        {currentNotice.priority}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs sm:inline hidden">
+                        {currentNotice.type}
+                      </Badge>
+                    </div>
                   </div>
-                  <p className="text-sm opacity-90 line-clamp-1">
+                  <p className="text-xs sm:text-sm opacity-90 line-clamp-2 sm:line-clamp-1">
                     {currentNotice.message}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 w-full sm:w-auto justify-end">
                 {currentNotice.link && (
                   <Link href={currentNotice.link}>
-                    <Button size="sm" variant="outline" className="text-xs">
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      {currentNotice.linkText || 'Learn More'}
+                    <Button size="sm" variant="outline" className="text-xs h-7 px-2">
+                      <ExternalLink className="h-3 w-3 sm:mr-1" />
+                      <span className="hidden sm:inline">{currentNotice.linkText || 'Learn More'}</span>
                     </Button>
                   </Link>
                 )}
@@ -159,13 +161,13 @@ export default function HeaderNoticeBoard() {
                       size="sm"
                       variant="ghost"
                       onClick={prevNotice}
-                      className="h-7 w-7 p-0"
+                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                       data-testid="notice-prev"
                     >
                       <ChevronLeft className="h-3 w-3" />
                     </Button>
                     
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-600 px-1">
                       {currentNoticeIndex + 1}/{activeNotices.length}
                     </span>
                     
@@ -173,7 +175,7 @@ export default function HeaderNoticeBoard() {
                       size="sm"
                       variant="ghost"
                       onClick={nextNotice}
-                      className="h-7 w-7 p-0"
+                      className="h-6 w-6 sm:h-7 sm:w-7 p-0"
                       data-testid="notice-next"
                     >
                       <ChevronRight className="h-3 w-3" />
@@ -187,7 +189,7 @@ export default function HeaderNoticeBoard() {
                     size="sm"
                     variant="ghost"
                     onClick={() => dismissNotice(currentNotice.id)}
-                    className="h-7 w-7 p-0 hover:bg-red-100"
+                    className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-red-100"
                     data-testid="notice-dismiss"
                   >
                     <X className="h-3 w-3" />
