@@ -1677,17 +1677,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const createdBy = (req as any).user.claims.sub;
       
+      console.log('News article submission - Raw body:', req.body);
+      console.log('User from session:', createdBy);
+      
       // Clean the data before validation
       const cleanData = {
-        title: req.body.title || '',
-        content: req.body.content || '',
-        excerpt: req.body.excerpt || '',
-        imageUrl: req.body.imageUrl || '',
-        author: req.body.author || 'Anonymous',
+        title: req.body.title?.trim() || '',
+        content: req.body.content?.trim() || '',
+        excerpt: req.body.excerpt?.trim() || '',
+        imageUrl: req.body.imageUrl?.trim() || '',
+        author: req.body.author?.trim() || 'Anonymous',
         createdBy,
         status: 'pending',
         readCount: 0
       };
+      
+      console.log('Cleaned data before validation:', cleanData);
       
       const validatedData = insertNewsArticleSchema.parse(cleanData);
       
