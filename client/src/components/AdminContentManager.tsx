@@ -59,7 +59,7 @@ export default function AdminContentManager() {
     queryKey: ["/api/events"],
   });
   
-  const { data: galleryData } = useQuery<GalleryImage[]>({
+  const { data: galleryData } = useQuery<{images: GalleryImage[], analytics: any}>({
     queryKey: ["/api/gallery"],
   });
 
@@ -80,7 +80,7 @@ export default function AdminContentManager() {
   const projects = projectsData?.projects || [];
   const articles = newsData?.articles || [];
   const events = eventsData?.events || [];
-  const gallery = galleryData || [];
+  const gallery = galleryData?.images || [];
   
   // Combine approved content with pending content for admin review
   const allProjects = [...projects, ...(pendingContent?.projects || [])];
