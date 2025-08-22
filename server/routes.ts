@@ -12,7 +12,8 @@ import {
   insertGalleryImageSchema,
   insertRegistrationSchema,
   insertUserSchema,
-  insertEventSchema
+  insertEventSchema,
+  insertEventRegistrationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -1743,13 +1744,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/event-registrations", isAdmin, async (req, res) => {
     try {
       const { eventId } = req.query;
-      const allRegistrations = (global as any).eventRegistrations || [];
-      
-      let registrations = allRegistrations;
-      if (eventId) {
-        registrations = allRegistrations.filter((reg: any) => reg.eventId === parseInt(eventId as string));
-      }
-      
+      const eventIdNum = eventId ? parseInt(eventId as string) : undefined;
+      const registrations = await storage.getEventRegistrations(eventIdNum);
       res.json(registrations);
     } catch (error) {
       console.error("Error fetching event registrations:", error);
@@ -1765,33 +1761,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
-      
-      // Create registration with user info
-      const registration = {
-        id: Date.now().toString(),
+
+      // Validate the registration data
+      const validatedData = insertEventRegistrationSchema.parse({
         eventId: registrationData.eventId,
-        userId: userId,
+        userId: parseInt(userId),
         name: registrationData.name,
         email: registrationData.email,
-        phone: registrationData.phone || '',
-        institution: registrationData.institution || '',
-        reason: registrationData.reason || '',
-        teamName: registrationData.teamName || '',
-        teamMembers: registrationData.teamMembers || '',
-        status: 'confirmed',
-        registeredAt: new Date().toISOString(),
-      };
+        phone: registrationData.phone || null,
+        institution: registrationData.institution || null,
+        reason: registrationData.reason || null,
+        teamName: registrationData.teamName || null,
+        teamMembers: registrationData.teamMembers || null,
+        status: 'confirmed'
+      });
+
+      // Check if user is already registered for this event
+      const existingRegistrations = await storage.getEventRegistrations(validatedData.eventId);
+      const alreadyRegistered = existingRegistrations.some(reg => reg.userId === validatedData.userId);
       
-      // Store in memory for now (would be database later)
-      if (!(global as any).eventRegistrations) {
-        (global as any).eventRegistrations = [];
+      if (alreadyRegistered) {
+        return res.status(409).json({ error: "User is already registered for this event" });
       }
-      (global as any).eventRegistrations.push(registration);
+
+      // Create the registration
+      const registration = await storage.createEventRegistration(validatedData);
       
       console.log(`✅ Event registration created: ${registration.name} for event ${registration.eventId}`);
       
       res.status(201).json(registration);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid registration data", details: error.errors });
+      }
       console.error("Error creating event registration:", error);
       res.status(500).json({ error: "Failed to create event registration" });
     }

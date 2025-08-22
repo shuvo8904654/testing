@@ -71,6 +71,13 @@ export interface IStorage {
   updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | null>;
   deleteEvent(id: number): Promise<void>;
   
+  // Event registration operations
+  getEventRegistrations(eventId?: number): Promise<EventRegistration[]>;
+  getEventRegistration(id: number): Promise<EventRegistration | null>;
+  createEventRegistration(registrationData: InsertEventRegistration): Promise<EventRegistration>;
+  updateEventRegistrationStatus(id: number, status: string): Promise<EventRegistration | null>;
+  deleteEventRegistration(id: number): Promise<void>;
+  
   // Content approval operations
   getPendingContent(): Promise<{
     projects: Project[];
@@ -361,6 +368,38 @@ export class PostgreSQLStorage implements IStorage {
     await db.delete(events).where(eq(events.id, id));
   }
 
+  // Event registration operations
+  async getEventRegistrations(eventId?: number): Promise<EventRegistration[]> {
+    if (eventId) {
+      return await db.select().from(eventRegistrations)
+        .where(eq(eventRegistrations.eventId, eventId))
+        .orderBy(desc(eventRegistrations.registeredAt));
+    }
+    return await db.select().from(eventRegistrations).orderBy(desc(eventRegistrations.registeredAt));
+  }
+
+  async getEventRegistration(id: number): Promise<EventRegistration | null> {
+    const result = await db.select().from(eventRegistrations).where(eq(eventRegistrations.id, id)).limit(1);
+    return result[0] || null;
+  }
+
+  async createEventRegistration(registrationData: InsertEventRegistration): Promise<EventRegistration> {
+    const result = await db.insert(eventRegistrations).values(registrationData).returning();
+    return result[0];
+  }
+
+  async updateEventRegistrationStatus(id: number, status: string): Promise<EventRegistration | null> {
+    const result = await db.update(eventRegistrations)
+      .set({ status })
+      .where(eq(eventRegistrations.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteEventRegistration(id: number): Promise<void> {
+    await db.delete(eventRegistrations).where(eq(eventRegistrations.id, id));
+  }
+
   // Content approval operations
   async getPendingContent(): Promise<{
     projects: Project[];
@@ -471,17 +510,18 @@ export class PostgreSQLStorage implements IStorage {
 
   async getActiveNotices(targetAudience?: string): Promise<Notice[]> {
     const now = new Date();
-    let query = db.select().from(notices)
-      .where(and(
-        sql`${notices.startDate} <= ${now}`,
-        sql`${notices.endDate} >= ${now}`
-      ));
+    const conditions = [
+      sql`${notices.startDate} <= ${now}`,
+      sql`${notices.endDate} >= ${now}`
+    ];
     
     if (targetAudience) {
-      query = query.where(eq(notices.targetAudience, targetAudience));
+      conditions.push(eq(notices.targetAudience, targetAudience));
     }
     
-    return await query.orderBy(desc(notices.priority), desc(notices.createdAt));
+    return await db.select().from(notices)
+      .where(and(...conditions))
+      .orderBy(desc(notices.priority), desc(notices.createdAt));
   }
 
   async getNotice(id: number): Promise<Notice | null> {
