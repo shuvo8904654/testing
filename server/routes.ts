@@ -1790,7 +1790,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/notices", isAdmin, async (req: any, res) => {
     try {
       const noticeData = {
-        ...req.body,
+        title: req.body.title,
+        message: req.body.message,
+        type: req.body.type,
+        priority: req.body.priority,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        targetAudience: req.body.targetAudience || 'all',
+        dismissible: req.body.dismissible !== false,
+        link: req.body.link || null,
+        linkText: req.body.linkText || null,
         createdBy: req.user?.claims?.sub || req.user?.id
       };
       
@@ -1798,7 +1807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(notice);
     } catch (error) {
       console.error("Error creating notice:", error);
-      res.status(500).json({ error: "Failed to create notice" });
+      res.status(500).json({ error: "Failed to create notice", details: error.message });
     }
   });
 

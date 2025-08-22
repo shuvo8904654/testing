@@ -70,16 +70,16 @@ interface EventRegistration {
 }
 
 export default function EventRegistrationSystem() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
 
-  const { data: eventsData } = useQuery<{events: Event[], analytics: any}>({
+  const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useQuery<{events: Event[], analytics: any}>({
     queryKey: ["/api/events"],
   });
 
-  const { data: registrations } = useQuery<EventRegistration[]>({
+  const { data: registrations, isLoading: registrationsLoading } = useQuery<EventRegistration[]>({
     queryKey: ["/api/event-registrations"],
   });
 
@@ -170,6 +170,23 @@ export default function EventRegistrationSystem() {
   const getRegistrationCount = (eventId: string) => {
     return registrations?.filter(reg => reg.eventId === eventId && reg.status !== 'cancelled').length || 0;
   };
+
+  if (authLoading || eventsLoading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="text-lg">Loading events...</div>
+      </div>
+    );
+  }
+
+  if (eventsError) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-lg text-red-600 mb-4">Unable to load events</div>
+        <div className="text-sm text-gray-600">Please try refreshing the page</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6" data-testid="event-registration-system">

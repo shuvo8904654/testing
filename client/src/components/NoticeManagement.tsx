@@ -18,14 +18,16 @@ import { useAuth } from "@/hooks/useAuth";
 interface Notice {
   id: number;
   title: string;
-  content: string;
+  message: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   type: 'announcement' | 'reminder' | 'deadline' | 'event' | 'general';
   targetAudience: 'all' | 'members' | 'admins';
-  isActive: boolean;
-  isPinned: boolean;
-  expiresAt?: Date;
-  createdBy: string;
+  startDate: Date;
+  endDate: Date;
+  link?: string;
+  linkText?: string;
+  dismissible: boolean;
+  createdBy?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,13 +42,13 @@ export default function NoticeManagement() {
   const noticeForm = useForm({
     defaultValues: {
       title: "",
-      content: "",
+      message: "",
       priority: "medium",
       type: "general",
       targetAudience: "all",
-      isActive: true,
-      isPinned: false,
-      expiresAt: "",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dismissible: true,
     }
   });
 
@@ -56,7 +58,12 @@ export default function NoticeManagement() {
 
   const createNoticeMutation = useMutation({
     mutationFn: async (noticeData: any) => {
-      return await apiRequest('/api/notices', 'POST', noticeData);
+      const formattedData = {
+        ...noticeData,
+        startDate: new Date(noticeData.startDate),
+        endDate: new Date(noticeData.endDate),
+      };
+      return await apiRequest('POST', '/api/notices', formattedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notices"] });
@@ -108,13 +115,13 @@ export default function NoticeManagement() {
     setEditingNotice(notice);
     noticeForm.reset({
       title: notice.title,
-      content: notice.content,
+      message: notice.message,
       priority: notice.priority,
       type: notice.type,
       targetAudience: notice.targetAudience,
-      isActive: notice.isActive,
-      isPinned: notice.isPinned,
-      expiresAt: notice.expiresAt ? new Date(notice.expiresAt).toISOString().split('T')[0] : "",
+      startDate: notice.startDate ? new Date(notice.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      endDate: notice.endDate ? new Date(notice.endDate).toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dismissible: notice.dismissible,
     });
     setEditDialogOpen(true);
   };
@@ -164,17 +171,45 @@ export default function NoticeManagement() {
                 />
                 <FormField
                   control={noticeForm.control}
-                  name="content"
+                  name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Content</FormLabel>
+                      <FormLabel>Message</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Notice content" rows={4} />
+                        <Textarea {...field} placeholder="Notice message" rows={4} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={noticeForm.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={noticeForm.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={noticeForm.control}
@@ -246,48 +281,18 @@ export default function NoticeManagement() {
                     </FormItem>
                   )}
                 />
-                <div className="flex items-center space-x-4">
-                  <FormField
-                    control={noticeForm.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel>Active</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={noticeForm.control}
-                    name="isPinned"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel>Pinned</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
                 <FormField
                   control={noticeForm.control}
-                  name="expiresAt"
+                  name="dismissible"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expires At (Optional)</FormLabel>
+                    <FormItem className="flex items-center space-x-2">
                       <FormControl>
-                        <Input {...field} type="date" />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormLabel>Dismissible</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -322,13 +327,12 @@ export default function NoticeManagement() {
       ) : (
         <div className="space-y-4">
           {notices.map((notice) => (
-            <Card key={notice.id} className={`${notice.isPinned ? 'border-blue-200 bg-blue-50' : ''}`}>
+            <Card key={notice.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <CardTitle className="text-lg">{notice.title}</CardTitle>
-                      {notice.isPinned && <Pin className="h-4 w-4 text-blue-600" />}
                     </div>
                     <div className="flex space-x-2 mt-2">
                       <Badge variant={getPriorityColor(notice.priority)}>
@@ -336,7 +340,7 @@ export default function NoticeManagement() {
                       </Badge>
                       <Badge variant="outline">{notice.type}</Badge>
                       <Badge variant="secondary">{notice.targetAudience}</Badge>
-                      {!notice.isActive && <Badge variant="destructive">Inactive</Badge>}
+                      {!notice.dismissible && <Badge variant="secondary">Non-dismissible</Badge>}
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -350,15 +354,13 @@ export default function NoticeManagement() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 mb-4">{notice.content}</p>
+                <p className="text-gray-700 mb-4">{notice.message}</p>
                 <div className="flex justify-between items-center text-sm text-gray-500">
                   <span>Created: {new Date(notice.createdAt).toLocaleDateString()}</span>
-                  {notice.expiresAt && (
-                    <span className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      Expires: {new Date(notice.expiresAt).toLocaleDateString()}
-                    </span>
-                  )}
+                  <span className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    Active until: {new Date(notice.endDate).toLocaleDateString()}
+                  </span>
                 </div>
               </CardContent>
             </Card>

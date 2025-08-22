@@ -22,10 +22,10 @@ import {
 import type { Event } from "@shared/schema";
 
 export default function EventRSVPSystem() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
-  const { data: eventsData } = useQuery<{events: Event[], analytics: any}>({
+  const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useQuery<{events: Event[], analytics: any}>({
     queryKey: ["/api/events"],
   });
 
@@ -73,6 +73,23 @@ export default function EventRSVPSystem() {
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  if (authLoading || eventsLoading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="text-lg">Loading events...</div>
+      </div>
+    );
+  }
+
+  if (eventsError) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-lg text-red-600 mb-4">Unable to load events</div>
+        <div className="text-sm text-gray-600">Please try refreshing the page</div>
+      </div>
+    );
+  }
 
   const handleRSVP = (eventId: string) => {
     if (!user) {
