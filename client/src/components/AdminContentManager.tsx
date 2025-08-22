@@ -192,10 +192,11 @@ export default function AdminContentManager() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="projects" data-testid="tab-projects">Projects</TabsTrigger>
               <TabsTrigger value="news" data-testid="tab-news">News</TabsTrigger>
               <TabsTrigger value="events" data-testid="tab-events">Events</TabsTrigger>
+              <TabsTrigger value="registrations" data-testid="tab-registrations">Event Registrations</TabsTrigger>
               <TabsTrigger value="gallery" data-testid="tab-gallery">Gallery</TabsTrigger>
               <TabsTrigger value="pending" data-testid="tab-pending">Pending Reviews</TabsTrigger>
             </TabsList>
@@ -210,6 +211,10 @@ export default function AdminContentManager() {
             
             <TabsContent value="events" className="space-y-4">
               <EventsManager events={events} />
+            </TabsContent>
+            
+            <TabsContent value="registrations" className="space-y-4">
+              <EventRegistrationManager />
             </TabsContent>
             
             <TabsContent value="gallery" className="space-y-4">
@@ -1072,5 +1077,259 @@ function CreateGalleryForm({ onSuccess }: { onSuccess: () => void }) {
         </Button>
       </form>
     </Form>
+  );
+}
+
+// Event Registration Manager Component
+function EventRegistrationManager() {
+  const { toast } = useToast();
+  const [activeRegistrationTab, setActiveRegistrationTab] = useState('registrations');
+
+  // Fetch event registrations
+  const { data: registrations } = useQuery<any[]>({
+    queryKey: ["/api/event-registrations"],
+  });
+
+  // Fetch events data to categorize registration vs RSVP events
+  const { data: eventsData } = useQuery<{events: Event[], analytics: any}>({
+    queryKey: ["/api/events"],
+  });
+
+  const events = eventsData?.events || [];
+  const allRegistrations = registrations || [];
+
+  // Categorize events
+  const registrationEvents = events.filter(event => 
+    event.registrationRequired && 
+    (event.status === 'upcoming' || event.status === 'ongoing')
+  );
+  
+  const rsvpEvents = events.filter(event => 
+    !event.registrationRequired && 
+    (event.status === 'upcoming' || event.status === 'ongoing')
+  );
+
+  const approveRegistrationMutation = useMutation({
+    mutationFn: async (registrationId: string) => {
+      return apiRequest("PATCH", `/api/event-registrations/${registrationId}`, { status: 'approved' });
+    },
+    onSuccess: () => {
+      toast({ title: "Registration approved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/event-registrations"] });
+    },
+  });
+
+  const rejectRegistrationMutation = useMutation({
+    mutationFn: async (registrationId: string) => {
+      return apiRequest("PATCH", `/api/event-registrations/${registrationId}`, { status: 'rejected' });
+    },
+    onSuccess: () => {
+      toast({ title: "Registration rejected successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/event-registrations"] });
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Event Registration Management</h3>
+        <Badge variant="secondary">{allRegistrations.length} total registrations</Badge>
+      </div>
+
+      <Tabs value={activeRegistrationTab} onValueChange={setActiveRegistrationTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="registrations">Registration Events</TabsTrigger>
+          <TabsTrigger value="rsvp">RSVP Events</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="registrations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Registration Events ({registrationEvents.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {registrationEvents.length > 0 ? (
+                <div className="grid gap-4">
+                  {registrationEvents.map((event) => {
+                    const eventRegistrations = allRegistrations.filter(reg => reg.eventId === event.id);
+                    return (
+                      <Card key={event.id} className="border-l-4 border-l-blue-500">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-semibold">{event.title}</h4>
+                              <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                <span>📅 {new Date(event.date).toLocaleDateString()}</span>
+                                <span>⏰ {event.time}</span>
+                                <span>📍 {event.location}</span>
+                                <span>👥 {eventRegistrations.length} registered</span>
+                              </div>
+                            </div>
+                            <Badge variant="default">Registration Required</Badge>
+                          </div>
+                          
+                          {eventRegistrations.length > 0 && (
+                            <div className="mt-4 border-t pt-4">
+                              <h5 className="font-medium text-sm mb-2">Recent Registrations:</h5>
+                              <div className="space-y-2">
+                                {eventRegistrations.slice(0, 3).map((registration) => (
+                                  <div key={registration.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                    <div>
+                                      <span className="font-medium text-sm">{registration.participantName}</span>
+                                      <span className="text-xs text-gray-500 ml-2">{registration.email}</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      {registration.status === 'registered' && (
+                                        <>
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            onClick={() => approveRegistrationMutation.mutate(registration.id.toString())}
+                                            className="text-green-600 hover:bg-green-50 h-6 px-2"
+                                          >
+                                            ✓
+                                          </Button>
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            onClick={() => rejectRegistrationMutation.mutate(registration.id.toString())}
+                                            className="text-red-600 hover:bg-red-50 h-6 px-2"
+                                          >
+                                            ✗
+                                          </Button>
+                                        </>
+                                      )}
+                                      {registration.status !== 'registered' && (
+                                        <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="text-xs">
+                                          {registration.status}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <h4 className="font-medium">No Registration Events</h4>
+                  <p className="text-sm">Events requiring registration will appear here.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="rsvp" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">RSVP Events ({rsvpEvents.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {rsvpEvents.length > 0 ? (
+                <div className="grid gap-4">
+                  {rsvpEvents.map((event) => (
+                    <Card key={event.id} className="border-l-4 border-l-green-500">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{event.title}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                              <span>📅 {new Date(event.date).toLocaleDateString()}</span>
+                              <span>⏰ {event.time}</span>
+                              <span>📍 {event.location}</span>
+                              <span>👥 Quick RSVP</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline">RSVP Only</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <h4 className="font-medium">No RSVP Events</h4>
+                  <p className="text-sm">Quick RSVP events will appear here.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{registrationEvents.length}</div>
+                  <div className="text-sm text-gray-600">Registration Events</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{rsvpEvents.length}</div>
+                  <div className="text-sm text-gray-600">RSVP Events</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{allRegistrations.length}</div>
+                  <div className="text-sm text-gray-600">Total Registrations</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Registration Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Registration Events</span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-20 bg-gray-200 rounded">
+                      <div 
+                        className="h-2 bg-blue-500 rounded"
+                        style={{ width: `${(registrationEvents.length / (registrationEvents.length + rsvpEvents.length || 1)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{registrationEvents.length}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">RSVP Events</span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-20 bg-gray-200 rounded">
+                      <div 
+                        className="h-2 bg-green-500 rounded"
+                        style={{ width: `${(rsvpEvents.length / (registrationEvents.length + rsvpEvents.length || 1)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{rsvpEvents.length}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

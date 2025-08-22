@@ -1041,8 +1041,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin-only endpoint to create new users
   app.post("/api/users", isAdmin, async (req: any, res) => {
     try {
-      const validatedData = insertUserSchema.extend({
+      const validatedData = z.object({
+        email: z.string().email(),
         password: z.string().min(8),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        phone: z.string().optional(),
+        age: z.string().optional(),
+        address: z.string().optional(),
+        motivation: z.string().optional(),
+        profileImageUrl: z.string().url().optional(),
+        role: z.enum(['member', 'admin', 'super_admin', 'applicant']).default('applicant'),
+        permissions: z.array(z.string()).default([]),
+        isActive: z.boolean().default(true),
+        authType: z.enum(['email', 'replit']).default('email'),
+        applicationStatus: z.enum(['pending', 'approved', 'rejected']).default('pending'),
       }).parse(req.body);
       
       // Hash password if provided
@@ -1538,7 +1551,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced event creation with smart scheduling and validation
   app.post("/api/events", isAdmin, async (req, res) => {
     try {
-      const validatedData = insertEventSchema.parse(req.body);
+      const validatedData = z.object({
+        title: z.string().min(1),
+        description: z.string().min(1),
+        date: z.string().transform((str) => new Date(str)),
+        time: z.string().min(1),
+        location: z.string().min(1),
+        category: z.enum(['workshop', 'meeting', 'training', 'volunteer', 'other']),
+        maxParticipants: z.number().optional(),
+        registrationRequired: z.boolean().default(false),
+        contactInfo: z.string().optional(),
+        status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
+        createdBy: z.string(),
+      }).parse(req.body);
       const createdBy = req.user.claims.sub;
       
       const eventDate = new Date(validatedData.date);
