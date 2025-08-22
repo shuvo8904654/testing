@@ -51,20 +51,24 @@ export default function Members() {
                   {member.bio}
                 </p>
                 <div className="flex justify-center space-x-3">
-                  <a 
-                    href="#" 
-                    className="text-youth-blue hover:text-youth-blue-dark"
-                    data-testid={`member-linkedin-${index}`}
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                  <a 
-                    href="#" 
-                    className="text-eco-green hover:text-eco-green-dark"
-                    data-testid={`member-facebook-${index}`}
-                  >
-                    <Facebook className="w-5 h-5" />
-                  </a>
+                  {member.social?.linkedin && (
+                    <a 
+                      href={member.social.linkedin} 
+                      className="text-youth-blue hover:text-youth-blue-dark"
+                      data-testid={`member-linkedin-${index}`}
+                    >
+                      <Linkedin className="w-5 h-5" />
+                    </a>
+                  )}
+                  {member.social?.facebook && (
+                    <a 
+                      href={member.social.facebook} 
+                      className="text-eco-green hover:text-eco-green-dark"
+                      data-testid={`member-facebook-${index}`}
+                    >
+                      <Facebook className="w-5 h-5" />
+                    </a>
+                  )}
                 </div>
               </CardContent>
             </Card>
