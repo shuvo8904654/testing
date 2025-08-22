@@ -32,10 +32,12 @@ import {
   insertNewsArticleSchema, 
   insertEventSchema, 
   insertGalleryImageSchema,
+  eventFormSchema,
   type InsertProject,
   type InsertNewsArticle,
   type InsertEvent,
-  type InsertGalleryImage
+  type InsertGalleryImage,
+  type EventFormData
 } from "@shared/validation";
 import type { Project, NewsArticle, Event, GalleryImage, Member } from "@shared/schema";
 
@@ -865,8 +867,8 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
 function CreateEventForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   
-  const form = useForm<InsertEvent>({
-    resolver: zodResolver(insertEventSchema),
+  const form = useForm<EventFormData>({
+    resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -876,12 +878,12 @@ function CreateEventForm({ onSuccess }: { onSuccess: () => void }) {
       category: "workshop",
       registrationRequired: false,
       status: "upcoming",
-      createdBy: "admin",
+      createdBy: 1,
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertEvent) => {
+    mutationFn: async (data: EventFormData) => {
       return apiRequest("POST", "/api/events", data);
     },
     onSuccess: () => {

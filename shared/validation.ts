@@ -84,11 +84,11 @@ export const insertRegistrationSchema = z.object({
   reviewedBy: z.string().optional(),
 });
 
-// Event validation schemas
-export const insertEventSchema = z.object({
+// Event validation schemas  
+export const eventFormSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
-  date: z.string().transform((str) => new Date(str)),
+  date: z.string().min(1),
   time: z.string().min(1),
   location: z.string().min(1),
   category: z.enum(['workshop', 'meeting', 'training', 'volunteer', 'other']),
@@ -96,7 +96,11 @@ export const insertEventSchema = z.object({
   registrationRequired: z.boolean().default(false),
   contactInfo: z.string().optional(),
   status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
-  createdBy: z.string(),
+  createdBy: z.number(),
+});
+
+export const insertEventSchema = eventFormSchema.extend({
+  date: z.string().transform((str) => new Date(str)),
 });
 
 // Types derived from schemas
@@ -109,3 +113,4 @@ export type InsertGalleryImage = z.infer<typeof insertGalleryImageSchema>;
 export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
 export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
 export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type EventFormData = z.infer<typeof eventFormSchema>;

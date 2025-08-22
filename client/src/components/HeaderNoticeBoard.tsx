@@ -19,10 +19,10 @@ interface Notice {
   id: number;
   title: string;
   message: string;
-  type: 'announcement' | 'event' | 'urgent' | 'info';
+  type: 'announcement' | 'event' | 'urgent' | 'info' | 'general';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  startDate: Date;
-  endDate: Date;
+  startDate: string | Date;
+  endDate: string | Date;
   link?: string;
   linkText?: string;
   dismissible: boolean;
@@ -51,7 +51,9 @@ export default function HeaderNoticeBoard() {
   // Filter active and non-dismissed notices
   const activeNotices = notices.filter(notice => {
     const now = new Date();
-    const isActive = now >= notice.startDate && now <= notice.endDate;
+    const startDate = new Date(notice.startDate);
+    const endDate = new Date(notice.endDate);
+    const isActive = now >= startDate && now <= endDate;
     const isNotDismissed = !dismissedNotices.includes(notice.id);
     return isActive && isNotDismissed;
   });
