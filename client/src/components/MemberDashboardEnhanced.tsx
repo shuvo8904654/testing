@@ -11,6 +11,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { FileUpload } from "@/components/ui/file-upload";
 import { 
   User, 
   Calendar as CalendarIcon, 
@@ -59,6 +64,40 @@ export default function MemberDashboardEnhanced() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState("overview");
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [articleDialogOpen, setArticleDialogOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
+  // Forms for content creation
+  const projectForm = useForm({
+    defaultValues: {
+      title: "",
+      description: "",
+      category: "environmental",
+      priority: "medium",
+      status: "draft"
+    }
+  });
+
+  const articleForm = useForm({
+    defaultValues: {
+      title: "",
+      content: "",
+      excerpt: "",
+      category: "news",
+      status: "draft"
+    }
+  });
+
+  const imageForm = useForm({
+    defaultValues: {
+      title: "",
+      description: "",
+      imageUrl: "",
+      category: "general",
+      status: "draft"
+    }
+  });
 
   // Fetch user data and activities
   const { data: memberData } = useQuery<Member>({
@@ -141,6 +180,76 @@ export default function MemberDashboardEnhanced() {
   };
 
   const levelInfo = getLevelProgress(memberStats.totalPoints);
+
+  // Mutations for content creation
+  const createProjectMutation = useMutation({
+    mutationFn: async (projectData: any) => {
+      return await apiRequest("POST", "/api/projects", { ...projectData, createdBy: user?._id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      projectForm.reset();
+      setProjectDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Project submitted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit project",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createArticleMutation = useMutation({
+    mutationFn: async (articleData: any) => {
+      return await apiRequest("POST", "/api/news", { ...articleData, createdBy: user?._id, author: `${user?.firstName} ${user?.lastName}` });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      articleForm.reset();
+      setArticleDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Article submitted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit article",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createGalleryImageMutation = useMutation({
+    mutationFn: async (imageData: any) => {
+      return await apiRequest("POST", "/api/gallery", { ...imageData, createdBy: user?._id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      imageForm.reset();
+      setImageDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="space-y-6" data-testid="member-dashboard-enhanced">
@@ -318,18 +427,55 @@ export default function MemberDashboardEnhanced() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Dialog>
+                <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="h-20 flex-col">
                       <FileText className="h-6 w-6 mb-2" />
                       <span className="text-sm">Submit Project</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Submit New Project</DialogTitle>
                     </DialogHeader>
-                    <p className="text-gray-600">Project submission form would go here.</p>
+                    <Form {...projectForm}>
+                      <form onSubmit={projectForm.handleSubmit((data) => createProjectMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={projectForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Project Title</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter project title" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={projectForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Describe your project" rows={4} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setProjectDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={createProjectMutation.isPending}>
+                            {createProjectMutation.isPending ? "Submitting..." : "Submit Project"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
                 
@@ -360,33 +506,137 @@ export default function MemberDashboardEnhanced() {
                   </DialogContent>
                 </Dialog>
                 
-                <Dialog>
+                <Dialog open={articleDialogOpen} onOpenChange={setArticleDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="h-20 flex-col">
                       <BookOpen className="h-6 w-6 mb-2" />
                       <span className="text-sm">Write Article</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Write Article</DialogTitle>
                     </DialogHeader>
-                    <p className="text-gray-600">Article submission form would go here.</p>
+                    <Form {...articleForm}>
+                      <form onSubmit={articleForm.handleSubmit((data) => createArticleMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={articleForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Article Title</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter article title" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={articleForm.control}
+                          name="excerpt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Excerpt</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Brief summary of the article" rows={2} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={articleForm.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Content</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Write your article content here" rows={8} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setArticleDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={createArticleMutation.isPending}>
+                            {createArticleMutation.isPending ? "Publishing..." : "Publish Article"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
                 
-                <Dialog>
+                <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="h-20 flex-col">
                       <Image className="h-6 w-6 mb-2" />
                       <span className="text-sm">Upload Image</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Upload Image to Gallery</DialogTitle>
                     </DialogHeader>
-                    <p className="text-gray-600">Image upload form would go here to test Cloudinary integration.</p>
+                    <Form {...imageForm}>
+                      <form onSubmit={imageForm.handleSubmit((data) => createGalleryImageMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={imageForm.control}
+                          name="imageUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image</FormLabel>
+                              <FormControl>
+                                <FileUpload
+                                  onFileUpload={field.onChange}
+                                  currentValue={field.value}
+                                  placeholder="Upload image"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={imageForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image Title</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Enter image title" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={imageForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Describe the image" rows={3} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setImageDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={createGalleryImageMutation.isPending}>
+                            {createGalleryImageMutation.isPending ? "Uploading..." : "Upload Image"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
                   </DialogContent>
                 </Dialog>
               </div>

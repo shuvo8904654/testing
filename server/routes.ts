@@ -244,7 +244,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Try to get member profile, create if doesn't exist
-      let member = await storage.getMemberByEmail(user.email);
+      let member = null;
+      try {
+        member = await storage.getMemberByEmail(user.email);
+      } catch (error) {
+        // Fallback: search through all members if method doesn't exist
+        const allMembers = await storage.getMembers();
+        member = allMembers.find(m => m.email === user.email) || null;
+      }
       
       if (!member && user.role === 'member') {
         // Auto-create member profile for users with member role

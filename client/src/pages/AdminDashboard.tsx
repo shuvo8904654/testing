@@ -22,9 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, insertEventSchema } from "@shared/validation";
 import { z } from "zod";
 import AdminContentManager from "@/components/AdminContentManager";
-import NotificationSystem from "@/components/NotificationSystem";
-import ImageUploadManager from "@/components/ImageUploadManager";
-import AdvancedSearch from "@/components/AdvancedSearch";
+import NoticeManagement from "@/components/NoticeManagement";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
@@ -851,7 +849,7 @@ export default function AdminDashboard() {
                                 {article.excerpt}
                               </p>
                               <Badge variant="outline" className="mt-2">
-                                {article.category}
+                                News
                               </Badge>
                             </div>
                             <Badge
@@ -868,7 +866,7 @@ export default function AdminDashboard() {
                             <span>Created: {new Date(article.createdAt!).toLocaleDateString()}</span>
                             <span>By: {article.createdBy || 'Unknown'}</span>
                           </div>
-                          {article.status === "draft" && (
+                          {article.status === "pending" && (
                             <div className="flex space-x-2 pt-2">
                               <Button
                                 size="sm"
@@ -927,9 +925,9 @@ export default function AdminDashboard() {
                               </p>
                               <div className="flex space-x-2 mt-2">
                                 <Badge variant="outline">
-                                  {project.category}
+                                  Project
                                 </Badge>
-                                <Badge variant={project.status === 'completed' ? 'default' : 'secondary'}>
+                                <Badge variant={project.status === 'approved' ? 'default' : 'secondary'}>
                                   {project.status}
                                 </Badge>
                               </div>
@@ -945,7 +943,7 @@ export default function AdminDashboard() {
                             <span>Created: {new Date(project.createdAt!).toLocaleDateString()}</span>
                             <span>By: {project.createdBy || 'Unknown'}</span>
                           </div>
-                          {project.status === "active" && (
+                          {project.status === "pending" && (
                             <div className="flex space-x-2 pt-2">
                               <Button
                                 size="sm"
@@ -997,7 +995,7 @@ export default function AdminDashboard() {
                         >
                           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                             <img
-                              src={image.url || image.imageUrl}
+                              src={image.imageUrl}
                               alt={image.title}
                               className="w-full h-full object-cover"
                               data-testid={`img-gallery-${image.id}`}
@@ -1076,7 +1074,7 @@ export default function AdminDashboard() {
                           <DialogTitle>Create New Event</DialogTitle>
                         </DialogHeader>
                         <Form {...createEventForm}>
-                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate(data))} className="space-y-4">
+                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate({...data, date: new Date(data.date), createdBy: user?._id || 'unknown'}))} className="space-y-4">
                             <FormField
                               control={createEventForm.control}
                               name="title"
