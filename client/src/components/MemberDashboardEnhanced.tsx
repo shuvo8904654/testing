@@ -207,7 +207,8 @@ export default function MemberDashboardEnhanced() {
 
   const createArticleMutation = useMutation({
     mutationFn: async (articleData: any) => {
-      return await apiRequest("POST", "/api/news", { ...articleData, createdBy: user?._id, author: `${user?.firstName} ${user?.lastName}` });
+      const authorName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Anonymous';
+      return await apiRequest("POST", "/api/news", { ...articleData, createdBy: user?._id, author: authorName });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });

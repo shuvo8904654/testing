@@ -34,23 +34,23 @@ export const insertMemberSchema = z.object({
 
 // Project validation schemas
 export const insertProjectSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
   imageUrl: z.string().optional(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string().optional(),
+  createdBy: z.string().min(1, "Creator is required"),
   approvedBy: z.string().optional(),
 });
 
 // News Article validation schemas
 export const insertNewsArticleSchema = z.object({
-  title: z.string().min(1),
-  content: z.string().min(1),
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
   excerpt: z.string().optional(),
   imageUrl: z.string().optional(),
-  author: z.string().min(1).optional(),
+  author: z.string().min(1, "Author is required"),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string().optional(),
+  createdBy: z.string().min(1, "Creator is required"),
   approvedBy: z.string().optional(),
   readCount: z.number().default(0),
 });

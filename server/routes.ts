@@ -1676,12 +1676,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/news", isAuthenticated, async (req, res) => {
     try {
       const createdBy = (req as any).user.claims.sub;
-      const validatedData = insertNewsArticleSchema.parse({
-        ...req.body,
-        createdBy,
+      
+      // Clean the data before validation
+      const cleanData = {
+        title: req.body.title || '',
+        content: req.body.content || '',
+        excerpt: req.body.excerpt || '',
+        imageUrl: req.body.imageUrl || '',
         author: req.body.author || 'Anonymous',
-        status: 'pending'
-      });
+        createdBy,
+        status: 'pending',
+        readCount: 0
+      };
+      
+      const validatedData = insertNewsArticleSchema.parse(cleanData);
       
       const article = await storage.createNewsArticle(validatedData);
       res.status(201).json(article);
@@ -1696,16 +1704,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects", isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertProjectSchema.parse(req.body);
       const createdBy = (req as any).user.claims.sub;
       
-      const projectData = {
-        ...validatedData,
+      // Clean the data before validation  
+      const cleanData = {
+        title: req.body.title || '',
+        description: req.body.description || '',
+        imageUrl: req.body.imageUrl || '',
         createdBy,
-        status: 'pending' as const
+        status: 'pending'
       };
       
-      const project = await storage.createProject(projectData);
+      const validatedData = insertProjectSchema.parse(cleanData);
+      
+      const project = await storage.createProject(validatedData);
       res.status(201).json(project);
     } catch (error) {
       if (error instanceof z.ZodError) {
