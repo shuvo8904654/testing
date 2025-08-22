@@ -233,6 +233,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get member profile by user ID for dashboard
+  app.get("/api/member-profile/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Try to get member profile, create if doesn't exist
+      let member = await storage.getMemberByEmail(user.email);
+      
+      if (!member && user.role === 'member') {
+        // Auto-create member profile for users with member role
+        const memberData = {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email,
+          role: 'member',
+          bio: user.motivation || 'Active member of 3ZERO Club',
+          status: 'approved' as const,
+          createdBy: userId,
+          image: user.profileImageUrl || ''
+        };
+        member = await storage.createMember(memberData);
+      }
+
+      res.json(member);
+    } catch (error) {
+      console.error("Error fetching member profile:", error);
+      res.status(500).json({ message: "Failed to fetch member profile" });
+    }
+  });
+
+  // Get user analytics and activities for member dashboard
+  app.get("/api/user-analytics/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get all user-related data
+      const [projects, articles, events, galleryImages] = await Promise.all([
+        storage.getProjects(),
+        storage.getNewsArticles(), 
+        storage.getEvents(),
+        storage.getGalleryImages()
+      ]);
+
+      // Calculate user stats
+      const userProjects = projects.filter(p => p.createdBy === userId);
+      const userArticles = articles.filter(a => a.createdBy === userId);
+      const userImages = galleryImages.filter(i => i.createdBy === userId);
+      
+      // Simple points calculation
+      const points = (userProjects.length * 50) + (userArticles.length * 30) + (userImages.length * 20);
+      
+      const analytics = {
+        projectsJoined: userProjects.length,
+        eventsAttended: 0, // Would need event registrations to calculate
+        articlesContributed: userArticles.length,
+        totalPoints: points,
+        imagesUploaded: userImages.length,
+        joinDate: user.createdAt,
+        daysActive: Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 3600 * 24)),
+        streak: 1 // Would need activity tracking to calculate properly
+      };
+
+      // Generate recent activities
+      const activities = [
+        ...userProjects.map(p => ({
+          id: p._id,
+          type: 'project_joined' as const,
+          title: `Created project: ${p.title}`,
+          description: p.description?.substring(0, 100) + '...' || '',
+          date: new Date(p.createdAt),
+          points: 50
+        })),
+        ...userArticles.map(a => ({
+          id: a._id,
+          type: 'content_created' as const,
+          title: `Published article: ${a.title}`,
+          description: a.excerpt || '',
+          date: new Date(a.createdAt),
+          points: 30
+        })),
+        ...userImages.map(i => ({
+          id: i._id,
+          type: 'content_created' as const,
+          title: `Uploaded image: ${i.title}`,
+          description: i.description || '',
+          date: new Date(i.createdAt),
+          points: 20
+        }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+
+      // Generate achievements based on activity
+      const achievements = [];
+      if (userProjects.length >= 1) {
+        achievements.push({
+          id: 'first-project',
+          title: 'Project Pioneer',
+          description: 'Created your first project',
+          icon: 'target',
+          category: 'contribution',
+          dateEarned: new Date(userProjects[0].createdAt),
+          points: 50
+        });
+      }
+      if (userArticles.length >= 1) {
+        achievements.push({
+          id: 'first-article',
+          title: 'Content Creator',
+          description: 'Published your first article',
+          icon: 'book',
+          category: 'contribution',
+          dateEarned: new Date(userArticles[0].createdAt),
+          points: 30
+        });
+      }
+      if (points >= 100) {
+        achievements.push({
+          id: 'hundred-points',
+          title: 'Century Club',
+          description: 'Earned 100 points',
+          icon: 'trophy',
+          category: 'participation',
+          dateEarned: new Date(),
+          points: 0
+        });
+      }
+
+      res.json({
+        analytics,
+        activities,
+        achievements
+      });
+    } catch (error) {
+      console.error("Error fetching user analytics:", error);
+      res.status(500).json({ message: "Failed to fetch user analytics" });
+    }
+  });
+
   // Image upload and management endpoints
   app.post("/api/images/upload", isAuthenticated, upload.single('image'), async (req: any, res) => {
     try {

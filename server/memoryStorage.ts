@@ -117,6 +117,15 @@ export class MemoryStorage implements IStorage {
     return members.get(id) || null;
   }
 
+  async getMemberByEmail(email: string): Promise<IMember | null> {
+    for (const member of members.values()) {
+      if (member.email === email) {
+        return member;
+      }
+    }
+    return null;
+  }
+
   async createMember(memberData: InsertMember): Promise<IMember> {
     const id = generateId();
     const member: IMember = {

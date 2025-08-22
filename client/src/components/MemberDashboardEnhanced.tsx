@@ -62,8 +62,17 @@ export default function MemberDashboardEnhanced() {
 
   // Fetch user data and activities
   const { data: memberData } = useQuery<Member>({
-    queryKey: ["/api/members", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["/api/member-profile", user?._id],
+    enabled: !!user?._id,
+  });
+
+  const { data: userAnalyticsData } = useQuery<{
+    analytics: any;
+    activities: Activity[];
+    achievements: Achievement[];
+  }>({
+    queryKey: ["/api/user-analytics", user?._id],
+    enabled: !!user?._id,
   });
 
   const { data: projectsData } = useQuery<{projects: Project[], analytics: any}>({
@@ -78,8 +87,8 @@ export default function MemberDashboardEnhanced() {
     queryKey: ["/api/news"],
   });
 
-  // Real data based on user activity
-  const memberStats = {
+  // Real data from API
+  const memberStats = userAnalyticsData?.analytics || {
     projectsJoined: 0,
     eventsAttended: 0,
     articlesContributed: 0,
@@ -90,9 +99,9 @@ export default function MemberDashboardEnhanced() {
     streak: 0
   };
 
-  const achievements: Achievement[] = [];
+  const achievements: Achievement[] = userAnalyticsData?.achievements || [];
 
-  const recentActivities: Activity[] = [];
+  const recentActivities: Activity[] = userAnalyticsData?.activities || [];
 
   const upcomingEvents = eventsData?.events?.filter(event => 
     event.status === 'upcoming' && 
@@ -309,22 +318,77 @@ export default function MemberDashboardEnhanced() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-20 flex-col">
-                  <FileText className="h-6 w-6 mb-2" />
-                  <span className="text-sm">Submit Project</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <CalendarIcon className="h-6 w-6 mb-2" />
-                  <span className="text-sm">RSVP Event</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <BookOpen className="h-6 w-6 mb-2" />
-                  <span className="text-sm">Write Article</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col">
-                  <Users className="h-6 w-6 mb-2" />
-                  <span className="text-sm">Find Team</span>
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <FileText className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Submit Project</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Submit New Project</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600">Project submission form would go here.</p>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <CalendarIcon className="h-6 w-6 mb-2" />
+                      <span className="text-sm">RSVP Event</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Upcoming Events</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                      {upcomingEvents.length > 0 ? (
+                        upcomingEvents.map((event) => (
+                          <div key={event._id} className="p-3 border rounded-lg">
+                            <h4 className="font-medium">{event.title}</h4>
+                            <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString()} - {event.description}</p>
+                            <Button size="sm" className="mt-2">RSVP</Button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500">No upcoming events</p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <BookOpen className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Write Article</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Write Article</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600">Article submission form would go here.</p>
+                  </DialogContent>
+                </Dialog>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <Image className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Upload Image</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Upload Image to Gallery</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600">Image upload form would go here to test Cloudinary integration.</p>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -404,11 +468,18 @@ export default function MemberDashboardEnhanced() {
                 <div className="space-y-4">
                   <h4 className="font-semibold">Events on {selectedDate?.toLocaleDateString()}</h4>
                   <div className="space-y-2">
-                    {/* Mock events for selected date */}
-                    <div className="p-3 border rounded-lg">
-                      <h5 className="font-medium">Team Meeting</h5>
-                      <p className="text-sm text-gray-600">10:00 AM - Project planning session</p>
-                    </div>
+                    {upcomingEvents.length > 0 ? (
+                      upcomingEvents.map((event) => (
+                        <div key={event._id} className="p-3 border rounded-lg">
+                          <h5 className="font-medium">{event.title}</h5>
+                          <p className="text-sm text-gray-600">{event.time} - {event.description}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 border rounded-lg text-gray-500">
+                        No events scheduled for this date
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -426,23 +497,23 @@ export default function MemberDashboardEnhanced() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Complete 3 Projects</span>
-                    <span className="text-sm text-gray-500">2/3</span>
+                    <span className="text-sm text-gray-500">{memberStats.projectsJoined}/3</span>
                   </div>
-                  <Progress value={67} />
+                  <Progress value={(memberStats.projectsJoined / 3) * 100} />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm font-medium">Attend 5 Events</span>
-                    <span className="text-sm text-gray-500">4/5</span>
+                    <span className="text-sm font-medium">Publish 5 Articles</span>
+                    <span className="text-sm text-gray-500">{memberStats.articlesContributed}/5</span>
                   </div>
-                  <Progress value={80} />
+                  <Progress value={(memberStats.articlesContributed / 5) * 100} />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">Reach 500 Points</span>
-                    <span className="text-sm text-gray-500">450/500</span>
+                    <span className="text-sm text-gray-500">{memberStats.totalPoints}/500</span>
                   </div>
-                  <Progress value={90} />
+                  <Progress value={(memberStats.totalPoints / 500) * 100} />
                 </div>
               </CardContent>
             </Card>

@@ -31,27 +31,38 @@ export default function Gallery() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-          {images?.map((image, index) => (
-            <div 
-              key={image.id} 
-              className="bg-white rounded-xl overflow-hidden shadow-lg hover-scale"
-              data-testid={`gallery-image-${index}`}
-            >
-              <img 
-                src={image.imageUrl || image.url} 
-                alt={image.title}
-                className="w-full h-48 object-cover"
-                data-testid={`image-${index}`}
-              />
-              {image.description && (
-                <div className="p-3" data-testid={`image-description-${index}`}>
-                  <p className="text-sm text-gray-600">{image.description}</p>
+        {images.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
+            {images.map((image, index) => (
+              <div 
+                key={image._id || image.id} 
+                className="bg-white rounded-xl overflow-hidden shadow-lg hover-scale"
+                data-testid={`gallery-image-${index}`}
+              >
+                <img 
+                  src={image.imageUrl || image.url} 
+                  alt={image.title}
+                  className="w-full h-48 object-cover"
+                  data-testid={`image-${index}`}
+                />
+                <div className="p-3">
+                  <h3 className="font-medium text-gray-900">{image.title}</h3>
+                  {image.description && (
+                    <p className="text-sm text-gray-600 mt-1" data-testid={`image-description-${index}`}>
+                      {image.description}
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Images className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Images Yet</h3>
+            <p className="text-gray-500 mb-4">Gallery images will appear here once they are uploaded and approved.</p>
+          </div>
+        )}
 
         <div className="text-center">
           <Button className="bg-youth-blue text-white px-8 py-3 hover:bg-youth-blue-dark" data-testid="button-view-all">

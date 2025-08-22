@@ -38,6 +38,7 @@ export interface IStorage {
   // Member operations
   getMembers(): Promise<IMember[]>;
   getMember(id: string): Promise<IMember | null>;
+  getMemberByEmail(email: string): Promise<IMember | null>;
   createMember(memberData: InsertMember): Promise<IMember>;
   updateMember(id: string, memberData: Partial<InsertMember>): Promise<IMember | null>;
   deleteMember(id: string): Promise<void>;
@@ -213,6 +214,10 @@ export class MongoStorage implements IStorage {
 
   async getMember(id: string): Promise<IMember | null> {
     return await Member.findById(id);
+  }
+
+  async getMemberByEmail(email: string): Promise<IMember | null> {
+    return await Member.findOne({ email });
   }
 
   async createMember(memberData: InsertMember): Promise<IMember> {
