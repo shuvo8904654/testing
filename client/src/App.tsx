@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import HeaderNoticeBoard from "@/components/HeaderNoticeBoard";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Members from "@/pages/Members";
@@ -17,6 +18,7 @@ import NewsArticle from "@/pages/NewsArticle";
 import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import Search from "@/pages/Search";
+import Events from "@/pages/Events";
 import AdminDashboard from "@/pages/AdminDashboard";
 import MemberDashboard from "@/pages/MemberDashboard";
 import Login from "@/pages/Login";
@@ -53,6 +55,7 @@ function Router() {
         <Route path="/dashboard" component={DashboardRouter} />
         <Route>
           <Navigation />
+          <HeaderNoticeBoard />
           <main className="flex-1">
             <Switch>
               <Route path="/" component={Home} />
@@ -63,6 +66,7 @@ function Router() {
               <Route path="/news" component={News} />
               <Route path="/news/:id" component={NewsArticle} />
               <Route path="/search" component={Search} />
+              <Route path="/events" component={Events} />
               <Route path="/join" component={Join} />
               <Route path="/contact" component={Contact} />
               <Route path="/login" component={Login} />

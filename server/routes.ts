@@ -1429,6 +1429,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Event Registration routes
+  app.get("/api/event-registrations", async (req, res) => {
+    try {
+      // For now, return empty array since we're using MongoDB and will implement this later
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching event registrations:", error);
+      res.status(500).json({ error: "Failed to fetch event registrations" });
+    }
+  });
+
+  app.post("/api/event-registrations", async (req, res) => {
+    try {
+      // For now, just return success response
+      const registrationData = req.body;
+      const registration = {
+        id: Date.now().toString(),
+        ...registrationData,
+        status: 'registered',
+        registeredAt: new Date(),
+      };
+      res.status(201).json(registration);
+    } catch (error) {
+      console.error("Error creating event registration:", error);
+      res.status(500).json({ error: "Failed to create event registration" });
+    }
+  });
+
+  // Notice routes
+  app.get("/api/notices", async (req, res) => {
+    try {
+      // For now, return empty array since we're using MongoDB and will implement this later
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+      res.status(500).json({ error: "Failed to fetch notices" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

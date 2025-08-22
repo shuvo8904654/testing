@@ -435,14 +435,27 @@ export default function AdvancedSearch() {
         )}
 
         {!isSearching && searchResults.map((result) => (
-          <SearchResultCard key={`${result.type}-${result.id}`} result={result} />
+          <SearchResultCard 
+            key={`${result.type}-${result.id}`} 
+            result={result} 
+            getTypeIcon={getTypeIcon}
+            getTypeColor={getTypeColor}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function SearchResultCard({ result }: { result: SearchResult }) {
+function SearchResultCard({ 
+  result, 
+  getTypeIcon, 
+  getTypeColor 
+}: { 
+  result: SearchResult;
+  getTypeIcon: (type: string) => React.ReactNode;
+  getTypeColor: (type: string) => string;
+}) {
   const getResultLink = (result: SearchResult) => {
     switch (result.type) {
       case 'project': return '/projects';

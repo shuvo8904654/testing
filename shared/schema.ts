@@ -137,9 +137,16 @@ export interface Event {
   date: Date;
   time: string;
   location: string;
-  category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'other';
+  category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'olympiad' | 'competition' | 'hackathon' | 'other';
   maxParticipants?: number;
   registrationRequired: boolean;
+  requiresRegistration?: boolean; // Alternative property name for compatibility
+  registrationDeadline?: Date;
+  eligibility?: string;
+  prizes?: string;
+  teamEvent?: boolean;
+  minTeamSize?: number;
+  maxTeamSize?: number;
   contactInfo?: string;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
   urgency?: 'urgent' | 'soon' | 'normal' | 'past';
@@ -151,6 +158,44 @@ export interface Event {
   isPast?: boolean;
   isToday?: boolean;
   createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EventRegistration {
+  id: string;
+  _id?: string;
+  eventId: string;
+  participantId?: string;
+  participantName: string;
+  email: string;
+  phone: string;
+  institution?: string;
+  grade?: string;
+  experience?: string;
+  motivation?: string;
+  teamName?: string;
+  teamMembers?: Array<{ name: string; email: string; phone: string; }>;
+  additionalInfo?: string;
+  status: 'registered' | 'confirmed' | 'waitlist' | 'cancelled';
+  registeredAt: Date;
+  checkInTime?: Date;
+}
+
+export interface Notice {
+  id: string;
+  _id?: string;
+  title: string;
+  message: string;
+  type: 'announcement' | 'event' | 'urgent' | 'info';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  startDate: Date;
+  endDate: Date;
+  link?: string;
+  linkText?: string;
+  dismissible: boolean;
+  targetAudience: 'all' | 'members' | 'admins';
+  createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
