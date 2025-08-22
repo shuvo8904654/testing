@@ -451,7 +451,7 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <Tabs defaultValue="registrations" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-1 h-auto">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1 h-auto">
               <TabsTrigger value="registrations" data-testid="tab-registrations" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
                 <UserCheck className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
                 <span className="hidden lg:inline">Registrations</span>
@@ -476,6 +476,11 @@ export default function AdminDashboard() {
                 <Calendar className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
                 <span className="hidden lg:inline">Events</span>
                 <span className="lg:hidden text-center">Events</span>
+              </TabsTrigger>
+              <TabsTrigger value="notices" data-testid="tab-notices" className="flex flex-col lg:flex-row items-center text-xs sm:text-sm p-2 sm:p-3 min-h-[3rem]">
+                <Bell className="w-4 h-4 lg:mr-2 mb-1 lg:mb-0" />
+                <span className="hidden lg:inline">Notices</span>
+                <span className="lg:hidden text-center">Notices</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1282,6 +1287,10 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="notices" className="space-y-4">
+              <NoticeManagement />
             </TabsContent>
           </Tabs>
         </div>

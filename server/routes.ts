@@ -1638,8 +1638,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notice routes
   app.get("/api/notices", async (req, res) => {
     try {
-      // For now, return empty array since we're using MongoDB and will implement this later
-      res.json([]);
+      // Mock notices data for now - should be replaced with real database operations
+      const notices = [
+        {
+          id: '1',
+          title: 'Youth Environmental Olympiad 2025',
+          content: 'Registration is now open for the annual Environmental Olympiad. Show your knowledge and win exciting prizes!',
+          type: 'event',
+          priority: 'high',
+          targetAudience: 'all',
+          isActive: true,
+          isPinned: true,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
+        },
+        {
+          id: '2',
+          title: 'New Partnership with Local Schools',
+          content: 'We\'re excited to announce partnerships with 5 local schools to expand our environmental education programs.',
+          type: 'announcement',
+          priority: 'medium',
+          targetAudience: 'all',
+          isActive: true,
+          isPinned: false,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
+        }
+      ];
+      res.json(notices);
     } catch (error) {
       console.error("Error fetching notices:", error);
       res.status(500).json({ error: "Failed to fetch notices" });
@@ -1731,6 +1757,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error rejecting content:", error);
       res.status(500).json({ message: "Failed to reject content" });
+    }
+  });
+
+  // User analytics endpoint for member dashboard
+  app.get("/api/user-analytics/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Mock analytics data for now - should be replaced with real analytics
+      const analytics = {
+        projectsJoined: 3,
+        eventsAttended: 5,
+        articlesContributed: 2,
+        totalPoints: 150,
+        level: 'Active Member',
+        joinDate: new Date('2024-01-15'),
+        daysActive: 45,
+        streak: 7
+      };
+
+      const activities = [
+        {
+          id: '1',
+          type: 'project_joined',
+          title: 'Joined Environmental Cleanup Project',
+          description: 'Participated in community cleanup initiative',
+          date: new Date('2024-08-15'),
+          relatedId: 'proj_1',
+          points: 25
+        },
+        {
+          id: '2',
+          type: 'event_attended',
+          title: 'Attended Workshop: Renewable Energy',
+          description: 'Learned about solar panel installation',
+          date: new Date('2024-08-10'),
+          relatedId: 'event_1',
+          points: 15
+        }
+      ];
+
+      const achievements = [
+        {
+          id: '1',
+          title: 'First Project',
+          description: 'Completed your first environmental project',
+          category: 'participation',
+          icon: '🌱',
+          dateEarned: new Date('2024-08-15'),
+          points: 50
+        },
+        {
+          id: '2',
+          title: 'Workshop Enthusiast',
+          description: 'Attended 5 workshops',
+          category: 'learning',
+          icon: '📚',
+          dateEarned: new Date('2024-08-20'),
+          points: 75
+        }
+      ];
+
+      res.json({
+        analytics,
+        activities,
+        achievements
+      });
+    } catch (error) {
+      console.error("Error fetching user analytics:", error);
+      res.status(500).json({ message: "Failed to fetch user analytics" });
+    }
+  });
+
+  // Member profile endpoint
+  app.get("/api/member-profile/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Get user data first
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Try to get member data, if exists
+      const members = await storage.getMembers();
+      const memberData = members.find(m => m.email === user.email);
+
+      // Create member profile combining user and member data
+      const profile = {
+        _id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        profileImageUrl: user.profileImageUrl,
+        role: user.role,
+        joinDate: user.createdAt,
+        isActive: user.isActive,
+        // Add member-specific fields if member exists
+        ...(memberData && {
+          phone: memberData.phone,
+          age: memberData.age,
+          address: memberData.address,
+          interests: memberData.interests || [],
+          skills: memberData.skills || []
+        })
+      };
+
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching member profile:", error);
+      res.status(500).json({ message: "Failed to fetch member profile" });
+    }
+  });
+
+  // Event RSVP endpoint
+  app.post("/api/event-rsvp", isAuthenticated, async (req, res) => {
+    try {
+      const { eventId, userId } = req.body;
+      
+      if (!eventId || !userId) {
+        return res.status(400).json({ message: "Event ID and User ID are required" });
+      }
+
+      // Verify event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // For now, just return success - in a real implementation, 
+      // you'd store RSVP data in the database
+      res.json({ 
+        message: "RSVP successful",
+        eventId,
+        userId,
+        rsvpDate: new Date()
+      });
+    } catch (error) {
+      console.error("Error processing RSVP:", error);
+      res.status(500).json({ message: "Failed to process RSVP" });
     }
   });
 

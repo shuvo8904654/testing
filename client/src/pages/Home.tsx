@@ -367,7 +367,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {teamMembers.map((member, index) => (
-              <Card key={`member-${member.id}`} className="hover-scale shadow-lg" data-testid={`team-member-${index}`}>
+              <Card key={`member-${member.id || member._id || index}`} className="hover-scale shadow-lg" data-testid={`team-member-${index}`}>
                 <CardContent className="p-6 text-center">
                   <img 
                     src={member.image} 
