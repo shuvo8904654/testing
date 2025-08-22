@@ -156,10 +156,10 @@ export function FileUpload({
             });
             resolve(file);
           }
-        }, file.type.includes('png') ? 'image/png' : 'image/jpeg', 0.9);
+        }, originalFile?.type.includes('png') ? 'image/png' : 'image/jpeg', 0.9);
       });
     },
-    []
+    [originalFile]
   );
 
   const handleCropComplete = async () => {
@@ -169,10 +169,12 @@ export function FileUpload({
         await uploadFile(croppedImageFile);
         setCropDialogOpen(false);
         setImageToCrop(null);
+        setOriginalFile(null);
       } catch (error) {
+        console.error("Crop error:", error);
         toast({
           title: "Crop failed",
-          description: "Please try again",
+          description: error.message || "Please try again",
           variant: "destructive",
         });
       }
