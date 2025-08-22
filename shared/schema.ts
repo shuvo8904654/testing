@@ -32,6 +32,10 @@ export interface Member {
   bio: string;
   image: string; // Maps to 'profileImageUrl' in MongoDB
   status: 'pending' | 'approved' | 'rejected';
+  social?: {
+    linkedin?: string;
+    facebook?: string;
+  };
   createdBy: string;
   approvedBy?: string;
   createdAt: Date;

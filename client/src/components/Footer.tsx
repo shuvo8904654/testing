@@ -44,9 +44,9 @@ export default function Footer() {
               {navigation.map((item) => (
                 <li key={item.name}>
                   <Link href={item.href} data-testid={`footer-link-${item.name.toLowerCase().replace(' ', '-')}`}>
-                    <a className="text-gray-300 hover:text-eco-green transition-colors">
+                    <span className="text-gray-300 hover:text-eco-green transition-colors cursor-pointer">
                       {item.name}
-                    </a>
+                    </span>
                   </Link>
                 </li>
               ))}
