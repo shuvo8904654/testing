@@ -74,9 +74,7 @@ export default function MemberDashboardEnhanced() {
     defaultValues: {
       title: "",
       description: "",
-      category: "environmental",
-      priority: "medium",
-      status: "draft"
+      imageUrl: ""
     }
   });
 
@@ -289,7 +287,7 @@ export default function MemberDashboardEnhanced() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={memberData?.profileImageUrl} alt={memberData?.name} />
+            <AvatarImage src={memberData?.profileImageUrl || undefined} alt={memberData?.name} />
             <AvatarFallback>
               {memberData?.name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
@@ -348,9 +346,13 @@ export default function MemberDashboardEnhanced() {
                     name="profileImageUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Profile Image URL</FormLabel>
+                        <FormLabel>Profile Picture</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="https://..." />
+                          <FileUpload
+                            onFileUpload={field.onChange}
+                            currentValue={field.value}
+                            placeholder="Upload profile picture"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -558,6 +560,23 @@ export default function MemberDashboardEnhanced() {
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={projectForm.control}
+                          name="imageUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Project Image (Optional)</FormLabel>
+                              <FormControl>
+                                <FileUpload
+                                  onFileUpload={field.onChange}
+                                  currentValue={field.value}
+                                  placeholder="Upload project image"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         <div className="flex space-x-2">
                           <Button type="button" variant="outline" onClick={() => setProjectDialogOpen(false)}>
                             Cancel
@@ -642,9 +661,13 @@ export default function MemberDashboardEnhanced() {
                           name="imageUrl"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Image URL (Optional)</FormLabel>
+                              <FormLabel>Article Image (Optional)</FormLabel>
                               <FormControl>
-                                <Input {...field} placeholder="https://example.com/image.jpg" />
+                                <FileUpload
+                                  onFileUpload={field.onChange}
+                                  currentValue={field.value}
+                                  placeholder="Upload article image"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

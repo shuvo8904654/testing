@@ -277,49 +277,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user-analytics/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
       
-      // Get user's projects, events, articles
-      const userProjects = await storage.getProjectsByCreator(userId);
-      const userArticles = await storage.getNewsByCreator(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get all user-related data
+      const [projects, articles, events, galleryImages] = await Promise.all([
+        storage.getProjects(),
+        storage.getNewsArticles(), 
+        storage.getEvents(),
+        storage.getGalleryImages()
+      ]);
+
+      // Filter user's content
+      const userProjects = projects.filter(p => p.createdBy === userId);
+      const userArticles = articles.filter(a => a.createdBy === userId);
+      const userImages = galleryImages.filter(i => i.createdBy === userId);
       
-      // Calculate analytics
+      // Simple points calculation
+      const points = (userProjects.length * 50) + (userArticles.length * 30) + (userImages.length * 20);
+      
       const analytics = {
         projectsJoined: userProjects.length,
-        eventsAttended: 0, // TODO: implement event tracking
+        eventsAttended: 0, // Would need event registrations to calculate
         articlesContributed: userArticles.length,
-        totalPoints: userProjects.length * 10 + userArticles.length * 5, // Simple point system
-        level: 'Active Member',
-        joinDate: new Date(),
-        daysActive: 30,
-        streak: Math.floor(Math.random() * 15) + 1 // TODO: implement real streak tracking
+        totalPoints: points,
+        imagesUploaded: userImages.length,
+        joinDate: user.createdAt,
+        daysActive: Math.floor((new Date().getTime() - new Date(user.createdAt).getTime()) / (1000 * 3600 * 24)),
+        streak: 1 // Would need activity tracking to calculate properly
       };
 
-      // Mock activities for now
+      // Generate real activities based on user content
       const activities = [
-        {
-          id: '1',
-          type: 'content_created',
-          title: 'Created new project',
-          description: 'Environmental cleanup initiative',
-          date: new Date(Date.now() - 86400000), // Yesterday
-          points: 10
-        }
-      ];
+        ...userProjects.map(p => ({
+          id: p.id.toString(),
+          type: 'project_joined' as const,
+          title: `Created project: ${p.title}`,
+          description: p.description?.substring(0, 100) + '...' || '',
+          date: new Date(p.createdAt),
+          points: 50
+        })),
+        ...userArticles.map(a => ({
+          id: a.id.toString(),
+          type: 'content_created' as const,
+          title: `Published article: ${a.title}`,
+          description: a.excerpt || '',
+          date: new Date(a.createdAt),
+          points: 30
+        })),
+        ...userImages.map(i => ({
+          id: i.id.toString(),
+          type: 'content_created' as const,
+          title: `Uploaded image: ${i.title}`,
+          description: i.description || '',
+          date: new Date(i.createdAt),
+          points: 20
+        }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
-      // Mock achievements
-      const achievements = [
-        {
-          id: '1',
-          title: 'First Contributor',
+      // Generate achievements based on real activity
+      const achievements = [];
+      if (userProjects.length >= 1) {
+        achievements.push({
+          id: 'first-project',
+          title: 'Project Pioneer',
           description: 'Created your first project',
-          icon: 'trophy',
+          icon: 'target',
           category: 'contribution' as const,
+          dateEarned: new Date(userProjects[0].createdAt),
+          points: 50
+        });
+      }
+      if (userArticles.length >= 1) {
+        achievements.push({
+          id: 'first-article',
+          title: 'Content Creator',
+          description: 'Published your first article',
+          icon: 'book',
+          category: 'contribution' as const,
+          dateEarned: new Date(userArticles[0].createdAt),
+          points: 30
+        });
+      }
+      if (points >= 100) {
+        achievements.push({
+          id: 'hundred-points',
+          title: 'Century Club',
+          description: 'Earned 100 points',
+          icon: 'trophy',
+          category: 'participation' as const,
           dateEarned: new Date(),
-          points: 10
-        }
-      ];
+          points: 0
+        });
+      }
 
-      res.json({ analytics, activities, achievements });
+      res.json({
+        analytics,
+        activities,
+        achievements
+      });
     } catch (error) {
       console.error("Error fetching user analytics:", error);
       res.status(500).json({ message: "Failed to fetch user analytics" });
@@ -521,6 +580,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Image deletion error:", error);
       res.status(500).json({ message: "Failed to delete image" });
+    }
+  });
+
+  // Create project endpoint for members
+  app.post("/api/projects", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertProjectSchema.parse(req.body);
+      const createdBy = parseInt((req as any).user.claims.sub);
+      
+      // Auto-categorize project
+      const title = validatedData.title?.toLowerCase() || '';
+      const description = validatedData.description?.toLowerCase() || '';
+      let autoCategory = 'general';
+      
+      if (title.includes('environment') || description.includes('environment') || title.includes('carbon')) {
+        autoCategory = 'environmental';
+      } else if (title.includes('education') || description.includes('education') || title.includes('training')) {
+        autoCategory = 'educational';
+      } else if (title.includes('community') || description.includes('community') || title.includes('social')) {
+        autoCategory = 'community';
+      } else if (title.includes('technology') || description.includes('tech') || title.includes('digital')) {
+        autoCategory = 'technology';
+      }
+      
+      // Calculate initial priority score
+      let priorityScore = 0;
+      if (validatedData.description && validatedData.description.length > 200) priorityScore += 30;
+      if (title.includes('urgent') || title.includes('critical')) priorityScore += 40;
+      if (validatedData.imageUrl) priorityScore += 20;
+      
+      const enhancedProjectData = {
+        ...validatedData,
+        createdBy,
+        category: autoCategory,
+        priorityScore,
+        status: 'pending' as const
+      };
+      
+      const project = await storage.createProject(enhancedProjectData);
+      
+      console.log(`✅ Project created: "${validatedData.title}" (Category: ${autoCategory}, Priority: ${priorityScore})`);
+      
+      res.status(201).json({ 
+        project, 
+        autoCategory,
+        priorityScore,
+        message: "Project submitted successfully and is pending approval"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error creating project:", error);
+      res.status(500).json({ message: "Failed to create project" });
     }
   });
 
