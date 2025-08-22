@@ -1154,6 +1154,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete gallery image endpoint for admin dashboard
+  app.delete("/api/gallery/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteGalleryImage(parseInt(req.params.id));
+      res.json({ message: "Gallery image deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete gallery image" });
+    }
+  });
+
+  // Delete news article endpoint for admin dashboard
+  app.delete("/api/news/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteNewsArticle(parseInt(req.params.id));
+      res.json({ message: "Article deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete article" });
+    }
+  });
+
   // Contact endpoint
   app.post("/api/contact", async (req, res) => {
     try {
