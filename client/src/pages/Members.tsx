@@ -36,7 +36,7 @@ export default function Members() {
             <Card key={member.id || index} className="bg-white hover-scale shadow-lg" data-testid={`member-card-${index}`}>
               <CardContent className="p-6">
                 <img 
-                  src={member.image} 
+                  src={member.profileImageUrl || '/placeholder-avatar.png'} 
                   alt={member.name}
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                   data-testid={`member-image-${index}`}
@@ -45,7 +45,7 @@ export default function Members() {
                   {member.name}
                 </h3>
                 <p className="text-eco-green text-center font-medium mb-3" data-testid={`member-position-${index}`}>
-                  {member.position}
+                  {member.role}
                 </p>
                 <p className="text-gray-600 text-center text-sm mb-4" data-testid={`member-bio-${index}`}>
                   {member.bio}
