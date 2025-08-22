@@ -1731,6 +1731,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/events/:id", isAdmin, async (req: any, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Convert date string to Date object if provided
+      if (updateData.date) {
+        updateData.date = new Date(updateData.date);
+      }
+
+      const updatedEvent = await storage.updateEvent(eventId, updateData);
+      
+      if (!updatedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      console.log(`✅ Event updated: "${updatedEvent.title}"`);
+      res.json(updatedEvent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error updating event:", error);
+      res.status(500).json({ message: "Failed to update event" });
+    }
+  });
+
   app.delete("/api/events/:id", isAdmin, async (req, res) => {
     try {
       await storage.deleteEvent(parseInt(req.params.id));
@@ -1796,6 +1823,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error creating event registration:", error);
       res.status(500).json({ error: "Failed to create event registration" });
+    }
+  });
+
+  // Update event registration status
+  app.patch("/api/event-registrations/:id", isAdmin, async (req, res) => {
+    try {
+      const registrationId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const updatedRegistration = await storage.updateEventRegistrationStatus(registrationId, status);
+      
+      if (!updatedRegistration) {
+        return res.status(404).json({ error: "Registration not found" });
+      }
+      
+      console.log(`✅ Registration status updated: ${updatedRegistration.name} - ${status}`);
+      res.json(updatedRegistration);
+    } catch (error) {
+      console.error("Error updating registration status:", error);
+      res.status(500).json({ error: "Failed to update registration status" });
     }
   });
 

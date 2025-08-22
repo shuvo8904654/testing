@@ -469,6 +469,8 @@ function NewsManager({ articles }: { articles: NewsArticle[] }) {
 // Events Manager Component
 function EventsManager({ events }: { events: Event[] }) {
   const { toast } = useToast();
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -479,6 +481,11 @@ function EventsManager({ events }: { events: Event[] }) {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
     },
   });
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -503,6 +510,9 @@ function EventsManager({ events }: { events: Event[] }) {
                       {event.status}
                     </Badge>
                     <Badge variant="outline">{event.category}</Badge>
+                    {event.registrationRequired && (
+                      <Badge variant="secondary" className="text-xs">Registration Required</Badge>
+                    )}
                     <span className="text-xs text-gray-500">
                       {new Date(event.date).toLocaleDateString()} at {event.time}
                     </span>
@@ -510,16 +520,25 @@ function EventsManager({ events }: { events: Event[] }) {
                   {event.location && (
                     <p className="text-xs text-gray-500 mt-1">📍 {event.location}</p>
                   )}
+                  {event.maxParticipants && (
+                    <p className="text-xs text-gray-500 mt-1">👥 Max {event.maxParticipants} participants</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEditEvent(event)}
+                    data-testid={`edit-event-${event.id}`}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => deleteMutation.mutate(event.id)}
+                    onClick={() => deleteMutation.mutate(event.id.toString())}
                     disabled={deleteMutation.isPending}
+                    data-testid={`delete-event-${event.id}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -535,6 +554,24 @@ function EventsManager({ events }: { events: Event[] }) {
           </div>
         )}
       </div>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+          </DialogHeader>
+          {editingEvent && (
+            <EditEventForm 
+              event={editingEvent} 
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setEditingEvent(null);
+              }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1355,6 +1392,520 @@ function EventRegistrationManager() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Edit Event Form
+function EditEventForm({ event, onSuccess }: { event: Event, onSuccess: () => void }) {
+  const { toast } = useToast();
+  
+  const form = useForm({
+    defaultValues: {
+      title: event.title,
+      description: event.description,
+      date: new Date(event.date).toISOString().split('T')[0],
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      registrationRequired: event.registrationRequired,
+      maxParticipants: event.maxParticipants || undefined,
+      eligibility: event.eligibility || "",
+      prizes: event.prizes || "",
+      contactInfo: event.contactInfo || "",
+      status: event.status,
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("PUT", `/api/events/${event.id}`, data);
+    },
+    onSuccess: () => {
+      toast({ title: "Event updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      onSuccess();
+      form.reset();
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={3} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input {...field} type="date" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="10:00 AM" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="training">Training</SelectItem>
+                    <SelectItem value="volunteer">Volunteer</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="maxParticipants"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Max Participants (optional)</FormLabel>
+                <FormControl>
+                  <Input {...field} type="number" placeholder="50" onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="registrationRequired"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Registration Required</FormLabel>
+                <div className="text-sm text-gray-600">
+                  Enable this if participants need to register formally. If disabled, it will be an RSVP-only event.
+                </div>
+              </div>
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="eligibility"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Eligibility Requirements (optional)</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={2} placeholder="Who can participate..." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="prizes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Prizes/Incentives (optional)</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={2} placeholder="Awards, certificates, recognition..." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="contactInfo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contact Information (optional)</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={2} placeholder="Contact person, phone, email..." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="ongoing">Ongoing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button type="submit" disabled={updateMutation.isPending} className="w-full">
+          {updateMutation.isPending ? "Updating..." : "Update Event"}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+// Pending Content Manager Component
+function PendingContentManager({ pendingContent }: { 
+  pendingContent?: {
+    projects: Project[],
+    news: NewsArticle[],
+    members: Member[],
+    gallery: GalleryImage[]
+  }
+}) {
+  const { toast } = useToast();
+
+  const approveContentMutation = useMutation({
+    mutationFn: async ({ type, id }: { type: string, id: number }) => {
+      return apiRequest("POST", `/api/approve-content/${type}/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Content approved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+    },
+  });
+
+  const rejectContentMutation = useMutation({
+    mutationFn: async ({ type, id }: { type: string, id: number }) => {
+      return apiRequest("POST", `/api/reject-content/${type}/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Content rejected successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+    },
+  });
+
+  if (!pendingContent) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+        <h4 className="font-medium">No Pending Content</h4>
+        <p className="text-sm">All content has been reviewed.</p>
+      </div>
+    );
+  }
+
+  const { projects, news, members, gallery } = pendingContent;
+  const totalPending = projects.length + news.length + members.length + gallery.length;
+
+  if (totalPending === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+        <h4 className="font-medium">No Pending Content</h4>
+        <p className="text-sm">All content has been reviewed.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Pending Content Review</h3>
+        <Badge variant="destructive">{totalPending} items need review</Badge>
+      </div>
+
+      {/* Pending Projects */}
+      {projects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Pending Projects ({projects.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {projects.map((project) => (
+              <div key={project.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="flex-1">
+                  <h4 className="font-medium">{project.title}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline">{project.category}</Badge>
+                    <span className="text-xs text-gray-500">
+                      Submitted on {new Date(project.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => approveContentMutation.mutate({ type: 'project', id: project.id })}
+                    disabled={approveContentMutation.isPending}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => rejectContentMutation.mutate({ type: 'project', id: project.id })}
+                    disabled={rejectContentMutation.isPending}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending News */}
+      {news.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Pending News Articles ({news.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {news.map((article) => (
+              <div key={article.id} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="flex-1">
+                  <h4 className="font-medium">{article.title}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{article.excerpt}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline">{article.author}</Badge>
+                    <span className="text-xs text-gray-500">
+                      Submitted on {new Date(article.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => approveContentMutation.mutate({ type: 'news', id: article.id })}
+                    disabled={approveContentMutation.isPending}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => rejectContentMutation.mutate({ type: 'news', id: article.id })}
+                    disabled={rejectContentMutation.isPending}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Members */}
+      {members.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Pending Members ({members.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                <div className="flex-1">
+                  <h4 className="font-medium">{member.name}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{member.email}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="outline">{member.role}</Badge>
+                    <span className="text-xs text-gray-500">
+                      Applied on {new Date(member.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => approveContentMutation.mutate({ type: 'member', id: member.id })}
+                    disabled={approveContentMutation.isPending}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => rejectContentMutation.mutate({ type: 'member', id: member.id })}
+                    disabled={rejectContentMutation.isPending}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Gallery */}
+      {gallery.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Image className="h-5 w-5" />
+              Pending Gallery Images ({gallery.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {gallery.map((image) => (
+              <div key={image.id} className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded">
+                <div className="flex-1 flex items-center gap-3">
+                  <img 
+                    src={image.imageUrl} 
+                    alt={image.title}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div>
+                    <h4 className="font-medium">{image.title}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{image.description}</p>
+                    <span className="text-xs text-gray-500">
+                      Uploaded on {new Date(image.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => approveContentMutation.mutate({ type: 'gallery', id: image.id })}
+                    disabled={approveContentMutation.isPending}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => rejectContentMutation.mutate({ type: 'gallery', id: image.id })}
+                    disabled={rejectContentMutation.isPending}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
