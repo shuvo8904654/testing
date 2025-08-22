@@ -12,7 +12,7 @@ import {
   insertRegistrationSchema,
   insertUserSchema,
   insertEventSchema
-} from "@shared/validation";
+} from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import bcrypt from "bcrypt";
@@ -130,8 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: 'member',
             bio: motivation || 'New member of 3ZERO Club',
             status: 'approved' as const,
-            createdBy: user._id,
-            approvedBy: user._id
+            createdBy: user.id,
+            approvedBy: user.id
           };
           
           await storage.createMember(memberData);
@@ -223,7 +223,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/members/:id", async (req, res) => {
     try {
-      const member = await storage.getMember(req.params.id);
+      const memberId = parseInt(req.params.id);
+      const member = await storage.getMember(memberId);
       if (!member) {
         return res.status(404).json({ message: "Member not found" });
       }
@@ -236,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get member profile by user ID for dashboard
   app.get("/api/member-profile/:userId", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.params.userId;
+      const userId = parseInt(req.params.userId);
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -262,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bio: user.motivation || 'Active member of 3ZERO Club',
           status: 'approved' as const,
           createdBy: userId,
-          image: user.profileImageUrl || ''
+          profileImageUrl: user.profileImageUrl || null
         };
         member = await storage.createMember(memberData);
       }
@@ -314,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate recent activities
       const activities = [
         ...userProjects.map(p => ({
-          id: p._id,
+          id: p.id,
           type: 'project_joined' as const,
           title: `Created project: ${p.title}`,
           description: p.description?.substring(0, 100) + '...' || '',
@@ -322,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           points: 50
         })),
         ...userArticles.map(a => ({
-          id: a._id,
+          id: a.id,
           type: 'content_created' as const,
           title: `Published article: ${a.title}`,
           description: a.excerpt || '',
@@ -330,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           points: 30
         })),
         ...userImages.map(i => ({
-          id: i._id,
+          id: i.id,
           type: 'content_created' as const,
           title: `Uploaded image: ${i.title}`,
           description: i.description || '',
@@ -468,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         return {
-          ...project.toObject ? project.toObject() : project,
+          ...project,
           priorityScore,
           impactLevel,
           autoCategory,
@@ -529,7 +530,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/projects/:id", async (req, res) => {
     try {
-      const project = await storage.getProject(req.params.id);
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
@@ -588,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         return {
-          ...article.toObject ? article.toObject() : article,
+          ...article,
           contentScore,
           readabilityLevel,
           estimatedReadTime,
@@ -650,7 +652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/news/:id", async (req, res) => {
     try {
-      const article = await storage.getNewsArticle(req.params.id);
+      const articleId = parseInt(req.params.id);
+      const article = await storage.getNewsArticle(articleId);
       if (!article) {
         return res.status(404).json({ message: "Article not found" });
       }
@@ -664,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/news", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertNewsArticleSchema.parse(req.body);
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       // Always set status to pending for member submissions
       const articleData = {
@@ -772,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         return {
-          ...image.toObject ? image.toObject() : image,
+          ...image,
           qualityScore,
           category,
           daysOld: Math.floor((new Date().getTime() - new Date(image.createdAt).getTime()) / (1000 * 3600 * 24))
@@ -1085,7 +1088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (user.age) qualityScore += 10;
         
         return {
-          ...user.toObject ? user.toObject() : user,
+          ...user,
           qualityScore,
           daysSinceApplication: Math.floor((new Date().getTime() - new Date(user.appliedAt || user.createdAt).getTime()) / (1000 * 3600 * 24))
         };
@@ -1156,7 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/:id/application-status", isAdmin, async (req: any, res) => {
     try {
       const { applicationStatus, role, approvedAt, autoCreateMember = true } = req.body;
-      const userId = req.params.id;
+      const userId = parseInt(req.params.id);
       const reviewedBy = req.user.claims.sub;
       
       const updateData: any = { 
@@ -1236,7 +1239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status } = req.body;
       const reviewedBy = req.user.claims.sub;
-      const registration = await storage.updateRegistrationStatus(req.params.id, status, reviewedBy);
+      const registration = await storage.updateRegistrationStatus(parseInt(req.params.id), status, parseInt(reviewedBy));
       res.json(registration);
     } catch (error) {
       res.status(500).json({ message: "Failed to update registration status" });
@@ -1262,7 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/members/:id", isAdmin, async (req, res) => {
     try {
       const validatedData = insertMemberSchema.parse(req.body);
-      const member = await storage.updateMember(req.params.id, validatedData);
+      const member = await storage.updateMember(parseInt(req.params.id), validatedData);
       res.json(member);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1274,7 +1277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/members/:id", isAdmin, async (req, res) => {
     try {
-      await storage.deleteMember(req.params.id);
+      await storage.deleteMember(parseInt(req.params.id));
       res.json({ message: "Member deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete member" });
@@ -1286,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/dashboard/projects", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertProjectSchema.parse(req.body);
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       // Auto-categorize project
       const title = validatedData.title?.toLowerCase() || '';
@@ -1339,7 +1342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/dashboard/projects/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertProjectSchema.parse(req.body);
-      const project = await storage.updateProject(req.params.id, validatedData);
+      const project = await storage.updateProject(parseInt(req.params.id), validatedData);
       res.json(project);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1351,7 +1354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/dashboard/projects/:id", isAdmin, async (req, res) => {
     try {
-      await storage.deleteProject(req.params.id);
+      await storage.deleteProject(parseInt(req.params.id));
       res.json({ message: "Project deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete project" });
@@ -1362,7 +1365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/dashboard/news/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertNewsArticleSchema.parse(req.body);
-      const article = await storage.updateNewsArticle(req.params.id, validatedData);
+      const article = await storage.updateNewsArticle(parseInt(req.params.id), validatedData);
       res.json(article);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1374,7 +1377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/dashboard/news/:id", isAdmin, async (req, res) => {
     try {
-      await storage.deleteNewsArticle(req.params.id);
+      await storage.deleteNewsArticle(parseInt(req.params.id));
       res.json({ message: "Article deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete article" });
@@ -1385,7 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/dashboard/gallery", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertGalleryImageSchema.parse(req.body);
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       const imageData = {
         ...validatedData,
@@ -1405,7 +1408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/dashboard/gallery/:id", isAdmin, async (req, res) => {
     try {
-      await storage.deleteGalleryImage(req.params.id);
+      await storage.deleteGalleryImage(parseInt(req.params.id));
       res.json({ message: "Gallery image deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete gallery image" });
@@ -1456,7 +1459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         return {
-          ...event.toObject ? event.toObject() : event,
+          ...event,
           daysUntilEvent,
           urgency,
           capacity,
@@ -1590,7 +1593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/events/:id", isAdmin, async (req, res) => {
     try {
-      await storage.deleteEvent(req.params.id);
+      await storage.deleteEvent(parseInt(req.params.id));
       res.json({ message: "Event deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete event" });
@@ -1665,7 +1668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add API endpoints that member dashboard expects
   app.post("/api/news", isAuthenticated, async (req, res) => {
     try {
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       console.log('News article submission - Raw body:', req.body);
       console.log('User from session:', createdBy);
@@ -1710,7 +1713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects", isAuthenticated, async (req, res) => {
     try {
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       // Clean the data before validation  
       const cleanData = {
@@ -1737,7 +1740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/gallery", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertGalleryImageSchema.parse(req.body);
-      const createdBy = (req as any).user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       const imageData = {
         ...validatedData,
