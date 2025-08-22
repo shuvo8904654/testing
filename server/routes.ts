@@ -341,18 +341,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Get all user-related data
-      const [projects, articles, events, galleryImages] = await Promise.all([
-        storage.getProjects(),
-        storage.getNewsArticles(), 
+      // Get all user-related data (including pending content for their own dashboard)
+      const [userProjects, userArticles, events, userImages] = await Promise.all([
+        storage.getAllProjectsByCreator(userId),
+        storage.getAllNewsByCreator(userId), 
         storage.getEvents(),
-        storage.getGalleryImages()
+        storage.getAllGalleryImagesByCreator(userId)
       ]);
-
-      // Filter user's content
-      const userProjects = projects.filter(p => p.createdBy === userId);
-      const userArticles = articles.filter(a => a.createdBy === userId);
-      const userImages = galleryImages.filter(i => i.createdBy === userId);
       
       // Simple points calculation
       const points = (userProjects.length * 50) + (userArticles.length * 30) + (userImages.length * 20);
@@ -1005,6 +1000,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error creating article:", error);
       res.status(500).json({ message: "Failed to create article" });
+    }
+  });
+
+  // Create gallery image endpoint
+  app.post("/api/gallery", isAuthenticated, async (req, res) => {
+    try {
+      const createdBy = parseInt((req as any).user.claims.sub);
+      const validatedData = insertGalleryImageSchema.parse({
+        ...req.body,
+        createdBy
+      });
+      
+      // Always set status to pending for user submissions
+      const imageData = {
+        ...validatedData,
+        createdBy,
+        status: 'pending' as const
+      };
+      
+      // Quality scoring based on metadata
+      let qualityScore = 0;
+      if (imageData.title && imageData.title.length >= 10) qualityScore += 30;
+      if (imageData.description && imageData.description.length >= 20) qualityScore += 25;
+      if (imageData.imageUrl) qualityScore += 25;
+      
+      // Auto-categorize images
+      const title = imageData.title?.toLowerCase() || '';
+      const desc = imageData.description?.toLowerCase() || '';
+      let category = 'general';
+      
+      if (title.includes('event') || desc.includes('event') || title.includes('workshop')) {
+        category = 'events';
+      } else if (title.includes('member') || desc.includes('team') || title.includes('staff')) {
+        category = 'people';
+      } else if (title.includes('project') || desc.includes('project') || title.includes('activity')) {
+        category = 'projects';
+      } else if (title.includes('environment') || desc.includes('nature') || title.includes('green')) {
+        category = 'environmental';
+      }
+      
+      const enhancedImageData = {
+        ...imageData,
+        qualityScore,
+        category
+      };
+      
+      const galleryImage = await storage.createGalleryImage(enhancedImageData);
+      
+      console.log(`✅ Gallery image created: "${validatedData.title}" (Score: ${qualityScore}, Category: ${category})`);
+      
+      res.status(201).json({ 
+        galleryImage, 
+        qualityScore,
+        category,
+        message: "Image submitted successfully and is pending approval"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error creating gallery image:", error);
+      res.status(500).json({ message: "Failed to create gallery image" });
     }
   });
 
