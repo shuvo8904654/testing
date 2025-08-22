@@ -84,8 +84,7 @@ export default function MemberDashboardEnhanced() {
       title: "",
       content: "",
       excerpt: "",
-      category: "news",
-      status: "draft"
+      imageUrl: ""
     }
   });
 
@@ -541,6 +540,19 @@ export default function MemberDashboardEnhanced() {
                               <FormLabel>Excerpt</FormLabel>
                               <FormControl>
                                 <Textarea {...field} placeholder="Brief summary of the article" rows={2} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={articleForm.control}
+                          name="imageUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image URL (Optional)</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="https://example.com/image.jpg" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

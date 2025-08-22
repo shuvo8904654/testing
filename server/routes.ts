@@ -1687,10 +1687,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         excerpt: req.body.excerpt?.trim() || '',
         imageUrl: req.body.imageUrl?.trim() || '',
         author: req.body.author?.trim() || 'Anonymous',
-        createdBy,
-        status: 'pending',
+        createdBy: createdBy || '',
+        status: 'pending' as const,
         readCount: 0
       };
+      
+      // Validate required fields
+      if (!cleanData.title) {
+        return res.status(400).json({ message: "Title is required" });
+      }
+      if (!cleanData.content) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+      if (!cleanData.createdBy) {
+        return res.status(400).json({ message: "User authentication required" });
+      }
       
       console.log('Cleaned data before validation:', cleanData);
       
