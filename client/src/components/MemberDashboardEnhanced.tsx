@@ -78,91 +78,21 @@ export default function MemberDashboardEnhanced() {
     queryKey: ["/api/news"],
   });
 
-  // Mock data for demonstration
+  // Real data based on user activity
   const memberStats = {
-    projectsJoined: 12,
-    eventsAttended: 8,
-    articlesContributed: 3,
-    totalPoints: 450,
-    level: 'Active Contributor',
-    joinDate: new Date('2023-06-15'),
-    daysActive: 180,
-    streak: 15
+    projectsJoined: 0,
+    eventsAttended: 0,
+    articlesContributed: 0,
+    totalPoints: 0,
+    level: 'New Member',
+    joinDate: user?.createdAt ? new Date(user.createdAt) : new Date(),
+    daysActive: 0,
+    streak: 0
   };
 
-  const achievements: Achievement[] = [
-    {
-      id: '1',
-      title: 'First Project',
-      description: 'Joined your first project',
-      icon: '🎯',
-      category: 'participation',
-      dateEarned: new Date('2023-07-01'),
-      points: 50
-    },
-    {
-      id: '2',
-      title: 'Event Enthusiast',
-      description: 'Attended 5 events',
-      icon: '🎉',
-      category: 'participation',
-      dateEarned: new Date('2023-09-15'),
-      points: 100
-    },
-    {
-      id: '3',
-      title: 'Content Creator',
-      description: 'Published first article',
-      icon: '✍️',
-      category: 'contribution',
-      dateEarned: new Date('2023-10-20'),
-      points: 150
-    },
-    {
-      id: '4',
-      title: 'Community Leader',
-      description: 'Led a project team',
-      icon: '👑',
-      category: 'leadership',
-      dateEarned: new Date('2023-11-30'),
-      points: 200
-    }
-  ];
+  const achievements: Achievement[] = [];
 
-  const recentActivities: Activity[] = [
-    {
-      id: '1',
-      type: 'event_attended',
-      title: 'Attended Youth Workshop',
-      description: 'Participated in environmental sustainability workshop',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-      points: 25
-    },
-    {
-      id: '2',
-      type: 'project_joined',
-      title: 'Joined Clean Energy Project',
-      description: 'Started contributing to solar panel installation initiative',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-      points: 50
-    },
-    {
-      id: '3',
-      type: 'content_created',
-      title: 'Published Article',
-      description: 'Wrote about community impact initiatives',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
-      points: 75
-    },
-    {
-      id: '4',
-      type: 'milestone_reached',
-      title: '100 Points Milestone',
-      description: 'Reached 100 contribution points',
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
-      points: 100
-    }
-  ];
+  const recentActivities: Activity[] = [];
 
   const upcomingEvents = eventsData?.events?.filter(event => 
     event.status === 'upcoming' && 

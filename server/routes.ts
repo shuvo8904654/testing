@@ -118,7 +118,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         permissions: [],
         isActive: true,
         applicationStatus: initialStatus,
-        appliedAt: new Date(),
         ...(initialStatus === "approved" && { approvedAt: new Date() })
       });
 
@@ -343,8 +342,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (sortBy === 'priority') {
           return order === 'desc' ? b.priorityScore - a.priorityScore : a.priorityScore - b.priorityScore;
         } else if (sortBy === 'impact') {
-          const impactOrder = { high: 3, medium: 2, low: 1 };
-          return order === 'desc' ? impactOrder[b.impactLevel] - impactOrder[a.impactLevel] : impactOrder[a.impactLevel] - impactOrder[b.impactLevel];
+          const impactOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
+          return order === 'desc' ? (impactOrder[b.impactLevel] || 0) - (impactOrder[a.impactLevel] || 0) : (impactOrder[a.impactLevel] || 0) - (impactOrder[b.impactLevel] || 0);
         } else if (sortBy === 'createdAt') {
           const aDate = new Date(a.createdAt).getTime();
           const bDate = new Date(b.createdAt).getTime();
@@ -723,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const article = await storage.updateNewsArticle(articleId, updateData);
             results.push({ type: 'article', id: articleId, status: 'published' });
           } catch (error) {
-            errors.push({ type: 'article', id: articleId, error: error.message });
+            errors.push({ type: 'article', id: articleId, error: error instanceof Error ? error.message : 'Unknown error' });
           }
         }
       }
@@ -736,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const project = await storage.updateProject(projectId, updateData);
             results.push({ type: 'project', id: projectId, status: 'active' });
           } catch (error) {
-            errors.push({ type: 'project', id: projectId, error: error.message });
+            errors.push({ type: 'project', id: projectId, error: error instanceof Error ? error.message : 'Unknown error' });
           }
         }
       }
@@ -756,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Comprehensive analytics across all content types
       const [users, projects, articles, events, members, gallery] = await Promise.all([
-        storage.getUsers(),
+        storage.getAllUsers(),
         storage.getProjects(),
         storage.getNewsArticles(),
         storage.getEvents(),
@@ -778,28 +777,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalGalleryImages: gallery.length
         },
         growth: {
-          newUsersThisMonth: users.filter(u => new Date(u.createdAt) >= thirtyDaysAgo).length,
-          newProjectsThisMonth: projects.filter(p => new Date(p.createdAt) >= thirtyDaysAgo).length,
-          newArticlesThisMonth: articles.filter(a => new Date(a.createdAt) >= thirtyDaysAgo).length,
-          newUsersThisWeek: users.filter(u => new Date(u.createdAt) >= sevenDaysAgo).length
+          newUsersThisMonth: users.filter((u: any) => new Date(u.createdAt) >= thirtyDaysAgo).length,
+          newProjectsThisMonth: projects.filter((p: any) => new Date(p.createdAt) >= thirtyDaysAgo).length,
+          newArticlesThisMonth: articles.filter((a: any) => new Date(a.createdAt) >= thirtyDaysAgo).length,
+          newUsersThisWeek: users.filter((u: any) => new Date(u.createdAt) >= sevenDaysAgo).length
         },
         userStats: {
-          applicants: users.filter(u => u.role === 'applicant').length,
-          members: users.filter(u => u.role === 'member').length,
-          admins: users.filter(u => u.role === 'admin').length,
-          pending: users.filter(u => u.applicationStatus === 'pending').length,
-          approved: users.filter(u => u.applicationStatus === 'approved').length
+          applicants: users.filter((u: any) => u.role === 'applicant').length,
+          members: users.filter((u: any) => u.role === 'member').length,
+          admins: users.filter((u: any) => u.role === 'admin').length,
+          pending: users.filter((u: any) => u.applicationStatus === 'pending').length,
+          approved: users.filter((u: any) => u.applicationStatus === 'approved').length
         },
         contentHealth: {
-          draftArticles: articles.filter(a => a.status === 'draft').length,
-          publishedArticles: articles.filter(a => a.status === 'published').length,
-          activeProjects: projects.filter(p => p.status === 'active').length,
-          upcomingEvents: events.filter(e => new Date(e.date) > now).length
+          pendingArticles: articles.filter((a: any) => a.status === 'pending').length,
+          approvedArticles: articles.filter((a: any) => a.status === 'approved').length,
+          approvedProjects: projects.filter((p: any) => p.status === 'approved').length,
+          upcomingEvents: events.filter((e: any) => new Date(e.date) > now).length
         },
         engagement: {
-          totalArticleReads: articles.reduce((sum, a) => sum + (a.readCount || 0), 0),
-          averageArticleReads: articles.length > 0 ? Math.round(articles.reduce((sum, a) => sum + (a.readCount || 0), 0) / articles.length) : 0,
-          popularArticles: articles.filter(a => (a.readCount || 0) >= 10).length
+          totalArticleReads: articles.reduce((sum: any, a: any) => sum + (a.readCount || 0), 0),
+          averageArticleReads: articles.length > 0 ? Math.round(articles.reduce((sum: any, a: any) => sum + (a.readCount || 0), 0) / articles.length) : 0,
+          popularArticles: articles.filter((a: any) => (a.readCount || 0) >= 10).length
         }
       };
       
@@ -857,7 +856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           results.push({ userId, status: 'success', user });
         } catch (error) {
-          errors.push({ userId, error: error.message });
+          errors.push({ userId, error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
       
@@ -1104,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/dashboard/projects", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertProjectSchema.parse(req.body);
-      const createdBy = req.user.claims.sub;
+      const createdBy = (req as any).user.claims.sub;
       
       // Auto-categorize project
       const title = validatedData.title?.toLowerCase() || '';
@@ -1132,7 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy,
         category: autoCategory,
         priorityScore,
-        status: 'active' as const
+        status: 'approved' as const
       };
       
       const project = await storage.createProject(enhancedProjectData);

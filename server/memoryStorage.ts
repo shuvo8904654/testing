@@ -25,69 +25,10 @@ function generateId(): string {
 }
 
 // Initialize with some sample data
-async function initializeSampleData() {
-  // Create super admin user
-  const adminId = generateId();
-  const adminUser: IUser = {
-    _id: adminId,
-    email: 'admin@3zero.club',
-    password: await bcrypt.hash('admin123', 10),
-    firstName: 'Super',
-    lastName: 'Admin',
-    role: 'super_admin',
-    permissions: [],
-    isActive: true,
-    authType: 'email',
-    applicationStatus: 'approved',
-    appliedAt: new Date(),
-    approvedAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as IUser;
-  users.set(adminId, adminUser);
+// Sample data removed - no longer initializing demo data
 
-  // Create sample member
-  const memberId = generateId();
-  const memberUser: IUser = {
-    _id: memberId,
-    email: 'member@3zero.club',
-    password: await bcrypt.hash('member123', 10),
-    firstName: 'John',
-    lastName: 'Doe',
-    role: 'member',
-    permissions: [],
-    isActive: true,
-    authType: 'email',
-    applicationStatus: 'approved',
-    appliedAt: new Date(),
-    approvedAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as IUser;
-  users.set(memberId, memberUser);
-
-  // Create sample news article
-  const newsId = generateId();
-  const sampleNews: INewsArticle = {
-    _id: newsId,
-    title: 'Welcome to 3ZERO Club Kurigram',
-    content: 'We are excited to launch our youth organization focused on zero poverty, zero unemployment, and zero net carbon emissions.',
-    excerpt: 'Welcome to our youth organization',
-    author: 'Admin Team',
-    status: 'approved',
-    createdBy: adminId,
-    approvedBy: adminId,
-    readCount: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as INewsArticle;
-  newsArticles.set(newsId, sampleNews);
-
-  console.log('Sample data initialized with admin user: admin@3zero.club / admin123');
-}
-
-// Initialize sample data
-initializeSampleData().catch(console.error);
+// Initialize sample data - commented out to remove demo data
+// initializeSampleData().catch(console.error);
 
 export class MemoryStorage implements IStorage {
   // User operations

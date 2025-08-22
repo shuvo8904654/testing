@@ -39,68 +39,8 @@ export default function NotificationSystem() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const { toast } = useToast();
 
-  // In a real app, this would come from an API
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'event',
-      title: 'New Event: 3ZERO Youth Workshop',
-      message: 'A new workshop has been scheduled for tomorrow. Registration is now open.',
-      priority: 'high',
-      read: false,
-      actionRequired: true,
-      relatedId: 'event-1',
-      relatedType: 'event',
-      createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-    },
-    {
-      id: '2',
-      type: 'content',
-      title: 'Content Pending Approval',
-      message: 'New project submission requires admin approval.',
-      priority: 'medium',
-      read: false,
-      actionRequired: true,
-      relatedId: 'project-1',
-      relatedType: 'project',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    },
-    {
-      id: '3',
-      type: 'member',
-      title: 'New Member Application',
-      message: 'Sarah Ahmed has applied to join the organization.',
-      priority: 'medium',
-      read: true,
-      actionRequired: true,
-      relatedId: 'user-123',
-      relatedType: 'application',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    },
-    {
-      id: '4',
-      type: 'news',
-      title: 'Article Published',
-      message: 'Your article "Community Impact Report" has been published.',
-      priority: 'low',
-      read: true,
-      actionRequired: false,
-      relatedId: 'article-1',
-      relatedType: 'news',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-    },
-    {
-      id: '5',
-      type: 'system',
-      title: 'System Maintenance',
-      message: 'Scheduled maintenance will occur this weekend.',
-      priority: 'medium',
-      read: false,
-      actionRequired: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4), // Expires in 4 days
-    }
-  ]);
+  // Real notifications from API
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const urgentCount = notifications.filter(n => n.priority === 'urgent' && !n.read).length;
