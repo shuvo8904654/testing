@@ -15,30 +15,12 @@ import {
 } from "@shared/validation";
 import { z } from "zod";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import bcrypt from "bcrypt";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create uploads directory if it doesn't exist
-  const uploadsDir = path.join(process.cwd(), "uploads");
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  // Configure multer for file uploads
-  const storage_multer = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + path.extname(file.originalname));
-    },
-  });
-
+  // Configure multer for memory storage (Cloudinary upload)
   const upload = multer({
-    storage: storage_multer,
+    storage: multer.memoryStorage(),
     limits: {
       fileSize: 5 * 1024 * 1024, // 5MB limit
     },
@@ -51,21 +33,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   });
 
-  // Serve uploaded files statically
-  app.use('/uploads', express.static(uploadsDir));
-
   // Auth middleware
   setupAuth(app);
 
-  // File upload endpoint
-  app.post("/api/upload", isAuthenticated, upload.single('file'), (req: any, res) => {
+  // File upload endpoint using Cloudinary
+  app.post("/api/upload", isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const fileUrl = `/uploads/${req.file.filename}`;
-      res.json({ url: fileUrl });
+      const { buffer, originalname, mimetype } = req.file;
+      
+      // Generate unique filename
+      const ext = originalname.split('.').pop();
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      
+      const imageUrl = await storage.uploadImage(buffer, filename, mimetype);
+      
+      res.json({ 
+        url: imageUrl,
+        filename 
+      });
     } catch (error) {
       console.error("Upload error:", error);
       res.status(500).json({ message: "Upload failed" });
@@ -246,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload and management endpoints
-  app.post("/api/images/upload", isAuthenticated, multer().single('image'), async (req: any, res) => {
+  app.post("/api/images/upload", isAuthenticated, upload.single('image'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No image file provided" });
@@ -271,23 +260,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Images are now served directly by Cloudinary URLs, no need for this endpoint
+  // Keeping for backward compatibility - redirects to Cloudinary
   app.get("/api/images/:filename", async (req, res) => {
-    try {
-      const { filename } = req.params;
-      const imageData = await storage.getImage(filename);
-      
-      if (!imageData) {
-        return res.status(404).json({ message: "Image not found" });
-      }
-      
-      res.setHeader('Content-Type', imageData.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
-      
-      imageData.stream.pipe(res);
-    } catch (error) {
-      console.error("Image retrieval error:", error);
-      res.status(500).json({ message: "Failed to retrieve image" });
-    }
+    res.status(410).json({ 
+      message: "Images are now served directly via Cloudinary URLs. Please use the full Cloudinary URL instead." 
+    });
   });
 
   app.delete("/api/images/:filename", isAdmin, async (req, res) => {

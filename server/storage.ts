@@ -1,6 +1,6 @@
 import { connectToMongoDB } from './mongodb';
-import { GridFSBucket } from 'mongodb';
 import mongoose from 'mongoose';
+import cloudinary from './cloudinary';
 import {
   User, Member, Project, NewsArticle, GalleryImage, ContactMessage, Registration, Event,
   IUser, IMember, IProject, INewsArticle, IGalleryImage, IContactMessage, IRegistration, IEvent,
@@ -170,48 +170,38 @@ export class MongoStorage implements IStorage {
     return await approvalHistory.find().sort({ reviewedAt: -1 }).limit(100);
   }
 
-  // Image storage operations using MongoDB GridFS
+  // Image storage operations using Cloudinary
   async uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string> {
-    const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
-    const uploadStream = bucket.openUploadStream(filename, { contentType });
-    
     return new Promise((resolve, reject) => {
-      uploadStream.on('error', reject);
-      uploadStream.on('finish', () => {
-        resolve(`/api/images/${filename}`);
-      });
-      uploadStream.end(buffer);
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'image',
+          public_id: filename.split('.')[0], // Remove extension
+          format: filename.split('.').pop(), // Keep original format
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result!.secure_url);
+          }
+        }
+      ).end(buffer);
     });
   }
 
   async getImage(filename: string): Promise<{ stream: any; contentType: string } | null> {
-    try {
-      const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
-      const file = await bucket.find({ filename }).toArray();
-      
-      if (file.length === 0) return null;
-      
-      const downloadStream = bucket.openDownloadStreamByName(filename);
-      return {
-        stream: downloadStream,
-        contentType: file[0].contentType || 'application/octet-stream'
-      };
-    } catch (error) {
-      console.error('Error retrieving image:', error);
-      return null;
-    }
+    // With Cloudinary, images are served directly via URLs, so this method is not needed
+    // Images are accessed directly through their Cloudinary URLs
+    return null;
   }
 
   async deleteImage(filename: string): Promise<void> {
     try {
-      const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'images' });
-      const files = await bucket.find({ filename }).toArray();
-      
-      if (files.length > 0) {
-        await bucket.delete(files[0]._id);
-      }
+      const publicId = filename.split('.')[0]; // Remove extension to get public_id
+      await cloudinary.uploader.destroy(publicId);
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting image from Cloudinary:', error);
       throw error;
     }
   }
@@ -451,7 +441,7 @@ class HybridStorage implements IStorage {
         return await operation(this.mongoStorage);
       }
     } catch (error) {
-      console.warn('MongoDB operation failed, falling back to memory storage:', error.message);
+      console.warn('MongoDB operation failed, falling back to memory storage:', error instanceof Error ? error.message : 'Unknown error');
     }
     
     // Fallback to memory storage
