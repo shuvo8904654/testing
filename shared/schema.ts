@@ -200,12 +200,12 @@ export const notices = pgTable('notices', {
 });
 
 // Create insert schemas using drizzle-zod
-export const insertUserSchema = createInsertSchema(users, {
-  permissions: z.array(z.string()).default([]),
-}).omit({
+export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  permissions: z.array(z.string()).default([]),
 });
 
 export const insertMemberSchema = createInsertSchema(members).omit({

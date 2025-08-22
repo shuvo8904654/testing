@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { User } from "@shared/schema";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -35,9 +36,9 @@ export default function Login() {
     try {
       await apiRequest("POST", "/api/auth/login", data);
       
-      // Invalidate and refetch user data immediately after successful login
+      // Invalidate and fetch user data immediately after successful login
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      const userData = await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      const userData = await queryClient.fetchQuery<User>({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Success",
@@ -46,10 +47,9 @@ export default function Login() {
       
       // Redirect to appropriate dashboard based on user role
       setTimeout(() => {
-        const user = userData[0]?.data;
-        if (user?.role === "admin" || user?.role === "super_admin") {
+        if (userData?.role === "admin" || userData?.role === "super_admin") {
           setLocation("/admin-dashboard");
-        } else if (user?.role === "member") {
+        } else if (userData?.role === "member") {
           setLocation("/member-dashboard");
         } else {
           setLocation("/");
