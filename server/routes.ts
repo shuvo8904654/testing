@@ -758,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (image.title && image.title.length >= 10) qualityScore += 30;
         if (image.description && image.description.length >= 20) qualityScore += 25;
         if (image.alt && image.alt.length >= 10) qualityScore += 20;
-        if (image.url) qualityScore += 25;
+        if (image.imageUrl) qualityScore += 25;
         
         // Auto-categorize images
         const title = image.title?.toLowerCase() || '';
@@ -976,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users/bulk-approve", isAdmin, async (req: any, res) => {
     try {
       const { userIds, role = 'member', autoCreateMember = true } = req.body;
-      const reviewedBy = req.user.claims.sub;
+      const reviewedBy = parseInt(req.user.claims.sub);
       
       if (!Array.isArray(userIds) || userIds.length === 0) {
         return res.status(400).json({ message: "User IDs array is required" });
@@ -1160,7 +1160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { applicationStatus, role, approvedAt, autoCreateMember = true } = req.body;
       const userId = parseInt(req.params.id);
-      const reviewedBy = req.user.claims.sub;
+      const reviewedBy = parseInt(req.user.claims.sub);
+      
+      // Validate that userId is a valid number
+      if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ message: "Invalid user ID provided" });
+      }
       
       const updateData: any = { 
         applicationStatus,
@@ -1238,7 +1243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/registrations/:id/status", isAdmin, async (req: any, res) => {
     try {
       const { status } = req.body;
-      const reviewedBy = req.user.claims.sub;
+      const reviewedBy = parseInt(req.user.claims.sub);
       const registration = await storage.updateRegistrationStatus(parseInt(req.params.id), status, parseInt(reviewedBy));
       res.json(registration);
     } catch (error) {
@@ -1486,8 +1491,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Smart sorting
       filteredEvents.sort((a, b) => {
         if (sortBy === 'urgency') {
-          const urgencyOrder = { urgent: 3, soon: 2, normal: 1, past: 0 };
-          return order === 'desc' ? urgencyOrder[b.urgency] - urgencyOrder[a.urgency] : urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+          const urgencyOrder: Record<string, number> = { urgent: 3, soon: 2, normal: 1, past: 0 };
+          return order === 'desc' ? (urgencyOrder[b.urgency] || 0) - (urgencyOrder[a.urgency] || 0) : (urgencyOrder[a.urgency] || 0) - (urgencyOrder[b.urgency] || 0);
         } else if (sortBy === 'popularity') {
           return order === 'desc' ? b.popularity - a.popularity : a.popularity - b.popularity;
         } else if (sortBy === 'date') {

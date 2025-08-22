@@ -328,7 +328,7 @@ export default function AdminDashboard() {
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData: z.infer<typeof insertEventSchema>) => {
-      return await apiRequest("POST", "/api/events", { ...eventData, createdBy: user?._id });
+      return await apiRequest("POST", "/api/events", { ...eventData, createdBy: user?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
@@ -501,19 +501,19 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       {applicants.map((applicant) => (
                         <div
-                          key={applicant._id}
+                          key={applicant.id}
                           className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-applicant-${applicant._id}`}
+                          data-testid={`card-applicant-${applicant.id}`}
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="font-medium" data-testid={`text-name-${applicant._id}`}>
+                              <h3 className="font-medium" data-testid={`text-name-${applicant.id}`}>
                                 {applicant.firstName} {applicant.lastName}
                               </h3>
-                              <p className="text-sm text-gray-600" data-testid={`text-email-${applicant._id}`}>
+                              <p className="text-sm text-gray-600" data-testid={`text-email-${applicant.id}`}>
                                 {applicant.email}
                               </p>
-                              <p className="text-sm text-gray-600" data-testid={`text-phone-${applicant._id}`}>
+                              <p className="text-sm text-gray-600" data-testid={`text-phone-${applicant.id}`}>
                                 {applicant.phone}
                               </p>
                             </div>
@@ -525,7 +525,7 @@ export default function AdminDashboard() {
                                   ? "destructive"
                                   : "secondary"
                               }
-                              data-testid={`badge-status-${applicant._id}`}
+                              data-testid={`badge-status-${applicant.id}`}
                             >
                               {applicant.applicationStatus}
                             </Badge>
@@ -561,9 +561,9 @@ export default function AdminDashboard() {
                               <Button
                                 size="sm"
                                 className="w-full sm:w-auto"
-                                onClick={() => handleApplicantAction(applicant._id, "approved")}
+                                onClick={() => handleApplicantAction(applicant.id, "approved")}
                                 disabled={updateApplicantStatusMutation.isPending}
-                                data-testid={`button-approve-${applicant._id}`}
+                                data-testid={`button-approve-${applicant.id}`}
                               >
                                 Approve
                               </Button>
@@ -571,9 +571,9 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="destructive"
                                 className="w-full sm:w-auto"
-                                onClick={() => handleApplicantAction(applicant._id, "rejected")}
+                                onClick={() => handleApplicantAction(applicant.id, "rejected")}
                                 disabled={updateApplicantStatusMutation.isPending}
-                                data-testid={`button-reject-${applicant._id}`}
+                                data-testid={`button-reject-${applicant.id}`}
                               >
                                 Reject
                               </Button>
@@ -739,9 +739,9 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       {allUsers.map((targetUser) => (
                         <div
-                          key={targetUser._id || targetUser.id}
+                          key={targetUser.id}
                           className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-user-${targetUser._id || targetUser.id}`}
+                          data-testid={`card-user-${targetUser.id}`}
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -749,11 +749,11 @@ export default function AdminDashboard() {
                                 {targetUser.role === "super_admin" && <Crown className="w-4 h-4 text-yellow-500" />}
                                 {targetUser.role === "admin" && <Shield className="w-4 h-4 text-blue-500" />}
                                 {targetUser.role === "member" && <UserIcon className="w-4 h-4 text-gray-500" />}
-                                <h3 className="font-medium" data-testid={`text-user-name-${targetUser._id || targetUser.id}`}>
+                                <h3 className="font-medium" data-testid={`text-user-name-${targetUser.id}`}>
                                   {targetUser.firstName && targetUser.lastName 
                                     ? `${targetUser.firstName} ${targetUser.lastName}` 
                                     : targetUser.email}
-                                  {(targetUser._id || targetUser.id) === (user?._id || user?.id) && " (You)"}
+                                  {targetUser.id === user?.id && " (You)"}
                                 </h3>
                               </div>
                               <p className="text-sm text-gray-600" data-testid={`text-user-email-${targetUser.id}`}>
@@ -1079,7 +1079,7 @@ export default function AdminDashboard() {
                           <DialogTitle>Create New Event</DialogTitle>
                         </DialogHeader>
                         <Form {...createEventForm}>
-                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate({...data, date: new Date(data.date), createdBy: user?._id || 'unknown'}))} className="space-y-4">
+                          <form onSubmit={createEventForm.handleSubmit((data) => createEventMutation.mutate({...data, date: new Date(data.date), createdBy: user?.id || 'unknown'}))} className="space-y-4">
                             <FormField
                               control={createEventForm.control}
                               name="title"
