@@ -305,12 +305,14 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 mb-12">
               {latestNews.map((article, index) => (
                 <Card key={`news-${article.id}`} className="shadow-lg hover-scale overflow-hidden" data-testid={`news-card-${index}`}>
-                  <img 
-                    src={article.image} 
-                    alt={article.title}
-                    className="w-full h-48 object-cover"
-                    data-testid={`news-image-${index}`}
-                  />
+                  {article.imageUrl && (
+                    <img 
+                      src={article.imageUrl} 
+                      alt={article.title}
+                      className="w-full h-48 object-cover"
+                      data-testid={`news-image-${index}`}
+                    />
+                  )}
                   <CardContent className="p-6">
                     <div className="flex items-center mb-4">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
