@@ -25,7 +25,8 @@ import {
   TrendingUp,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Download
 } from "lucide-react";
 import { 
   insertProjectSchema, 
