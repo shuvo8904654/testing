@@ -1132,18 +1132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get pending content for admin review
   app.get("/api/pending-content", isAdmin, async (req, res) => {
     try {
-      const [newsArticles, projects, galleryImages] = await Promise.all([
-        storage.getNewsArticles(),
-        storage.getProjects(),
-        storage.getGalleryImages()
-      ]);
-
-      const pendingContent = {
-        news: newsArticles.filter(article => article.status === 'draft' || article.status === 'pending'),
-        projects: projects.filter(project => project.status === 'draft' || project.status === 'pending'),
-        gallery: galleryImages.filter(image => image.status === 'draft' || image.status === 'pending')
-      };
-
+      // Use the storage layer's getPendingContent method which fetches content with 'pending' status
+      const pendingContent = await storage.getPendingContent();
       res.json(pendingContent);
     } catch (error) {
       console.error("Error fetching pending content:", error);
