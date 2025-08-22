@@ -1,0 +1,88 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:337:18
+    at div
+    at _c9 (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at div
+    at section
+    at div
+    at Home (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/pages/Home.tsx:52:34)
+    at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+    at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+    at main
+    at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+    at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+    at div
+    at Router
+    at Provider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=45fc04cb:38:15)
+    at TooltipProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=45fc04cb:62:5)
+    at QueryClientProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=45fc04cb:2805:3)
+    at App
+activity.date.toLocaleDateString is not a function
+activity.date.toLocaleDateString is not a function
+The above error occurred in the <MemberDashboardEnhanced> component:
+
+    at MemberDashboardEnhanced (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/MemberDashboardEnhanced.tsx:50:20)
+    at div
+    at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=45fc04cb:42:13
+    at Presence (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VCJEE5DL.js?v=45fc04cb:24:11)
+    at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=45fc04cb:387:13
+    at _c5 (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=45fc04cb:42:13
+    at Provider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=45fc04cb:38:15)
+    at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=45fc04cb:265:7
+    at div
+    at div
+    at MemberDashboard (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/pages/MemberDashboard.tsx:27:48)
+    at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+    at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+    at main
+    at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+    at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+    at div
+    at Router
+    at Provider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=45fc04cb:38:15)
+    at TooltipProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=45fc04cb:62:5)
+    at QueryClientProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=45fc04cb:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at MemberDashboardEnhanced (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/MemberDashboardEnhanced.tsx:50:20)
+at div
+at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=45fc04cb:42:13
+at Presence (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VCJEE5DL.js?v=45fc04cb:24:11)
+at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=45fc04cb:387:13
+at _c5 (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/components/ui/tabs.tsx:72:12)
+at div
+at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=45fc04cb:42:13
+at Provider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=45fc04cb:38:15)
+at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=45fc04cb:265:7
+at div
+at div
+at MemberDashboard (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/src/pages/MemberDashboard.tsx:27:48)
+at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+at main
+at Route (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:323:16)
+at Switch (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=45fc04cb:379:17)
+at div
+at Router
+at Provider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=45fc04cb:38:15)
+at TooltipProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=45fc04cb:62:5)
+at QueryClientProvider (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=45fc04cb:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://b45134dc-55c6-44b0-ad87-1e5fe585fcaa-00-9yoa81v961pa.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+activity.date.toLocaleDateString is not a function

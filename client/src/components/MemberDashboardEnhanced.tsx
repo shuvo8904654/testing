@@ -147,7 +147,7 @@ export default function MemberDashboardEnhanced() {
       name: memberData?.name || "",
       bio: memberData?.bio || "",
       profileImageUrl: memberData?.profileImageUrl || "",
-      position: memberData?.position || ""
+      position: memberData?.role || ""
     }
   });
 
@@ -289,14 +289,14 @@ export default function MemberDashboardEnhanced() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={memberData?.profileImageUrl || memberData?.image} alt={memberData?.name} />
+            <AvatarImage src={memberData?.profileImageUrl} alt={memberData?.name} />
             <AvatarFallback>
               {memberData?.name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
           </Avatar>
           <div>
             <h1 className="text-2xl font-bold">{memberData?.name || user?.firstName}</h1>
-            <p className="text-gray-600">{memberData?.position || 'Member'}</p>
+            <p className="text-gray-600">{memberData?.role || 'Member'}</p>
             <Badge variant="outline" className="mt-1">
               {levelInfo.level}
             </Badge>
@@ -762,7 +762,7 @@ export default function MemberDashboardEnhanced() {
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">{activity.title}</h4>
                       <span className="text-sm text-gray-500">
-                        {activity.date.toLocaleDateString()}
+                        {activity.date ? new Date(activity.date).toLocaleDateString() : 'Recent'}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
@@ -796,7 +796,7 @@ export default function MemberDashboardEnhanced() {
                           {achievement.points} points
                         </Badge>
                         <span className="text-xs text-gray-500">
-                          {achievement.dateEarned.toLocaleDateString()}
+                          {achievement.dateEarned ? new Date(achievement.dateEarned).toLocaleDateString() : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -825,7 +825,7 @@ export default function MemberDashboardEnhanced() {
                   <div className="space-y-2">
                     {upcomingEvents.length > 0 ? (
                       upcomingEvents.map((event) => (
-                        <div key={event._id} className="p-3 border rounded-lg">
+                        <div key={event.id} className="p-3 border rounded-lg">
                           <h5 className="font-medium">{event.title}</h5>
                           <p className="text-sm text-gray-600">{event.time} - {event.description}</p>
                         </div>

@@ -330,10 +330,8 @@ export default function Home() {
                     <p className="text-gray-600 mb-4" data-testid={`news-excerpt-${index}`}>
                       {article.excerpt}
                     </p>
-                    <Link href={`/news#${article.id}`}>
-                      <a className="text-eco-green font-medium hover:text-eco-green-dark transition-colors" data-testid={`news-read-more-${index}`}>
-                        Read More →
-                      </a>
+                    <Link href={`/news#${article.id}`} className="text-eco-green font-medium hover:text-eco-green-dark transition-colors" data-testid={`news-read-more-${index}`}>
+                      Read More →
                     </Link>
                   </CardContent>
                 </Card>
@@ -341,10 +339,8 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <Link href="/news">
-                <Button variant="outline" className="px-8 py-3" data-testid="button-view-all-news">
-                  View All News
-                </Button>
+              <Link href="/news" className="inline-block px-8 py-3 border border-gray-300 rounded-md font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors" data-testid="button-view-all-news">
+                View All News
               </Link>
             </div>
           </div>
