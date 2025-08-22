@@ -34,17 +34,18 @@ export default function Home() {
   return (
     <div data-testid="home-page">
       {/* Hero Section */}
-      <section className="gradient-bg min-h-screen flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="gradient-bg min-h-screen flex items-center relative overflow-hidden">
+        <div className="absolute inset-0 grid-pattern opacity-30"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-white">
-              <div className="mb-6">
-                <span className="bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium">
-                  ID: 050-009-0023
+              <div className="mb-8">
+                <span className="glass-card text-white px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm floating-element">
+                  ✨ ID: 050-009-0023
                 </span>
               </div>
-              <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight" data-testid="hero-title">
-                Creating a World of <span className="text-yellow-300">Three Zeros</span>
+              <h1 className="text-5xl lg:text-7xl font-bold mb-8 leading-tight" data-testid="hero-title">
+                Creating a World of <span className="text-shimmer">Three Zeros</span>
               </h1>
               <div className="text-xl mb-8 space-y-2">
                 <p className="flex items-center" data-testid="zero-poverty">
@@ -64,38 +65,38 @@ export default function Home() {
                 Join the youth-led movement in Kurigram, inspired by Nobel Laureate Dr. Muhammad Yunus, 
                 to build a sustainable and equitable future for all.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-6">
                 <Link href="/join">
-                  <Button className="bg-white text-eco-green px-8 py-4 rounded-full font-semibold hover:bg-gray-100 text-lg" data-testid="button-join-movement">
-                    <Rocket className="mr-2" />
+                  <Button className="btn-modern text-lg px-10 py-5 glow-effect" data-testid="button-join-movement">
+                    <Rocket className="mr-3" />
                     Join the Movement
                   </Button>
                 </Link>
                 <Link href="/about">
-                  <Button variant="outline" className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-eco-green text-lg" data-testid="button-learn-more">
-                    <Play className="mr-2" />
+                  <Button variant="outline" className="glass-card border-2 border-white text-white px-10 py-5 rounded-full font-semibold hover:bg-white hover:text-eco-green text-lg transition-all duration-300" data-testid="button-learn-more">
+                    <Play className="mr-3" />
                     Learn More
                   </Button>
                 </Link>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative floating-element">
               <img 
                 src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
                 alt="Youth community action" 
-                className="rounded-3xl shadow-2xl w-full"
+                className="rounded-3xl shadow-2xl w-full perspective-card hover-scale"
                 data-testid="hero-image"
               />
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl" data-testid="stat-youth-empowered">
+              <div className="absolute -bottom-6 -left-6 neo-card p-8 glow-effect" data-testid="stat-youth-empowered">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-eco-green">500+</p>
-                  <p className="text-sm text-gray-600">Youth Empowered</p>
+                  <p className="text-4xl font-bold text-eco-green mb-2">500+</p>
+                  <p className="text-sm text-gray-600 font-medium">Youth Empowered</p>
                 </div>
               </div>
-              <div className="absolute -top-6 -right-6 bg-white p-6 rounded-2xl shadow-xl" data-testid="stat-projects-completed">
+              <div className="absolute -top-6 -right-6 neo-card p-8 glow-effect" data-testid="stat-projects-completed">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-youth-blue">25+</p>
-                  <p className="text-sm text-gray-600">Projects Completed</p>
+                  <p className="text-4xl font-bold text-youth-blue mb-2">25+</p>
+                  <p className="text-sm text-gray-600 font-medium">Projects Completed</p>
                 </div>
               </div>
             </div>
@@ -115,12 +116,12 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center">
-              <div className="bg-eco-green/10 p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                <Leaf className="text-eco-green text-2xl" />
+            <div className="text-center fade-in-up">
+              <div className="bg-eco-green/10 p-8 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 neo-card glow-effect">
+                <Leaf className="text-eco-green text-3xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2" data-testid="mission-poverty">Zero Poverty</h3>
-              <p className="text-gray-600">Creating economic opportunities for all community members</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid="mission-poverty">Zero Poverty</h3>
+              <p className="text-gray-600 text-lg">Creating economic opportunities for all community members</p>
             </div>
             <div className="text-center">
               <div className="bg-youth-blue/10 p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
@@ -165,18 +166,18 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             {featuredProjects.map((project, index) => (
-              <Card key={project.id} className={`hover-scale ${
+              <Card key={project.id} className={`neo-card perspective-card ${
                 index === 0 ? 'bg-gradient-to-br from-eco-green/5 to-eco-green/10' :
                 index === 1 ? 'bg-gradient-to-br from-youth-blue/5 to-youth-blue/10' :
                 'bg-gradient-to-br from-yellow-400/5 to-yellow-400/10'
               }`} data-testid={`project-card-${index}`}>
                 <CardContent className="p-8">
-                  <div className={`p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 ${
+                  <div className={`p-6 rounded-full w-20 h-20 flex items-center justify-center mb-8 glow-effect floating-element ${
                     index === 0 ? 'bg-eco-green/20' :
                     index === 1 ? 'bg-youth-blue/20' :
                     'bg-yellow-400/20'
                   }`}>
-                    <Leaf className={`text-2xl ${
+                    <Leaf className={`text-3xl ${
                       index === 0 ? 'text-eco-green' :
                       index === 1 ? 'text-youth-blue' :
                       'text-yellow-600'
@@ -276,14 +277,16 @@ export default function Home() {
 
             <div className="grid lg:grid-cols-2 gap-8 mb-12">
               {latestNews.map((article, index) => (
-                <Card key={article.id} className="shadow-lg hover-scale overflow-hidden" data-testid={`news-card-${index}`}>
-                  <img 
-                    src={article.image} 
-                    alt={article.title}
-                    className="w-full h-48 object-cover"
-                    data-testid={`news-image-${index}`}
-                  />
-                  <CardContent className="p-6">
+                <Card key={article.id} className="neo-card perspective-card overflow-hidden" data-testid={`news-card-${index}`}>
+                  <div className="relative overflow-hidden">
+                    <img 
+                      src={article.image} 
+                      alt={article.title}
+                      className="w-full h-48 object-cover hover-scale transition-transform duration-500"
+                      data-testid={`news-image-${index}`}
+                    />
+                  </div>
+                  <CardContent className="p-8">
                     <div className="flex items-center mb-4">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         article.category === 'Success Story' ? 'bg-eco-green/10 text-eco-green' :
@@ -335,14 +338,17 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {teamMembers.map((member, index) => (
-              <Card key={member.id} className="hover-scale shadow-lg" data-testid={`team-member-${index}`}>
-                <CardContent className="p-6 text-center">
-                  <img 
-                    src={member.image} 
-                    alt={member.name}
-                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                    data-testid={`member-image-${index}`}
-                  />
+              <Card key={member.id} className="neo-card perspective-card" data-testid={`team-member-${index}`}>
+                <CardContent className="p-8 text-center">
+                  <div className="relative inline-block mb-6">
+                    <img 
+                      src={member.image} 
+                      alt={member.name}
+                      className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
+                      data-testid={`member-image-${index}`}
+                    />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-eco-green/20 to-youth-blue/20 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2" data-testid={`member-name-${index}`}>
                     {member.name}
                   </h3>

@@ -39,18 +39,18 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50" data-testid="navigation">
+    <nav className="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-100" data-testid="navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-18">
           {/* Logo */}
           <Link href="/" data-testid="link-home">
-            <div className="flex items-center space-x-3 cursor-pointer">
-              <div className="w-10 h-10 gradient-bg rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">3Z</span>
+            <div className="flex items-center space-x-3 cursor-pointer hover-scale">
+              <div className="w-12 h-12 gradient-bg rounded-full flex items-center justify-center glow-effect">
+                <span className="text-white font-bold text-xl">3Z</span>
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">3ZERO Club</h1>
-                <p className="text-xs text-gray-600">Kurigram</p>
+                <p className="text-xs text-eco-green font-medium">Kurigram</p>
               </div>
             </div>
           </Link>
