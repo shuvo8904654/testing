@@ -46,7 +46,7 @@ export default function HeaderNoticeBoard() {
     queryFn: () => fetch('/api/notices?active=true').then(res => res.json()),
   });
 
-  const notices: Notice[] = noticesData || [];
+  const notices: Notice[] = Array.isArray(noticesData) ? noticesData : [];
 
   // Filter active and non-dismissed notices
   const activeNotices = notices.filter(notice => {

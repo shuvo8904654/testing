@@ -15,6 +15,7 @@ import {
   insertEventSchema,
   insertEventRegistrationSchema
 } from "@shared/schema";
+import { updateMemberSchema } from "@shared/validation";
 import { z } from "zod";
 import multer from "multer";
 import bcrypt from "bcrypt";
@@ -263,12 +264,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/member-profile/:id", async (req, res) => {
     try {
       const memberId = parseInt(req.params.id);
-      const updatedMember = await storage.updateMember(memberId, req.body);
+      
+      // Validate the request body
+      const validation = updateMemberSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: "Invalid data", 
+          errors: validation.error.errors 
+        });
+      }
+      
+      const updatedMember = await storage.updateMember(memberId, validation.data);
       if (!updatedMember) {
         return res.status(404).json({ message: "Member not found" });
       }
       res.json(updatedMember);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error updating member profile:", error);
       res.status(500).json({ message: "Failed to update member profile" });
     }
   });

@@ -26,10 +26,14 @@ export const insertMemberSchema = z.object({
   email: z.string().email(),
   role: z.string().min(1),
   bio: z.string().min(1),
-  profileImageUrl: z.string().url().optional(),
+  profileImageUrl: z.string().optional(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string(),
-  approvedBy: z.string().optional(),
+  createdBy: z.number(),
+  approvedBy: z.number().optional(),
+});
+
+export const updateMemberSchema = insertMemberSchema.partial().omit({
+  createdBy: true,
 });
 
 // Project validation schemas
@@ -38,8 +42,8 @@ export const insertProjectSchema = z.object({
   description: z.string().min(1, "Description is required"),
   imageUrl: z.string().optional(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string().min(1, "Creator is required"),
-  approvedBy: z.string().optional(),
+  createdBy: z.number(),
+  approvedBy: z.number().optional(),
 });
 
 // News Article validation schemas
@@ -50,8 +54,8 @@ export const insertNewsArticleSchema = z.object({
   imageUrl: z.string().optional(),
   author: z.string().min(1, "Author is required"),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string().min(1, "Creator is required"),
-  approvedBy: z.string().optional(),
+  createdBy: z.number(),
+  approvedBy: z.number().optional(),
   readCount: z.number().default(0),
 });
 
@@ -61,8 +65,8 @@ export const insertGalleryImageSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().min(1),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string().optional(),
-  approvedBy: z.string().optional(),
+  createdBy: z.number(),
+  approvedBy: z.number().optional(),
 });
 
 // Contact Message validation schemas
@@ -81,7 +85,7 @@ export const insertRegistrationSchema = z.object({
   institution: z.string().min(1),
   reason: z.string().min(1),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  reviewedBy: z.string().optional(),
+  reviewedBy: z.number().optional(),
 });
 
 // Event validation schemas  
@@ -106,6 +110,7 @@ export const insertEventSchema = eventFormSchema.extend({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type InsertMember = z.infer<typeof insertMemberSchema>;
+export type UpdateMember = z.infer<typeof updateMemberSchema>;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
 export type InsertGalleryImage = z.infer<typeof insertGalleryImageSchema>;

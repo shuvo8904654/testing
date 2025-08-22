@@ -352,6 +352,8 @@ export default function MemberDashboardEnhanced() {
                             onFileUpload={field.onChange}
                             currentValue={field.value}
                             placeholder="Upload profile picture"
+                            enableCrop={true}
+                            cropAspect={1}
                           />
                         </FormControl>
                         <FormMessage />

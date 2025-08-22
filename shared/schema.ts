@@ -205,7 +205,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  permissions: z.array(z.string()).default([]),
+  permissions: z.array(z.string()).optional().default([]),
 });
 
 export const insertMemberSchema = createInsertSchema(members).omit({
@@ -262,34 +262,34 @@ export const insertNoticeSchema = createInsertSchema(notices).omit({
 
 // Type exports for the frontend
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 
 export type Member = typeof members.$inferSelect;
-export type InsertMember = z.infer<typeof insertMemberSchema>;
+export type InsertMember = typeof members.$inferInsert;
 
 export type Project = typeof projects.$inferSelect;
-export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type InsertProject = typeof projects.$inferInsert;
 
 export type NewsArticle = typeof newsArticles.$inferSelect;
-export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
+export type InsertNewsArticle = typeof newsArticles.$inferInsert;
 
 export type GalleryImage = typeof galleryImages.$inferSelect;
-export type InsertGalleryImage = z.infer<typeof insertGalleryImageSchema>;
+export type InsertGalleryImage = typeof galleryImages.$inferInsert;
 
 export type ContactMessage = typeof contactMessages.$inferSelect;
-export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+export type InsertContactMessage = typeof contactMessages.$inferInsert;
 
 export type Registration = typeof registrations.$inferSelect;
-export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type InsertRegistration = typeof registrations.$inferInsert;
 
 export type Event = typeof events.$inferSelect;
-export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type InsertEvent = typeof events.$inferInsert;
 
 export type EventRegistration = typeof eventRegistrations.$inferSelect;
-export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+export type InsertEventRegistration = typeof eventRegistrations.$inferInsert;
 
 export type Notice = typeof notices.$inferSelect;
-export type InsertNotice = z.infer<typeof insertNoticeSchema>;
+export type InsertNotice = typeof notices.$inferInsert;
 
 // Export common types
 export type UserRole = 'member' | 'admin' | 'super_admin' | 'applicant';
