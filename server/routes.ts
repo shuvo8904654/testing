@@ -661,9 +661,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced news creation with content analysis and smart features
-  app.post("/api/news", async (req, res) => {
+  app.post("/api/news", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertNewsArticleSchema.parse(req.body);
+      const createdBy = (req as any).user.claims.sub;
+      
+      // Always set status to pending for member submissions
+      const articleData = {
+        ...validatedData,
+        createdBy,
+        status: 'pending' as const,
+        readCount: 0
+      };
       
       // Content quality analysis
       let contentScore = 0;
@@ -702,13 +711,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const enhancedArticleData = {
-        ...validatedData,
+        ...articleData,
         excerpt,
         contentScore,
         category: contentCategory,
-        estimatedReadTime,
-        readCount: 0,
-        status: contentScore >= 70 ? 'published' : 'draft' as const
+        estimatedReadTime
       };
       
       const article = await storage.createNewsArticle(enhancedArticleData);
@@ -1317,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy,
         category: autoCategory,
         priorityScore,
-        status: 'approved' as const
+        status: 'pending' as const
       };
       
       const project = await storage.createProject(enhancedProjectData);
@@ -1388,7 +1395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/dashboard/gallery", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertGalleryImageSchema.parse(req.body);
-      const image = await storage.createGalleryImage(validatedData);
+      const createdBy = (req as any).user.claims.sub;
+      
+      const imageData = {
+        ...validatedData,
+        createdBy,
+        status: 'pending' as const
+      };
+      
+      const image = await storage.createGalleryImage(imageData);
       res.status(201).json(image);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1628,6 +1643,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching notices:", error);
       res.status(500).json({ error: "Failed to fetch notices" });
+    }
+  });
+
+  // Add API endpoints that member dashboard expects
+  app.post("/api/projects", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertProjectSchema.parse(req.body);
+      const createdBy = (req as any).user.claims.sub;
+      
+      const projectData = {
+        ...validatedData,
+        createdBy,
+        status: 'pending' as const
+      };
+      
+      const project = await storage.createProject(projectData);
+      res.status(201).json(project);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error creating project:", error);
+      res.status(500).json({ message: "Failed to create project" });
+    }
+  });
+
+  app.post("/api/gallery", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertGalleryImageSchema.parse(req.body);
+      const createdBy = (req as any).user.claims.sub;
+      
+      const imageData = {
+        ...validatedData,
+        createdBy,
+        status: 'pending' as const
+      };
+      
+      const image = await storage.createGalleryImage(imageData);
+      res.status(201).json(image);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      console.error("Error creating gallery image:", error);
+      res.status(500).json({ message: "Failed to create gallery image" });
+    }
+  });
+
+  // Content approval/rejection endpoints
+  app.post("/api/approve-content/:contentType/:id", isAdmin, async (req, res) => {
+    try {
+      const { contentType, id } = req.params;
+      
+      if (contentType === 'news') {
+        await storage.updateNewsArticle(id, { status: 'published' });
+      } else if (contentType === 'projects') {
+        await storage.updateProject(id, { status: 'approved' });
+      } else if (contentType === 'gallery') {
+        await storage.updateGalleryImage(id, { status: 'approved' });
+      } else {
+        return res.status(400).json({ message: "Invalid content type" });
+      }
+      
+      res.json({ message: "Content approved successfully" });
+    } catch (error) {
+      console.error("Error approving content:", error);
+      res.status(500).json({ message: "Failed to approve content" });
+    }
+  });
+
+  app.post("/api/reject-content/:contentType/:id", isAdmin, async (req, res) => {
+    try {
+      const { contentType, id } = req.params;
+      
+      if (contentType === 'news') {
+        await storage.updateNewsArticle(id, { status: 'rejected' });
+      } else if (contentType === 'projects') {
+        await storage.updateProject(id, { status: 'rejected' });
+      } else if (contentType === 'gallery') {
+        await storage.updateGalleryImage(id, { status: 'rejected' });
+      } else {
+        return res.status(400).json({ message: "Invalid content type" });
+      }
+      
+      res.json({ message: "Content rejected successfully" });
+    } catch (error) {
+      console.error("Error rejecting content:", error);
+      res.status(500).json({ message: "Failed to reject content" });
     }
   });
 
