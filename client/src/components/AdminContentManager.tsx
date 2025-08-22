@@ -26,7 +26,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Download
+  Download,
+  BarChart3,
+  X
 } from "lucide-react";
 import { 
   insertProjectSchema, 
@@ -34,13 +36,17 @@ import {
   insertEventSchema, 
   insertGalleryImageSchema,
   eventFormSchema,
-  type InsertProject,
-  type InsertNewsArticle,
-  type InsertEvent,
-  type InsertGalleryImage,
-  type EventFormData
+  insertUserSchema
 } from "@shared/validation";
-import type { Project, NewsArticle, Event, GalleryImage, Member } from "@shared/schema";
+import type { 
+  InsertProject,
+  InsertNewsArticle,
+  InsertEvent,
+  InsertGalleryImage,
+  EventFormData,
+  InsertUser
+} from "@shared/validation";
+import type { Project, NewsArticle, Event, GalleryImage, Member, EventRegistration } from "@shared/schema";
 
 export default function AdminContentManager() {
   const { toast } = useToast();
