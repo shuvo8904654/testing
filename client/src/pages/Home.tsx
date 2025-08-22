@@ -364,7 +364,7 @@ export default function Home() {
               <Card key={`member-${member.id || member._id || index}`} className="hover-scale shadow-lg" data-testid={`team-member-${index}`}>
                 <CardContent className="p-6 text-center">
                   <img 
-                    src={member.image} 
+                    src={member.profileImageUrl || '/placeholder-avatar.png'} 
                     alt={member.name}
                     className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                     data-testid={`member-image-${index}`}

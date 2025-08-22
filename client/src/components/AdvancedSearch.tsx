@@ -240,7 +240,7 @@ export default function AdvancedSearch() {
               type: 'member',
               status: member.status,
               date: member.createdAt,
-              image: member.image,
+              image: member.profileImageUrl,
               relevanceScore: relevance
             });
           }
