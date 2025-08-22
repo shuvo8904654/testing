@@ -1535,7 +1535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             bio: user.motivation || 'New member of 3ZERO Club',
             profileImageUrl: user.profileImageUrl,
             status: 'approved' as const,
-            createdBy: reviewedBy,
+            createdBy: userId,
             approvedBy: reviewedBy
           };
           

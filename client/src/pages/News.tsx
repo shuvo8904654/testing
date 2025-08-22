@@ -53,12 +53,14 @@ export default function News() {
               data-testid={`news-card-${index}`}
               id={article.id}
             >
-              <img 
-                src={article.image} 
-                alt={article.title}
-                className="w-full h-48 object-cover"
-                data-testid={`news-image-${index}`}
-              />
+              {article.imageUrl && (
+                <img 
+                  src={article.imageUrl} 
+                  alt={article.title}
+                  className="w-full h-48 object-cover"
+                  data-testid={`news-image-${index}`}
+                />
+              )}
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <span 
