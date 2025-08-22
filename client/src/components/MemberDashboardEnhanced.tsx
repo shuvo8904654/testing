@@ -100,8 +100,8 @@ export default function MemberDashboardEnhanced() {
 
   // Fetch user data and activities
   const { data: memberData } = useQuery<Member>({
-    queryKey: ["/api/member-profile", user?._id],
-    enabled: !!user?._id,
+    queryKey: ["/api/member-profile", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: userAnalyticsData } = useQuery<{
@@ -109,8 +109,8 @@ export default function MemberDashboardEnhanced() {
     activities: Activity[];
     achievements: Achievement[];
   }>({
-    queryKey: ["/api/user-analytics", user?._id],
-    enabled: !!user?._id,
+    queryKey: ["/api/user-analytics", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: projectsData } = useQuery<{projects: Project[], analytics: any}>({
@@ -183,11 +183,11 @@ export default function MemberDashboardEnhanced() {
   // Mutations for content creation
   const createProjectMutation = useMutation({
     mutationFn: async (projectData: any) => {
-      return await apiRequest("POST", "/api/projects", { ...projectData, createdBy: user?._id });
+      return await apiRequest("POST", "/api/projects", { ...projectData, createdBy: user?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?.id] });
       projectForm.reset();
       setProjectDialogOpen(false);
       toast({
@@ -207,11 +207,11 @@ export default function MemberDashboardEnhanced() {
   const createArticleMutation = useMutation({
     mutationFn: async (articleData: any) => {
       const authorName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || 'Anonymous';
-      return await apiRequest("POST", "/api/news", { ...articleData, createdBy: user?._id, author: authorName });
+      return await apiRequest("POST", "/api/news", { ...articleData, createdBy: user?.id, author: authorName });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?.id] });
       articleForm.reset();
       setArticleDialogOpen(false);
       toast({
@@ -230,11 +230,11 @@ export default function MemberDashboardEnhanced() {
 
   const createGalleryImageMutation = useMutation({
     mutationFn: async (imageData: any) => {
-      return await apiRequest("POST", "/api/gallery", { ...imageData, createdBy: user?._id });
+      return await apiRequest("POST", "/api/gallery", { ...imageData, createdBy: user?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-analytics", user?.id] });
       imageForm.reset();
       setImageDialogOpen(false);
       toast({
