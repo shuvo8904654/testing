@@ -62,10 +62,10 @@ export default function News() {
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <span 
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.category)}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.category || 'general')}`}
                     data-testid={`news-category-${index}`}
                   >
-                    {article.category}
+                    {article.category || 'General'}
                   </span>
                   <div className="flex items-center text-gray-500 text-sm ml-auto" data-testid={`news-date-${index}`}>
                     <CalendarDays className="w-4 h-4 mr-1" />

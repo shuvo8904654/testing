@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus, Calendar } from "lucide-react";
+import { Users, FileText, Image, UserCheck, Crown, Shield, User as UserIcon, Plus, Calendar, Settings, Search, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect, useState } from "react";
@@ -21,6 +21,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, insertEventSchema } from "@shared/validation";
 import { z } from "zod";
+import AdminContentManager from "@/components/AdminContentManager";
+import NotificationSystem from "@/components/NotificationSystem";
+import ImageUploadManager from "@/components/ImageUploadManager";
+import AdvancedSearch from "@/components/AdvancedSearch";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();

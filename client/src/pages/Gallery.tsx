@@ -4,9 +4,11 @@ import { Images } from "lucide-react";
 import type { GalleryImage } from "@shared/schema";
 
 export default function Gallery() {
-  const { data: images, isLoading } = useQuery<GalleryImage[]>({
+  const { data: galleryData, isLoading } = useQuery<{images: GalleryImage[], analytics: any}>({
     queryKey: ["/api/gallery"],
   });
+
+  const images = galleryData?.images || [];
 
   if (isLoading) {
     return (
@@ -37,7 +39,7 @@ export default function Gallery() {
               data-testid={`gallery-image-${index}`}
             >
               <img 
-                src={image.url} 
+                src={image.imageUrl || image.url} 
                 alt={image.title}
                 className="w-full h-48 object-cover"
                 data-testid={`image-${index}`}
