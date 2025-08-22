@@ -894,6 +894,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all users for admin management
+  app.get("/api/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   // Enhanced applicants endpoint with analytics and smart sorting
   app.get("/api/users/applicants", isAdmin, async (req, res) => {
     try {
@@ -955,6 +966,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching applicants:", error);
       res.status(500).json({ message: "Failed to fetch applicants" });
+    }
+  });
+
+  // Get pending content for admin review
+  app.get("/api/pending-content", isAdmin, async (req, res) => {
+    try {
+      const [newsArticles, projects, galleryImages] = await Promise.all([
+        storage.getNewsArticles(),
+        storage.getProjects(),
+        storage.getGalleryImages()
+      ]);
+
+      const pendingContent = {
+        news: newsArticles.filter(article => article.status === 'draft' || article.status === 'pending'),
+        projects: projects.filter(project => project.status === 'draft' || project.status === 'pending'),
+        gallery: galleryImages.filter(image => image.status === 'draft' || image.status === 'pending')
+      };
+
+      res.json(pendingContent);
+    } catch (error) {
+      console.error("Error fetching pending content:", error);
+      res.status(500).json({ message: "Failed to fetch pending content" });
     }
   });
 

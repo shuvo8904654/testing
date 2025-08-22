@@ -33,7 +33,7 @@ export default function Members() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
           {members?.map((member, index) => (
-            <Card key={member.id} className="bg-white hover-scale shadow-lg" data-testid={`member-card-${index}`}>
+            <Card key={member._id || member.id || index} className="bg-white hover-scale shadow-lg" data-testid={`member-card-${index}`}>
               <CardContent className="p-6">
                 <img 
                   src={member.image} 
