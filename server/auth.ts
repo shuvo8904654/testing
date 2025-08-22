@@ -29,7 +29,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   // Verify user still exists and is active
   try {
-    const dbUser = await storage.getUser(user.claims.sub);
+    const userId = parseInt(user.claims.sub);
+    const dbUser = await storage.getUser(userId);
     if (!dbUser || !dbUser.isActive) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -48,7 +49,8 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
   }
 
   try {
-    const dbUser = await storage.getUser(user.claims.sub);
+    const userId = parseInt(user.claims.sub);
+    const dbUser = await storage.getUser(userId);
     if (!dbUser || (dbUser.role !== "admin" && dbUser.role !== "super_admin")) {
       return res.status(403).json({ message: "Admin access required" });
     }

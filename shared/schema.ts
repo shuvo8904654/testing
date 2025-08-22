@@ -1,225 +1,291 @@
-// Simplified schema file for MongoDB compatibility
-// TODO: Complete PostgreSQL migration when DATABASE_URL is available
+import { pgTable, varchar, text, boolean, timestamp, integer, json, serial } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// Export types compatible with MongoDB models
+// Users table
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  password: varchar('password', { length: 255 }),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
+  phone: varchar('phone', { length: 20 }),
+  age: varchar('age', { length: 10 }),
+  address: text('address'),
+  motivation: text('motivation'),
+  profileImageUrl: text('profile_image_url'),
+  role: varchar('role', { length: 20 }).notNull().default('applicant'),
+  permissions: json('permissions').$type<string[]>().notNull().default([]),
+  isActive: boolean('is_active').notNull().default(true),
+  authType: varchar('auth_type', { length: 20 }).notNull().default('email'),
+  applicationStatus: varchar('application_status', { length: 20 }).default('pending'),
+  appliedAt: timestamp('applied_at').defaultNow(),
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Members table
+export const members = pgTable('members', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  role: varchar('role', { length: 100 }).notNull(),
+  bio: text('bio').notNull(),
+  profileImageUrl: text('profile_image_url'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  social: json('social').$type<{ linkedin?: string; facebook?: string }>(),
+  createdBy: integer('created_by').notNull(),
+  approvedBy: integer('approved_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Projects table
+export const projects = pgTable('projects', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  imageUrl: text('image_url'),
+  completedAt: varchar('completed_at', { length: 100 }),
+  category: varchar('category', { length: 100 }),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  priorityScore: integer('priority_score'),
+  impactLevel: varchar('impact_level', { length: 20 }),
+  autoCategory: varchar('auto_category', { length: 100 }),
+  daysActive: integer('days_active'),
+  createdBy: integer('created_by').notNull(),
+  approvedBy: integer('approved_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// News articles table
+export const newsArticles = pgTable('news_articles', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content').notNull(),
+  excerpt: text('excerpt'),
+  imageUrl: text('image_url'),
+  category: varchar('category', { length: 100 }),
+  contentCategory: varchar('content_category', { length: 100 }),
+  author: varchar('author', { length: 255 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  contentScore: integer('content_score'),
+  readabilityLevel: varchar('readability_level', { length: 20 }),
+  estimatedReadTime: integer('estimated_read_time'),
+  engagement: integer('engagement'),
+  daysOld: integer('days_old'),
+  readCount: integer('read_count').notNull().default(0),
+  publishedAt: timestamp('published_at'),
+  createdBy: integer('created_by').notNull(),
+  approvedBy: integer('approved_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Gallery images table
+export const galleryImages = pgTable('gallery_images', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  alt: varchar('alt', { length: 255 }),
+  imageUrl: text('image_url').notNull(),
+  category: varchar('category', { length: 100 }),
+  qualityScore: integer('quality_score'),
+  daysOld: integer('days_old'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdBy: integer('created_by').notNull(),
+  approvedBy: integer('approved_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Contact messages table
+export const contactMessages = pgTable('contact_messages', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  subject: varchar('subject', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Registrations table
+export const registrations = pgTable('registrations', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 20 }).notNull(),
+  institution: varchar('institution', { length: 255 }).notNull(),
+  reason: text('reason').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  reviewedBy: integer('reviewed_by'),
+  reviewedAt: timestamp('reviewed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Events table
+export const events = pgTable('events', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  date: timestamp('date').notNull(),
+  time: varchar('time', { length: 50 }).notNull(),
+  location: varchar('location', { length: 255 }).notNull(),
+  category: varchar('category', { length: 50 }).notNull(),
+  maxParticipants: integer('max_participants'),
+  registrationRequired: boolean('registration_required').notNull().default(false),
+  registrationDeadline: timestamp('registration_deadline'),
+  eligibility: text('eligibility'),
+  prizes: text('prizes'),
+  teamEvent: boolean('team_event').default(false),
+  minTeamSize: integer('min_team_size'),
+  maxTeamSize: integer('max_team_size'),
+  contactInfo: text('contact_info'),
+  status: varchar('status', { length: 20 }).notNull().default('upcoming'),
+  urgency: varchar('urgency', { length: 20 }),
+  capacity: varchar('capacity', { length: 20 }),
+  popularity: integer('popularity'),
+  smartStatus: varchar('smart_status', { length: 100 }),
+  daysUntilEvent: integer('days_until_event'),
+  createdBy: integer('created_by').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Event registrations table
+export const eventRegistrations = pgTable('event_registrations', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull(),
+  participantId: integer('participant_id'),
+  participantName: varchar('participant_name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 20 }).notNull(),
+  institution: varchar('institution', { length: 255 }),
+  grade: varchar('grade', { length: 50 }),
+  experience: text('experience'),
+  motivation: text('motivation'),
+  teamName: varchar('team_name', { length: 255 }),
+  teamMembers: json('team_members').$type<Array<{ name: string; email: string; phone: string }>>(),
+  additionalInfo: text('additional_info'),
+  status: varchar('status', { length: 20 }).notNull().default('registered'),
+  registeredAt: timestamp('registered_at').defaultNow().notNull(),
+  checkInTime: timestamp('check_in_time'),
+});
+
+// Notices table
+export const notices = pgTable('notices', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  type: varchar('type', { length: 50 }).notNull(),
+  priority: varchar('priority', { length: 20 }).notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  link: text('link'),
+  linkText: varchar('link_text', { length: 255 }),
+  dismissible: boolean('dismissible').notNull().default(true),
+  targetAudience: varchar('target_audience', { length: 20 }).notNull().default('all'),
+  createdBy: integer('created_by'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Create insert schemas using drizzle-zod
+export const insertUserSchema = createInsertSchema(users, {
+  permissions: z.array(z.string()).default([]),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMemberSchema = createInsertSchema(members).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNewsArticleSchema = createInsertSchema(newsArticles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGalleryImageSchema = createInsertSchema(galleryImages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRegistrationSchema = createInsertSchema(registrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
+  id: true,
+  registeredAt: true,
+});
+
+export const insertNoticeSchema = createInsertSchema(notices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Type exports for the frontend
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Member = typeof members.$inferSelect;
+export type InsertMember = z.infer<typeof insertMemberSchema>;
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
+export type NewsArticle = typeof newsArticles.$inferSelect;
+export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
+
+export type GalleryImage = typeof galleryImages.$inferSelect;
+export type InsertGalleryImage = z.infer<typeof insertGalleryImageSchema>;
+
+export type ContactMessage = typeof contactMessages.$inferSelect;
+export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+
+export type Registration = typeof registrations.$inferSelect;
+export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+
+export type Notice = typeof notices.$inferSelect;
+export type InsertNotice = z.infer<typeof insertNoticeSchema>;
+
+// Export common types
 export type UserRole = 'member' | 'admin' | 'super_admin' | 'applicant';
 export type ContentStatus = 'pending' | 'approved' | 'rejected';
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
-
-// User type for frontend (compatible with MongoDB)
-export interface User {
-  id: string;
-  _id?: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  age?: string;
-  address?: string;
-  motivation?: string;
-  profileImageUrl?: string;
-  role: UserRole;
-  permissions: string[];
-  isActive: boolean;
-  authType: 'email' | 'replit';
-  applicationStatus?: ApplicationStatus;
-  appliedAt?: Date;
-  approvedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Member type for frontend (compatible with MongoDB)
-export interface Member {
-  id: string;
-  _id?: string;
-  name: string;
-  email: string;
-  role: string;
-  bio: string;
-  profileImageUrl?: string;
-  status: ContentStatus;
-  social?: {
-    linkedin?: string;
-    facebook?: string;
-  };
-  createdBy: string;
-  approvedBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Project type for frontend (compatible with MongoDB)
-export interface Project {
-  id: string;
-  _id?: string;
-  title: string;
-  description: string;
-  imageUrl?: string;
-  completedAt?: string;
-  category?: string;
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled';
-  priorityScore?: number;
-  impactLevel?: 'low' | 'medium' | 'high';
-  autoCategory?: string;
-  daysActive?: number;
-  createdBy: string;
-  approvedBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// News Article type for frontend (compatible with MongoDB)
-export interface NewsArticle {
-  id: string;
-  _id?: string;
-  title: string;
-  content: string;
-  excerpt?: string;
-  imageUrl?: string;
-  category?: string;
-  contentCategory?: string;
-  author: string;
-  status: 'draft' | 'published' | 'archived';
-  contentScore?: number;
-  readabilityLevel?: 'simple' | 'medium' | 'complex';
-  estimatedReadTime?: number;
-  engagement?: number;
-  daysOld?: number;
-  readCount: number;
-  publishedAt: Date;
-  createdBy: string;
-  approvedBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Gallery Image type for frontend (compatible with MongoDB)
-export interface GalleryImage {
-  id: string;
-  _id?: string;
-  title: string;
-  description?: string;
-  alt?: string;
-  imageUrl: string;
-  category?: string;
-  qualityScore?: number;
-  daysOld?: number;
-  status: ContentStatus;
-  createdBy: string;
-  approvedBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Contact Message type for frontend (compatible with MongoDB)
-export interface ContactMessage {
-  id: string;
-  _id?: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  createdAt: Date;
-}
-
-// Registration type for frontend (compatible with MongoDB)
-export interface Registration {
-  id: string;
-  _id?: string;
-  name: string;
-  email: string;
-  phone: string;
-  institution: string;
-  reason: string;
-  status: ApplicationStatus;
-  reviewedBy?: string;
-  reviewedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Event type for frontend (compatible with MongoDB)
-export interface Event {
-  id: string;
-  _id?: string;
-  title: string;
-  description: string;
-  date: Date;
-  time: string;
-  location: string;
-  category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'olympiad' | 'competition' | 'hackathon' | 'other';
-  maxParticipants?: number;
-  registrationRequired: boolean;
-  registrationDeadline?: Date;
-  eligibility?: string;
-  prizes?: string;
-  teamEvent?: boolean;
-  minTeamSize?: number;
-  maxTeamSize?: number;
-  contactInfo?: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  urgency?: 'urgent' | 'soon' | 'normal' | 'past';
-  capacity?: 'limited' | 'moderate' | 'large' | 'available';
-  popularity?: number;
-  smartStatus?: string;
-  daysUntilEvent?: number;
-  isUpcoming?: boolean;
-  isPast?: boolean;
-  isToday?: boolean;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Event Registration type for frontend (compatible with MongoDB)
-export interface EventRegistration {
-  id: string;
-  _id?: string;
-  eventId: string;
-  participantId?: string;
-  participantName: string;
-  email: string;
-  phone: string;
-  institution?: string;
-  grade?: string;
-  experience?: string;
-  motivation?: string;
-  teamName?: string;
-  teamMembers?: Array<{ name: string; email: string; phone: string; }>;
-  additionalInfo?: string;
-  status: 'registered' | 'confirmed' | 'waitlist' | 'cancelled';
-  registeredAt: Date;
-  checkInTime?: Date;
-}
-
-// Notice type for frontend (compatible with MongoDB)
-export interface Notice {
-  id: string;
-  _id?: string;
-  title: string;
-  message: string;
-  type: 'announcement' | 'event' | 'urgent' | 'info';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  startDate: Date;
-  endDate: Date;
-  link?: string;
-  linkText?: string;
-  dismissible: boolean;
-  targetAudience: 'all' | 'members' | 'admins';
-  createdBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Simple insert types for MongoDB compatibility (no Zod validation for now)
-export type InsertUser = Omit<User, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertMember = Omit<Member, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertProject = Omit<Project, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertNewsArticle = Omit<NewsArticle, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertGalleryImage = Omit<GalleryImage, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertContactMessage = Omit<ContactMessage, 'id' | '_id' | 'createdAt'>;
-export type InsertRegistration = Omit<Registration, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertEvent = Omit<Event, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
-export type InsertEventRegistration = Omit<EventRegistration, 'id' | '_id' | 'registeredAt'>;
-export type InsertNotice = Omit<Notice, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
