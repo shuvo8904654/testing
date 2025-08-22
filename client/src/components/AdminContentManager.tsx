@@ -1142,256 +1142,296 @@ function CreateGalleryForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// Event Registration Manager Component
+// Event Registration Manager Component (Enhanced with Reports)
 function EventRegistrationManager() {
   const { toast } = useToast();
-  const [activeRegistrationTab, setActiveRegistrationTab] = useState('registrations');
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  // Fetch event registrations
-  const { data: registrations } = useQuery<any[]>({
-    queryKey: ["/api/event-registrations"],
-  });
-
-  // Fetch events data to categorize registration vs RSVP events
+  // Fetch all events
   const { data: eventsData } = useQuery<{events: Event[], analytics: any}>({
     queryKey: ["/api/events"],
   });
 
+  // Fetch registrations for all events or selected event
+  const { data: registrations = [] } = useQuery<EventRegistration[]>({
+    queryKey: ["/api/event-registrations", selectedEventId],
+    queryFn: async () => {
+      const params = selectedEventId ? `?eventId=${selectedEventId}` : '';
+      const response = await apiRequest("GET", `/api/event-registrations${params}`);
+      return response;
+    },
+  });
+
   const events = eventsData?.events || [];
-  const allRegistrations = registrations || [];
 
-  // Categorize events
-  const registrationEvents = events.filter(event => 
-    event.registrationRequired && 
-    (event.status === 'upcoming' || event.status === 'ongoing')
-  );
-  
-  const rsvpEvents = events.filter(event => 
-    !event.registrationRequired && 
-    (event.status === 'upcoming' || event.status === 'ongoing')
-  );
-
-  const approveRegistrationMutation = useMutation({
-    mutationFn: async (registrationId: string) => {
-      return apiRequest("PATCH", `/api/event-registrations/${registrationId}`, { status: 'approved' });
+  const updateRegistrationStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number, status: string }) => {
+      return apiRequest("PATCH", `/api/event-registrations/${id}`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Registration approved successfully" });
+      toast({ title: "Registration status updated successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/event-registrations"] });
     },
   });
 
-  const rejectRegistrationMutation = useMutation({
-    mutationFn: async (registrationId: string) => {
-      return apiRequest("PATCH", `/api/event-registrations/${registrationId}`, { status: 'rejected' });
-    },
-    onSuccess: () => {
-      toast({ title: "Registration rejected successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/event-registrations"] });
-    },
-  });
+  // Analytics calculations
+  const analytics = {
+    totalRegistrations: registrations.length,
+    confirmedRegistrations: registrations.filter(r => r.status === 'confirmed').length,
+    pendingRegistrations: registrations.filter(r => r.status === 'pending').length,
+    cancelledRegistrations: registrations.filter(r => r.status === 'cancelled').length,
+  };
+
+  const selectedEvent = selectedEventId ? events.find(e => e.id === selectedEventId) : null;
 
   return (
     <div className="space-y-6">
+      {/* Header and Filters */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Event Registration Management</h3>
-        <Badge variant="secondary">{allRegistrations.length} total registrations</Badge>
+        <h3 className="text-lg font-semibold">Event Registration Reports</h3>
+        <div className="flex items-center gap-4">
+          <Select value={selectedEventId?.toString() || 'all'} onValueChange={(value) => setSelectedEventId(value === 'all' ? null : parseInt(value))}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Select an event" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {events.map(event => (
+                <SelectItem key={event.id} value={event.id.toString()}>
+                  {event.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
-      <Tabs value={activeRegistrationTab} onValueChange={setActiveRegistrationTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="registrations">Registration Events</TabsTrigger>
-          <TabsTrigger value="rsvp">RSVP Events</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+      {/* Analytics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Total Registrations</p>
+                <p className="text-2xl font-bold">{analytics.totalRegistrations}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Confirmed</p>
+                <p className="text-2xl font-bold">{analytics.confirmedRegistrations}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Pending</p>
+                <p className="text-2xl font-bold">{analytics.pendingRegistrations}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <div>
+                <p className="text-sm font-medium">Cancelled</p>
+                <p className="text-2xl font-bold">{analytics.cancelledRegistrations}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="registrations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Registration Events ({registrationEvents.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {registrationEvents.length > 0 ? (
-                <div className="grid gap-4">
-                  {registrationEvents.map((event) => {
-                    const eventRegistrations = allRegistrations.filter(reg => reg.eventId === event.id);
-                    return (
-                      <Card key={event.id} className="border-l-4 border-l-blue-500">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-semibold">{event.title}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{event.description}</p>
-                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                <span>📅 {new Date(event.date).toLocaleDateString()}</span>
-                                <span>⏰ {event.time}</span>
-                                <span>📍 {event.location}</span>
-                                <span>👥 {eventRegistrations.length} registered</span>
-                              </div>
-                            </div>
-                            <Badge variant="default">Registration Required</Badge>
-                          </div>
-                          
-                          {eventRegistrations.length > 0 && (
-                            <div className="mt-4 border-t pt-4">
-                              <h5 className="font-medium text-sm mb-2">Recent Registrations:</h5>
-                              <div className="space-y-2">
-                                {eventRegistrations.slice(0, 3).map((registration) => (
-                                  <div key={registration.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                    <div>
-                                      <span className="font-medium text-sm">{registration.participantName}</span>
-                                      <span className="text-xs text-gray-500 ml-2">{registration.email}</span>
-                                    </div>
-                                    <div className="flex gap-1">
-                                      {registration.status === 'registered' && (
-                                        <>
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={() => approveRegistrationMutation.mutate(registration.id.toString())}
-                                            className="text-green-600 hover:bg-green-50 h-6 px-2"
-                                          >
-                                            ✓
-                                          </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={() => rejectRegistrationMutation.mutate(registration.id.toString())}
-                                            className="text-red-600 hover:bg-red-50 h-6 px-2"
-                                          >
-                                            ✗
-                                          </Button>
-                                        </>
-                                      )}
-                                      {registration.status !== 'registered' && (
-                                        <Badge variant={registration.status === 'approved' ? 'default' : 'destructive'} className="text-xs">
-                                          {registration.status}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="font-medium">No Registration Events</h4>
-                  <p className="text-sm">Events requiring registration will appear here.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="rsvp" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">RSVP Events ({rsvpEvents.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {rsvpEvents.length > 0 ? (
-                <div className="grid gap-4">
-                  {rsvpEvents.map((event) => (
-                    <Card key={event.id} className="border-l-4 border-l-green-500">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold">{event.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{event.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                              <span>📅 {new Date(event.date).toLocaleDateString()}</span>
-                              <span>⏰ {event.time}</span>
-                              <span>📍 {event.location}</span>
-                              <span>👥 Quick RSVP</span>
-                            </div>
-                          </div>
-                          <Badge variant="outline">RSVP Only</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
+      {/* Selected Event Details */}
+      {selectedEvent && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{selectedEvent.title} - Event Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="font-medium">Date & Time</p>
+                <p>{new Date(selectedEvent.date).toLocaleDateString()} at {selectedEvent.time}</p>
+              </div>
+              <div>
+                <p className="font-medium">Location</p>
+                <p>{selectedEvent.location}</p>
+              </div>
+              <div>
+                <p className="font-medium">Capacity</p>
+                <p>{selectedEvent.maxParticipants ? `${registrations.length}/${selectedEvent.maxParticipants}` : registrations.length}</p>
+              </div>
+            </div>
+            {selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0 && (
+              <div className="mt-4">
+                <p className="font-medium text-sm mb-2">Custom Questions:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {selectedEvent.customQuestions.map((q, index) => (
+                    <div key={q.id} className="text-xs bg-gray-50 p-2 rounded">
+                      <strong>Q{index + 1}:</strong> {q.question} ({q.type})
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <h4 className="font-medium">No RSVP Events</h4>
-                  <p className="text-sm">Quick RSVP events will appear here.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{registrationEvents.length}</div>
-                  <div className="text-sm text-gray-600">Registration Events</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{rsvpEvents.length}</div>
-                  <div className="text-sm text-gray-600">RSVP Events</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{allRegistrations.length}</div>
-                  <div className="text-sm text-gray-600">Total Registrations</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Registration Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Registration Events</span>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-20 bg-gray-200 rounded">
-                      <div 
-                        className="h-2 bg-blue-500 rounded"
-                        style={{ width: `${(registrationEvents.length / (registrationEvents.length + rsvpEvents.length || 1)) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{registrationEvents.length}</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">RSVP Events</span>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-20 bg-gray-200 rounded">
-                      <div 
-                        className="h-2 bg-green-500 rounded"
-                        style={{ width: `${(rsvpEvents.length / (registrationEvents.length + rsvpEvents.length || 1)) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{rsvpEvents.length}</span>
-                  </div>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Registrations List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            {selectedEvent ? `Registrations for ${selectedEvent.title}` : 'All Event Registrations'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {registrations.map((registration) => {
+              const event = events.find(e => e.id === registration.eventId);
+              return (
+                <div key={registration.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h4 className="font-medium">{registration.name}</h4>
+                        <p className="text-sm text-gray-600">{registration.email}</p>
+                        {!selectedEvent && event && (
+                          <p className="text-xs text-gray-500 mt-1">Event: {event.title}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={
+                          registration.status === 'confirmed' ? 'default' :
+                          registration.status === 'pending' ? 'secondary' : 'destructive'
+                        }
+                      >
+                        {registration.status}
+                      </Badge>
+                      {registration.status === 'pending' && (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateRegistrationStatusMutation.mutate({
+                              id: registration.id,
+                              status: 'confirmed'
+                            })}
+                            disabled={updateRegistrationStatusMutation.isPending}
+                            className="h-7 px-2 text-green-600 hover:bg-green-50"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateRegistrationStatusMutation.mutate({
+                              id: registration.id,
+                              status: 'cancelled'
+                            })}
+                            disabled={updateRegistrationStatusMutation.isPending}
+                            className="h-7 px-2 text-red-600 hover:bg-red-50"
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    {registration.phone && (
+                      <div>
+                        <p className="font-medium">Phone</p>
+                        <p>{registration.phone}</p>
+                      </div>
+                    )}
+                    {registration.institution && (
+                      <div>
+                        <p className="font-medium">Institution</p>
+                        <p>{registration.institution}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">Registered</p>
+                      <p>{new Date(registration.registeredAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  
+                  {registration.reason && (
+                    <div className="mt-3">
+                      <p className="font-medium text-sm">Reason for participation:</p>
+                      <p className="text-sm bg-gray-50 p-2 rounded mt-1">{registration.reason}</p>
+                    </div>
+                  )}
+                  
+                  {registration.teamName && (
+                    <div className="mt-3">
+                      <p className="font-medium text-sm">Team Details:</p>
+                      <p className="text-sm"><strong>Team:</strong> {registration.teamName}</p>
+                      {registration.teamMembers && (
+                        <p className="text-sm bg-gray-50 p-2 rounded mt-1">
+                          <strong>Members:</strong> {registration.teamMembers}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {registration.customAnswers && Object.keys(registration.customAnswers).length > 0 && (
+                    <div className="mt-3">
+                      <p className="font-medium text-sm">Custom Answers:</p>
+                      <div className="space-y-1 mt-1">
+                        {Object.entries(registration.customAnswers).map(([questionId, answer]) => {
+                          const question = event?.customQuestions?.find(q => q.id === questionId);
+                          return (
+                            <div key={questionId} className="text-sm bg-gray-50 p-2 rounded">
+                              <strong>{question?.question || questionId}:</strong> {Array.isArray(answer) ? answer.join(', ') : answer}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            {registrations.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h4 className="font-medium">No Registrations Found</h4>
+                <p className="text-sm">
+                  {selectedEvent 
+                    ? `No registrations yet for ${selectedEvent.title}` 
+                    : 'No event registrations available'}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1399,6 +1439,13 @@ function EventRegistrationManager() {
 // Edit Event Form
 function EditEventForm({ event, onSuccess }: { event: Event, onSuccess: () => void }) {
   const { toast } = useToast();
+  const [customQuestions, setCustomQuestions] = useState<Array<{
+    id: string;
+    question: string;
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+    required: boolean;
+    options?: string[];
+  }>>(event.customQuestions || []);
   
   const form = useForm({
     defaultValues: {
@@ -1417,9 +1464,34 @@ function EditEventForm({ event, onSuccess }: { event: Event, onSuccess: () => vo
     },
   });
 
+  const addCustomQuestion = () => {
+    const newQuestion = {
+      id: `q_${Date.now()}`,
+      question: '',
+      type: 'text' as const,
+      required: false,
+      options: []
+    };
+    setCustomQuestions([...customQuestions, newQuestion]);
+  };
+
+  const removeCustomQuestion = (id: string) => {
+    setCustomQuestions(customQuestions.filter(q => q.id !== id));
+  };
+
+  const updateCustomQuestion = (id: string, field: string, value: any) => {
+    setCustomQuestions(customQuestions.map(q => 
+      q.id === id ? { ...q, [field]: value } : q
+    ));
+  };
+
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("PUT", `/api/events/${event.id}`, data);
+      const eventData = {
+        ...data,
+        customQuestions: customQuestions.filter(q => q.question.trim() !== '')
+      };
+      return apiRequest("PUT", `/api/events/${event.id}`, eventData);
     },
     onSuccess: () => {
       toast({ title: "Event updated successfully" });
@@ -1633,6 +1705,91 @@ function EditEventForm({ event, onSuccess }: { event: Event, onSuccess: () => vo
             </FormItem>
           )}
         />
+
+        {/* Custom Questions Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium">Custom Registration Questions</h4>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addCustomQuestion()}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Question
+            </Button>
+          </div>
+          
+          {customQuestions.map((question, index) => (
+            <div key={question.id} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Question {index + 1}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeCustomQuestion(question.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Question</label>
+                  <Input
+                    value={question.question}
+                    onChange={(e) => updateCustomQuestion(question.id, 'question', e.target.value)}
+                    placeholder="Enter your question"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Type</label>
+                  <Select
+                    value={question.type}
+                    onValueChange={(value) => updateCustomQuestion(question.id, 'type', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Text Input</SelectItem>
+                      <SelectItem value="textarea">Text Area</SelectItem>
+                      <SelectItem value="select">Dropdown</SelectItem>
+                      <SelectItem value="radio">Radio Buttons</SelectItem>
+                      <SelectItem value="checkbox">Checkboxes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={question.required}
+                    onChange={(e) => updateCustomQuestion(question.id, 'required', e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Required</span>
+                </label>
+              </div>
+              
+              {(question.type === 'select' || question.type === 'radio' || question.type === 'checkbox') && (
+                <div>
+                  <label className="text-sm font-medium">Options (one per line)</label>
+                  <Textarea
+                    value={question.options?.join('\n') || ''}
+                    onChange={(e) => updateCustomQuestion(question.id, 'options', e.target.value.split('\n').filter(Boolean))}
+                    placeholder="Option 1&#10;Option 2&#10;Option 3"
+                    rows={3}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
         
         <Button type="submit" disabled={updateMutation.isPending} className="w-full">
           {updateMutation.isPending ? "Updating..." : "Update Event"}
@@ -1641,6 +1798,8 @@ function EditEventForm({ event, onSuccess }: { event: Event, onSuccess: () => vo
     </Form>
   );
 }
+
+// Pending Content Manager Component
 
 // Pending Content Manager Component
 function PendingContentManager({ pendingContent }: { 

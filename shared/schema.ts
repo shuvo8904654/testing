@@ -144,6 +144,13 @@ export const events = pgTable('events', {
   minTeamSize: integer('min_team_size'),
   maxTeamSize: integer('max_team_size'),
   contactInfo: text('contact_info'),
+  customQuestions: json('custom_questions').$type<Array<{
+    id: string;
+    question: string;
+    type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio';
+    required: boolean;
+    options?: string[];
+  }>>().default([]),
   status: varchar('status', { length: 20 }).notNull().default('upcoming'),
   urgency: varchar('urgency', { length: 20 }),
   capacity: varchar('capacity', { length: 20 }),
@@ -167,6 +174,7 @@ export const eventRegistrations = pgTable('event_registrations', {
   reason: text('reason'),
   teamName: varchar('team_name', { length: 255 }),
   teamMembers: text('team_members'),
+  customAnswers: json('custom_answers').$type<Record<string, string | string[]>>().default({}),
   status: varchar('status', { length: 20 }).notNull().default('confirmed'),
   registeredAt: timestamp('registered_at').defaultNow().notNull(),
 }, (table) => ({
