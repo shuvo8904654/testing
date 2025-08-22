@@ -99,7 +99,7 @@ export default function MemberDashboardEnhanced() {
 
   // Fetch user data and activities
   const { data: memberData } = useQuery<Member>({
-    queryKey: ["/api/member-profile", user?.id],
+    queryKey: ["/api/member-profile/user", user?.id],
     enabled: !!user?.id,
   });
 
@@ -261,10 +261,10 @@ export default function MemberDashboardEnhanced() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: any) => {
-      return await apiRequest("PUT", `/api/member-profile/${user?.id}`, profileData);
+      return await apiRequest("PUT", `/api/member-profile/user/${user?.id}`, profileData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/member-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/member-profile/user", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/members"] });
       setProfileDialogOpen(false);
       toast({

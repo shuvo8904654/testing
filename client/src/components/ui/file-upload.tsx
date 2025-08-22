@@ -64,7 +64,7 @@ export function FileUpload({
     }
   };
 
-  const uploadFile = async (file: File | Blob) => {
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
 
     try {
@@ -117,7 +117,7 @@ export function FileUpload({
   }, [cropAspect]);
 
   const getCroppedImg = useCallback(
-    (image: HTMLImageElement, crop: Crop): Promise<Blob> => {
+    (image: HTMLImageElement, crop: Crop): Promise<File> => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
@@ -144,7 +144,12 @@ export function FileUpload({
       return new Promise((resolve) => {
         canvas.toBlob((blob) => {
           if (blob) {
-            resolve(blob);
+            // Create a File object from the blob with proper name and type
+            const file = new File([blob], `cropped-image-${Date.now()}.jpg`, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(file);
           }
         }, 'image/jpeg', 0.9);
       });
@@ -155,8 +160,8 @@ export function FileUpload({
   const handleCropComplete = async () => {
     if (completedCrop && imgRef.current) {
       try {
-        const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
-        await uploadFile(croppedImageBlob);
+        const croppedImageFile = await getCroppedImg(imgRef.current, completedCrop);
+        await uploadFile(croppedImageFile);
         setCropDialogOpen(false);
         setImageToCrop(null);
       } catch (error) {
