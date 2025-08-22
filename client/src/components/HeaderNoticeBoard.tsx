@@ -46,50 +46,7 @@ export default function HeaderNoticeBoard() {
     queryFn: () => fetch('/api/notices?active=true').then(res => res.json()),
   });
 
-  const notices: Notice[] = noticesData.length > 0 ? noticesData : [
-    {
-      id: 1,
-      title: 'Youth Environmental Olympiad 2025',
-      message: 'Registration is now open for the annual Environmental Olympiad. Show your knowledge and win exciting prizes!',
-      type: 'event',
-      priority: 'high',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
-      link: '/events/environmental-olympiad',
-      linkText: 'Register Now',
-      dismissible: true
-    },
-    {
-      id: 2,
-      title: 'New Partnership with Local Schools',
-      message: 'We\'re excited to announce partnerships with 5 local schools to expand our environmental education programs.',
-      type: 'announcement',
-      priority: 'medium',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
-      dismissible: true
-    },
-    {
-      id: 3,
-      title: 'Monthly Team Meeting',
-      message: 'Join us for our monthly planning meeting this Saturday at 3 PM at the community center.',
-      type: 'event',
-      priority: 'medium',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), // 3 days
-      dismissible: true
-    },
-    {
-      id: 4,
-      title: 'Website Maintenance Notice',
-      message: 'Brief maintenance scheduled for this weekend. Some features may be temporarily unavailable.',
-      type: 'info',
-      priority: 'low',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2), // 2 days
-      dismissible: true
-    }
-  ];
+  const notices: Notice[] = noticesData || [];
 
   // Filter active and non-dismissed notices
   const activeNotices = notices.filter(notice => {

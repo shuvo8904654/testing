@@ -65,22 +65,39 @@ export default function AdminContentManager() {
     queryKey: ["/api/members"],
   });
 
+  // Fetch pending content that needs admin approval
+  const { data: pendingContent } = useQuery<{
+    projects: Project[],
+    news: NewsArticle[],
+    members: Member[],
+    gallery: GalleryImage[]
+  }>({
+    queryKey: ["/api/pending-content"],
+  });
+
   const projects = projectsData?.projects || [];
   const articles = newsData?.articles || [];
   const events = eventsData?.events || [];
   const gallery = galleryData || [];
+  
+  // Combine approved content with pending content for admin review
+  const allProjects = [...projects, ...(pendingContent?.projects || [])];
+  const allArticles = [...articles, ...(pendingContent?.news || [])];
+  const allGallery = [...gallery, ...(pendingContent?.gallery || [])];
+  const pendingMembers = pendingContent?.members || [];
 
   // Analytics overview
   const analytics = {
-    totalProjects: projects.length,
-    totalArticles: articles.length,
+    totalProjects: allProjects.length,
+    totalArticles: allArticles.length,
     totalEvents: events.length,
-    totalImages: gallery.length,
-    totalMembers: members?.length || 0,
+    totalImages: allGallery.length,
+    totalMembers: (members?.length || 0) + pendingMembers.length,
     pendingApprovals: [
-      ...projects.filter(p => p.status === 'pending'),
-      ...articles.filter(a => a.status === 'draft'),
-      ...gallery.filter(g => g.status === 'pending')
+      ...(pendingContent?.projects || []),
+      ...(pendingContent?.news || []),
+      ...(pendingContent?.gallery || []),
+      ...pendingMembers
     ].length
   };
 
@@ -175,19 +192,20 @@ export default function AdminContentManager() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="projects" data-testid="tab-projects">Projects</TabsTrigger>
               <TabsTrigger value="news" data-testid="tab-news">News</TabsTrigger>
               <TabsTrigger value="events" data-testid="tab-events">Events</TabsTrigger>
               <TabsTrigger value="gallery" data-testid="tab-gallery">Gallery</TabsTrigger>
+              <TabsTrigger value="pending" data-testid="tab-pending">Pending Reviews</TabsTrigger>
             </TabsList>
             
             <TabsContent value="projects" className="space-y-4">
-              <ProjectsManager projects={projects} />
+              <ProjectsManager projects={allProjects} />
             </TabsContent>
             
             <TabsContent value="news" className="space-y-4">
-              <NewsManager articles={articles} />
+              <NewsManager articles={allArticles} />
             </TabsContent>
             
             <TabsContent value="events" className="space-y-4">
@@ -195,7 +213,11 @@ export default function AdminContentManager() {
             </TabsContent>
             
             <TabsContent value="gallery" className="space-y-4">
-              <GalleryManager images={gallery} />
+              <GalleryManager images={allGallery} />
+            </TabsContent>
+            
+            <TabsContent value="pending" className="space-y-4">
+              <PendingContentManager pendingContent={pendingContent} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -220,11 +242,23 @@ function ProjectsManager({ projects }: { projects: Project[] }) {
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("PATCH", `/api/projects/${id}`, { status: 'completed' });
+      return apiRequest("POST", `/api/approve-content/project/${id}`);
     },
     onSuccess: () => {
       toast({ title: "Project approved successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/reject-content/project/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Project rejected successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
     },
   });
 
@@ -257,14 +291,26 @@ function ProjectsManager({ projects }: { projects: Project[] }) {
                 </div>
                 <div className="flex gap-2">
                   {project.status === 'pending' && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => approveMutation.mutate(project.id)}
-                      disabled={approveMutation.isPending}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => approveMutation.mutate(project.id.toString())}
+                        disabled={approveMutation.isPending}
+                        className="text-green-600 hover:bg-green-50"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => rejectMutation.mutate(project.id.toString())}
+                        disabled={rejectMutation.isPending}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                   <Button size="sm" variant="outline">
                     <Edit className="h-4 w-4" />
@@ -272,7 +318,7 @@ function ProjectsManager({ projects }: { projects: Project[] }) {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => deleteMutation.mutate(project.id)}
+                    onClick={() => deleteMutation.mutate(project.id.toString())}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -304,6 +350,29 @@ function NewsManager({ articles }: { articles: NewsArticle[] }) {
     onSuccess: () => {
       toast({ title: "Article deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/approve-content/news/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Article approved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/reject-content/news/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Article rejected successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
     },
   });
 
@@ -338,6 +407,28 @@ function NewsManager({ articles }: { articles: NewsArticle[] }) {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {article.status === 'pending' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => approveMutation.mutate(article.id.toString())}
+                        disabled={approveMutation.isPending}
+                        className="text-green-600 hover:bg-green-50"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => rejectMutation.mutate(article.id.toString())}
+                        disabled={rejectMutation.isPending}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                   <Button size="sm" variant="outline">
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -347,7 +438,7 @@ function NewsManager({ articles }: { articles: NewsArticle[] }) {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => deleteMutation.mutate(article.id)}
+                    onClick={() => deleteMutation.mutate(article.id.toString())}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -452,6 +543,29 @@ function GalleryManager({ images }: { images: GalleryImage[] }) {
     onSuccess: () => {
       toast({ title: "Image deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/approve-content/gallery/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Image approved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("POST", `/api/reject-content/gallery/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Image rejected successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/gallery"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pending-content"] });
     },
   });
 
@@ -483,13 +597,35 @@ function GalleryManager({ images }: { images: GalleryImage[] }) {
                   {image.status}
                 </Badge>
                 <div className="flex gap-1">
+                  {image.status === 'pending' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => approveMutation.mutate(image.id.toString())}
+                        disabled={approveMutation.isPending}
+                        className="text-green-600 hover:bg-green-50"
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => rejectMutation.mutate(image.id.toString())}
+                        disabled={rejectMutation.isPending}
+                        className="text-red-600 hover:bg-red-50"
+                      >
+                        <XCircle className="h-3 w-3" />
+                      </Button>
+                    </>
+                  )}
                   <Button size="sm" variant="outline">
                     <Edit className="h-3 w-3" />
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => deleteMutation.mutate(image.id)}
+                    onClick={() => deleteMutation.mutate(image.id.toString())}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="h-3 w-3" />
