@@ -1,5 +1,5 @@
 import { db } from './db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import cloudinary from './cloudinary';
 import bcrypt from 'bcrypt';
 import {
@@ -249,7 +249,7 @@ export class PostgreSQLStorage implements IStorage {
 
   async incrementReadCount(id: number): Promise<void> {
     await db.update(newsArticles)
-      .set({ readCount: newsArticles.readCount + 1 })
+      .set({ readCount: sql`${newsArticles.readCount} + 1` })
       .where(eq(newsArticles.id, id));
   }
 

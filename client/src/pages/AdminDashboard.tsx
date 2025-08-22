@@ -23,6 +23,7 @@ import { insertUserSchema, insertEventSchema } from "@shared/validation";
 import { z } from "zod";
 import AdminContentManager from "@/components/AdminContentManager";
 import NoticeManagement from "@/components/NoticeManagement";
+import { NotificationPanel } from "@/components/NotificationPanel";
 
 export default function AdminDashboard() {
   const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
@@ -447,6 +448,11 @@ export default function AdminDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Real-time Notifications Panel */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <NotificationPanel />
+      </div>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">

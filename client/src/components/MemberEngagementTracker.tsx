@@ -220,7 +220,7 @@ export default function MemberEngagementTracker() {
                   </div>
                   <CardContent className="p-4 text-center">
                     <Avatar className="h-16 w-16 mx-auto mb-3">
-                      <AvatarImage src={member.image} alt={member.name} />
+                      <AvatarImage src={member.profileImageUrl || member.image} alt={member.name} />
                       <AvatarFallback>
                         {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>

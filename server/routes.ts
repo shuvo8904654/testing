@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import { 
@@ -1673,8 +1674,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Content approval endpoints
+  app.post("/api/approve-content/:type/:id", isAdmin, async (req: any, res) => {
+    try {
+      const { type, id } = req.params;
+      const approvedBy = parseInt(req.user.claims.sub);
+      await storage.approveContent(type, parseInt(id), approvedBy);
+      
+      // Broadcast real-time notification
+      if ((global as any).broadcastNotification) {
+        (global as any).broadcastNotification({
+          type: 'approval',
+          title: 'Content Approved',
+          message: `${type.charAt(0).toUpperCase() + type.slice(1)} has been approved`,
+          data: { contentType: type, contentId: id, approvedBy }
+        });
+      }
+      
+      res.json({ message: `${type} approved successfully` });
+    } catch (error) {
+      console.error(`Error approving ${req.params.type}:`, error);
+      res.status(500).json({ message: `Failed to approve ${req.params.type}` });
+    }
+  });
+
+  app.post("/api/reject-content/:type/:id", isAdmin, async (req: any, res) => {
+    try {
+      const { type, id } = req.params;
+      const approvedBy = parseInt(req.user.claims.sub);
+      await storage.rejectContent(type, parseInt(id), approvedBy);
+      res.json({ message: `${type} rejected successfully` });
+    } catch (error) {
+      console.error(`Error rejecting ${req.params.type}:`, error);
+      res.status(500).json({ message: `Failed to reject ${req.params.type}` });
+    }
+  });
+
+  // User role management endpoint
+  app.put("/api/users/:id", isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      // If updating role, use the specific role update method
+      if (updateData.role !== undefined) {
+        const updatedUser = await storage.updateUserRole(
+          parseInt(id), 
+          updateData.role, 
+          updateData.permissions || []
+        );
+        res.json(updatedUser);
+      } else {
+        // For other updates, use general update method
+        const updatedUser = await storage.updateUser(parseInt(id), updateData);
+        res.json(updatedUser);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Create and return HTTP server instance
   const server = createServer(app);
+  
+  // Setup WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  
+  // Store connected clients
+  const clients = new Set<WebSocket>();
+  
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('New WebSocket connection established');
+    clients.add(ws);
+    
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+      clients.delete(ws);
+    });
+    
+    // Send initial connection message
+    ws.send(JSON.stringify({
+      type: 'connected',
+      message: 'Connected to real-time notifications'
+    }));
+  });
+  
+  // Function to broadcast notifications to all connected clients
+  (global as any).broadcastNotification = (notification: {
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }) => {
+    const notificationData = JSON.stringify(notification);
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(notificationData);
+      }
+    });
+  };
+  
   return server;
 }
 

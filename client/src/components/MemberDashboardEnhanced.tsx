@@ -257,7 +257,7 @@ export default function MemberDashboardEnhanced() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={memberData?.image} alt={memberData?.name} />
+            <AvatarImage src={memberData?.profileImageUrl || memberData?.image} alt={memberData?.name} />
             <AvatarFallback>
               {memberData?.name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
