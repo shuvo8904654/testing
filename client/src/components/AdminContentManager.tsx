@@ -1165,7 +1165,7 @@ function EventRegistrationManager() {
     queryFn: async () => {
       const params = selectedEventId ? `?eventId=${selectedEventId}` : '';
       const response = await apiRequest("GET", `/api/event-registrations${params}`);
-      return response;
+      return Array.isArray(response) ? response : [];
     },
   });
 
@@ -1182,11 +1182,12 @@ function EventRegistrationManager() {
   });
 
   // Analytics calculations
+  const safeRegistrations = Array.isArray(registrations) ? registrations : [];
   const analytics = {
-    totalRegistrations: registrations.length,
-    confirmedRegistrations: registrations.filter(r => r.status === 'confirmed').length,
-    pendingRegistrations: registrations.filter(r => r.status === 'pending').length,
-    cancelledRegistrations: registrations.filter(r => r.status === 'cancelled').length,
+    totalRegistrations: safeRegistrations.length,
+    confirmedRegistrations: safeRegistrations.filter(r => r.status === 'confirmed').length,
+    pendingRegistrations: safeRegistrations.filter(r => r.status === 'pending').length,
+    cancelledRegistrations: safeRegistrations.filter(r => r.status === 'cancelled').length,
   };
 
   const selectedEvent = selectedEventId ? events.find(e => e.id === selectedEventId) : null;
@@ -1286,7 +1287,7 @@ function EventRegistrationManager() {
               </div>
               <div>
                 <p className="font-medium">Capacity</p>
-                <p>{selectedEvent.maxParticipants ? `${registrations.length}/${selectedEvent.maxParticipants}` : registrations.length}</p>
+                <p>{selectedEvent.maxParticipants ? `${safeRegistrations.length}/${selectedEvent.maxParticipants}` : safeRegistrations.length}</p>
               </div>
             </div>
             {selectedEvent.customQuestions && selectedEvent.customQuestions.length > 0 && (
@@ -1314,7 +1315,7 @@ function EventRegistrationManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {registrations.map((registration) => {
+            {safeRegistrations.map((registration) => {
               const event = events.find(e => e.id === registration.eventId);
               return (
                 <div key={registration.id} className="border rounded-lg p-4">
@@ -1425,7 +1426,7 @@ function EventRegistrationManager() {
               );
             })}
             
-            {registrations.length === 0 && (
+            {safeRegistrations.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <h4 className="font-medium">No Registrations Found</h4>

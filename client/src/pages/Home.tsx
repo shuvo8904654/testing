@@ -97,17 +97,13 @@ export default function Home() {
                 to build a sustainable and equitable future for all.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/join">
-                  <Button className="bg-white text-eco-green px-8 py-4 rounded-full font-semibold hover:bg-gray-100 text-lg" data-testid="button-join-movement">
-                    <Rocket className="mr-2" />
-                    Join the Movement
-                  </Button>
+                <Link href="/join" className="bg-white text-eco-green px-8 py-4 rounded-full font-semibold hover:bg-gray-100 text-lg flex items-center justify-center" data-testid="button-join-movement">
+                  <Rocket className="mr-2" />
+                  Join the Movement
                 </Link>
-                <Link href="/about">
-                  <Button variant="outline" className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-eco-green text-lg" data-testid="button-learn-more">
-                    <Play className="mr-2" />
-                    Learn More
-                  </Button>
+                <Link href="/about" className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-eco-green text-lg flex items-center justify-center" data-testid="button-learn-more">
+                  <Play className="mr-2" />
+                  Learn More
                 </Link>
               </div>
             </div>
