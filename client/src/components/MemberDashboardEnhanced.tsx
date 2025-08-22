@@ -67,6 +67,7 @@ export default function MemberDashboardEnhanced() {
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [articleDialogOpen, setArticleDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   // Forms for content creation
   const projectForm = useForm({
@@ -95,6 +96,15 @@ export default function MemberDashboardEnhanced() {
       imageUrl: "",
       category: "general",
       status: "draft"
+    }
+  });
+
+  const profileForm = useForm({
+    defaultValues: {
+      name: memberData?.name || "",
+      bio: memberData?.bio || "",
+      profileImageUrl: memberData?.profileImageUrl || "",
+      position: memberData?.position || ""
     }
   });
 
@@ -251,6 +261,28 @@ export default function MemberDashboardEnhanced() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: any) => {
+      return await apiRequest("PUT", `/api/member-profile/${user?.id}`, profileData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/member-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      setProfileDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="space-y-6" data-testid="member-dashboard-enhanced">
       {/* Header */}
@@ -272,10 +304,70 @@ export default function MemberDashboardEnhanced() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Profile
-          </Button>
+          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+              </DialogHeader>
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit((data) => updateProfileMutation.mutate(data))} className="space-y-4">
+                  <FormField
+                    control={profileForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Your full name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Tell us about yourself" rows={3} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="profileImageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Image URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://..." />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setProfileDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={updateProfileMutation.isPending}>
+                      {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" size="sm">
             <Settings className="h-4 w-4 mr-2" />
             Settings

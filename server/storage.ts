@@ -165,6 +165,11 @@ export class PostgreSQLStorage implements IStorage {
   // Member operations
   async getMembers(): Promise<Member[]> {
     return await db.select().from(members)
+      .orderBy(desc(members.createdAt));
+  }
+
+  async getApprovedMembers(): Promise<Member[]> {
+    return await db.select().from(members)
       .where(eq(members.status, 'approved'))
       .orderBy(desc(members.createdAt));
   }
@@ -226,6 +231,12 @@ export class PostgreSQLStorage implements IStorage {
     await db.delete(projects).where(eq(projects.id, id));
   }
 
+  async getProjectsByCreator(createdBy: number): Promise<Project[]> {
+    return await db.select().from(projects)
+      .where(eq(projects.createdBy, createdBy))
+      .orderBy(desc(projects.createdAt));
+  }
+
   // News operations
   async getNewsArticles(): Promise<NewsArticle[]> {
     return await db.select().from(newsArticles)
@@ -253,6 +264,12 @@ export class PostgreSQLStorage implements IStorage {
 
   async deleteNewsArticle(id: number): Promise<void> {
     await db.delete(newsArticles).where(eq(newsArticles.id, id));
+  }
+
+  async getNewsByCreator(createdBy: number): Promise<NewsArticle[]> {
+    return await db.select().from(newsArticles)
+      .where(eq(newsArticles.createdBy, createdBy))
+      .orderBy(desc(newsArticles.createdAt));
   }
 
   async incrementReadCount(id: number): Promise<void> {

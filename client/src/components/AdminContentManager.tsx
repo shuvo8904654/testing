@@ -991,6 +991,29 @@ function CreateEventForm({ onSuccess }: { onSuccess: () => void }) {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="registrationRequired"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Registration Required</FormLabel>
+                <div className="text-sm text-gray-600">
+                  Enable this if participants need to register formally. If disabled, it will be an RSVP-only event.
+                </div>
+              </div>
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         
         <Button type="submit" disabled={createMutation.isPending} className="w-full">
           {createMutation.isPending ? "Creating..." : "Create Event"}

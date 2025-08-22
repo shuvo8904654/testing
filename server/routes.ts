@@ -212,8 +212,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
-  // Members endpoints
+  // Members endpoints - public (only approved members)
   app.get("/api/members", async (req, res) => {
+    try {
+      const members = await storage.getApprovedMembers();
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch members" });
+    }
+  });
+
+  // Admin endpoint - all members with analytics
+  app.get("/api/admin/members", isAdmin, async (req, res) => {
     try {
       const members = await storage.getMembers();
       res.json(members);
@@ -232,6 +242,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(member);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch member" });
+    }
+  });
+
+  // Member profile management
+  app.get("/api/member-profile/:id", async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.id);
+      const member = await storage.getMember(memberId);
+      if (!member) {
+        return res.status(404).json({ message: "Member profile not found" });
+      }
+      res.json(member);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch member profile" });
+    }
+  });
+
+  app.put("/api/member-profile/:id", async (req, res) => {
+    try {
+      const memberId = parseInt(req.params.id);
+      const updatedMember = await storage.updateMember(memberId, req.body);
+      if (!updatedMember) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+      res.json(updatedMember);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update member profile" });
+    }
+  });
+
+  // User analytics for member dashboard
+  app.get("/api/user-analytics/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Get user's projects, events, articles
+      const userProjects = await storage.getProjectsByCreator(userId);
+      const userArticles = await storage.getNewsByCreator(userId);
+      
+      // Calculate analytics
+      const analytics = {
+        projectsJoined: userProjects.length,
+        eventsAttended: 0, // TODO: implement event tracking
+        articlesContributed: userArticles.length,
+        totalPoints: userProjects.length * 10 + userArticles.length * 5, // Simple point system
+        level: 'Active Member',
+        joinDate: new Date(),
+        daysActive: 30,
+        streak: Math.floor(Math.random() * 15) + 1 // TODO: implement real streak tracking
+      };
+
+      // Mock activities for now
+      const activities = [
+        {
+          id: '1',
+          type: 'content_created',
+          title: 'Created new project',
+          description: 'Environmental cleanup initiative',
+          date: new Date(Date.now() - 86400000), // Yesterday
+          points: 10
+        }
+      ];
+
+      // Mock achievements
+      const achievements = [
+        {
+          id: '1',
+          title: 'First Contributor',
+          description: 'Created your first project',
+          icon: 'trophy',
+          category: 'contribution' as const,
+          dateEarned: new Date(),
+          points: 10
+        }
+      ];
+
+      res.json({ analytics, activities, achievements });
+    } catch (error) {
+      console.error("Error fetching user analytics:", error);
+      res.status(500).json({ message: "Failed to fetch user analytics" });
     }
   });
 
@@ -1374,11 +1464,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/dashboard/projects/:id", isAdmin, async (req, res) => {
+  app.delete("/api/dashboard/projects/:id", async (req: any, res) => {
     try {
-      await storage.deleteProject(parseInt(req.params.id));
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      // Check if user is admin or project creator
+      const isProjectCreator = project.createdBy === req.user?.id;
+      const isAdminUser = req.user?.role === 'admin' || req.user?.role === 'superadmin';
+      
+      if (!isProjectCreator && !isAdminUser) {
+        return res.status(403).json({ error: "Not authorized to delete this project" });
+      }
+
+      await storage.deleteProject(projectId);
       res.json({ message: "Project deleted successfully" });
     } catch (error) {
+      console.error("Error deleting project:", error);
       res.status(500).json({ message: "Failed to delete project" });
     }
   });
