@@ -1,6 +1,12 @@
-// Frontend types based on MongoDB models
-// These types are used by React components
+// Simplified schema file for MongoDB compatibility
+// TODO: Complete PostgreSQL migration when DATABASE_URL is available
 
+// Export types compatible with MongoDB models
+export type UserRole = 'member' | 'admin' | 'super_admin' | 'applicant';
+export type ContentStatus = 'pending' | 'approved' | 'rejected';
+export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+// User type for frontend (compatible with MongoDB)
 export interface User {
   id: string;
   _id?: string;
@@ -12,26 +18,27 @@ export interface User {
   address?: string;
   motivation?: string;
   profileImageUrl?: string;
-  role: 'member' | 'admin' | 'super_admin' | 'applicant';
+  role: UserRole;
   permissions: string[];
   isActive: boolean;
   authType: 'email' | 'replit';
-  applicationStatus?: 'pending' | 'approved' | 'rejected';
+  applicationStatus?: ApplicationStatus;
   appliedAt?: Date;
   approvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Member type for frontend (compatible with MongoDB)
 export interface Member {
   id: string;
   _id?: string;
   name: string;
   email: string;
-  position: string; // Maps to 'role' in MongoDB
+  role: string;
   bio: string;
-  image: string; // Maps to 'profileImageUrl' in MongoDB
-  status: 'pending' | 'approved' | 'rejected';
+  profileImageUrl?: string;
+  status: ContentStatus;
   social?: {
     linkedin?: string;
     facebook?: string;
@@ -42,14 +49,15 @@ export interface Member {
   updatedAt: Date;
 }
 
+// Project type for frontend (compatible with MongoDB)
 export interface Project {
   id: string;
   _id?: string;
   title: string;
   description: string;
   imageUrl?: string;
-  completedAt?: string; // For display purposes
-  category?: string; // Auto-categorized: environmental, educational, community, technology, general
+  completedAt?: string;
+  category?: string;
   status: 'active' | 'completed' | 'on-hold' | 'cancelled';
   priorityScore?: number;
   impactLevel?: 'low' | 'medium' | 'high';
@@ -61,15 +69,15 @@ export interface Project {
   updatedAt: Date;
 }
 
+// News Article type for frontend (compatible with MongoDB)
 export interface NewsArticle {
   id: string;
   _id?: string;
   title: string;
   content: string;
   excerpt?: string;
-  image: string; // Maps to 'imageUrl' in MongoDB
-  imageUrl?: string; // Alternative field name
-  category?: string; // Auto-categorized: environmental, events, community, announcements, general
+  imageUrl?: string;
+  category?: string;
   contentCategory?: string;
   author: string;
   status: 'draft' | 'published' | 'archived';
@@ -78,32 +86,33 @@ export interface NewsArticle {
   estimatedReadTime?: number;
   engagement?: number;
   daysOld?: number;
+  readCount: number;
+  publishedAt: Date;
   createdBy: string;
   approvedBy?: string;
-  readCount: number;
-  publishedAt: Date; // Maps to 'createdAt'
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Gallery Image type for frontend (compatible with MongoDB)
 export interface GalleryImage {
   id: string;
   _id?: string;
   title: string;
   description?: string;
   alt?: string;
-  url?: string; // Alternative field name
   imageUrl: string;
-  category?: string; // Auto-categorized: events, people, projects, environmental, general
+  category?: string;
   qualityScore?: number;
   daysOld?: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: ContentStatus;
   createdBy: string;
   approvedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Contact Message type for frontend (compatible with MongoDB)
 export interface ContactMessage {
   id: string;
   _id?: string;
@@ -114,6 +123,7 @@ export interface ContactMessage {
   createdAt: Date;
 }
 
+// Registration type for frontend (compatible with MongoDB)
 export interface Registration {
   id: string;
   _id?: string;
@@ -122,13 +132,14 @@ export interface Registration {
   phone: string;
   institution: string;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: ApplicationStatus;
   reviewedBy?: string;
   reviewedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Event type for frontend (compatible with MongoDB)
 export interface Event {
   id: string;
   _id?: string;
@@ -140,7 +151,6 @@ export interface Event {
   category: 'workshop' | 'meeting' | 'training' | 'volunteer' | 'olympiad' | 'competition' | 'hackathon' | 'other';
   maxParticipants?: number;
   registrationRequired: boolean;
-  requiresRegistration?: boolean; // Alternative property name for compatibility
   registrationDeadline?: Date;
   eligibility?: string;
   prizes?: string;
@@ -162,6 +172,7 @@ export interface Event {
   updatedAt: Date;
 }
 
+// Event Registration type for frontend (compatible with MongoDB)
 export interface EventRegistration {
   id: string;
   _id?: string;
@@ -182,6 +193,7 @@ export interface EventRegistration {
   checkInTime?: Date;
 }
 
+// Notice type for frontend (compatible with MongoDB)
 export interface Notice {
   id: string;
   _id?: string;
@@ -199,3 +211,15 @@ export interface Notice {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Simple insert types for MongoDB compatibility (no Zod validation for now)
+export type InsertUser = Omit<User, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertMember = Omit<Member, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertProject = Omit<Project, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertNewsArticle = Omit<NewsArticle, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertGalleryImage = Omit<GalleryImage, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertContactMessage = Omit<ContactMessage, 'id' | '_id' | 'createdAt'>;
+export type InsertRegistration = Omit<Registration, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertEvent = Omit<Event, 'id' | '_id' | 'createdAt' | 'updatedAt'>;
+export type InsertEventRegistration = Omit<EventRegistration, 'id' | '_id' | 'registeredAt'>;
+export type InsertNotice = Omit<Notice, 'id' | '_id' | 'createdAt' | 'updatedAt'>;

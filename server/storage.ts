@@ -453,6 +453,11 @@ class HybridStorage implements IStorage {
     return await operation(this.memoryStorage);
   }
 
+  // Add missing getMemberByEmail method
+  async getMemberByEmail(email: string): Promise<IMember | null> {
+    return this.useStorage((storage) => storage.getMemberByEmail(email));
+  }
+
   // User operations
   async getUser(id: string): Promise<IUser | null> {
     return this.useStorage(storage => storage.getUser(id));
