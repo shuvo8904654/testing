@@ -34,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect, useState } from "react";
 import type { IRegistration, INewsArticle, IProject, IGalleryImage, IUser, IEvent } from "@shared/models";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={user?.profileImageUrl} alt={user?.firstName} />
+            <AvatarImage src={user?.profileImageUrl || undefined} alt={user?.firstName || 'Admin'} />
             <AvatarFallback>
               <Crown className="h-8 w-8 text-yellow-600" />
             </AvatarFallback>
@@ -373,7 +373,7 @@ export default function AdminDashboard() {
                   <div key={applicant.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={applicant.profileImageUrl} />
+                        <AvatarImage src={applicant.profileImageUrl || undefined} />
                         <AvatarFallback>
                           {applicant.firstName?.[0] || applicant.email[0].toUpperCase()}
                         </AvatarFallback>
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
                       <Button
                         size="sm"
                         onClick={() => updateApplicantStatusMutation.mutate({
-                          id: applicant.id!,
+                          id: applicant.id!.toString(),
                           status: "approved"
                         })}
                         disabled={updateApplicantStatusMutation.isPending}
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
                         size="sm"
                         variant="destructive"
                         onClick={() => updateApplicantStatusMutation.mutate({
-                          id: applicant.id!,
+                          id: applicant.id!.toString(),
                           status: "rejected"
                         })}
                         disabled={updateApplicantStatusMutation.isPending}
@@ -470,9 +470,14 @@ export default function AdminDashboard() {
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Create New User</DialogTitle>
+                      <DialogDescription>Add a new user to the system with their basic information and role assignment.</DialogDescription>
                     </DialogHeader>
                     <Form {...createUserForm}>
-                      <form onSubmit={createUserForm.handleSubmit((data) => createUserMutation.mutate(data))} className="space-y-4">
+                      <form onSubmit={createUserForm.handleSubmit((data) => {
+                        if (data.password) {
+                          createUserMutation.mutate(data as typeof data & { password: string });
+                        }
+                      })} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={createUserForm.control}
@@ -763,7 +768,7 @@ export default function AdminDashboard() {
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={user.profileImageUrl} />
+                        <AvatarImage src={user.profileImageUrl || undefined} />
                         <AvatarFallback>
                           {user.firstName?.[0] || user.email[0].toUpperCase()}
                         </AvatarFallback>
