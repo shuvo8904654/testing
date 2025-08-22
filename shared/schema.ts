@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, timestamp, integer, json, serial } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, boolean, timestamp, integer, json, serial, unique } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -158,22 +158,20 @@ export const events = pgTable('events', {
 // Event registrations table
 export const eventRegistrations = pgTable('event_registrations', {
   id: serial('id').primaryKey(),
-  eventId: integer('event_id').notNull(),
-  participantId: integer('participant_id'),
-  participantName: varchar('participant_name', { length: 255 }).notNull(),
+  eventId: integer('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 20 }).notNull(),
+  phone: varchar('phone', { length: 50 }),
   institution: varchar('institution', { length: 255 }),
-  grade: varchar('grade', { length: 50 }),
-  experience: text('experience'),
-  motivation: text('motivation'),
+  reason: text('reason'),
   teamName: varchar('team_name', { length: 255 }),
-  teamMembers: json('team_members').$type<Array<{ name: string; email: string; phone: string }>>(),
-  additionalInfo: text('additional_info'),
-  status: varchar('status', { length: 20 }).notNull().default('registered'),
+  teamMembers: text('team_members'),
+  status: varchar('status', { length: 20 }).notNull().default('confirmed'),
   registeredAt: timestamp('registered_at').defaultNow().notNull(),
-  checkInTime: timestamp('check_in_time'),
-});
+}, (table) => ({
+  uniqueUserEvent: unique().on(table.eventId, table.userId),
+}));
 
 // Notices table
 export const notices = pgTable('notices', {

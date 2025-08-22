@@ -689,6 +689,41 @@ export default function AdminDashboard() {
                             )}
                           />
                         </div>
+                        <FormField
+                          control={createEventForm.control}
+                          name="registrationRequired"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Registration Required
+                                </FormLabel>
+                                <div className="text-sm text-muted-foreground">
+                                  Enable this if users need to register to attend this event
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={createEventForm.control}
+                          name="contactInfo"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Information (optional)</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Contact details for questions about this event" rows={2} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                         <div className="flex space-x-2">
                           <Button type="button" variant="outline" onClick={() => setCreateEventDialogOpen(false)}>
                             Cancel

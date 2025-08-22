@@ -1740,26 +1740,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Event Registration routes
-  app.get("/api/event-registrations", async (req, res) => {
+  app.get("/api/event-registrations", isAdmin, async (req, res) => {
     try {
-      // For now, return empty array since we're using MongoDB and will implement this later
-      res.json([]);
+      const { eventId } = req.query;
+      const allRegistrations = (global as any).eventRegistrations || [];
+      
+      let registrations = allRegistrations;
+      if (eventId) {
+        registrations = allRegistrations.filter((reg: any) => reg.eventId === parseInt(eventId as string));
+      }
+      
+      res.json(registrations);
     } catch (error) {
       console.error("Error fetching event registrations:", error);
       res.status(500).json({ error: "Failed to fetch event registrations" });
     }
   });
 
-  app.post("/api/event-registrations", async (req, res) => {
+  app.post("/api/event-registrations", isAuthenticated, async (req: any, res) => {
     try {
-      // For now, just return success response
       const registrationData = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+      
+      // Create registration with user info
       const registration = {
         id: Date.now().toString(),
-        ...registrationData,
-        status: 'registered',
-        registeredAt: new Date(),
+        eventId: registrationData.eventId,
+        userId: userId,
+        name: registrationData.name,
+        email: registrationData.email,
+        phone: registrationData.phone || '',
+        institution: registrationData.institution || '',
+        reason: registrationData.reason || '',
+        teamName: registrationData.teamName || '',
+        teamMembers: registrationData.teamMembers || '',
+        status: 'confirmed',
+        registeredAt: new Date().toISOString(),
       };
+      
+      // Store in memory for now (would be database later)
+      if (!(global as any).eventRegistrations) {
+        (global as any).eventRegistrations = [];
+      }
+      (global as any).eventRegistrations.push(registration);
+      
+      console.log(`✅ Event registration created: ${registration.name} for event ${registration.eventId}`);
+      
       res.status(201).json(registration);
     } catch (error) {
       console.error("Error creating event registration:", error);

@@ -469,7 +469,7 @@ export default function MemberDashboardEnhanced() {
                       <p className="text-sm text-gray-600">{activity.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500">
-                          {new Date(activity.date).toLocaleDateString()}
+                          {activity.date ? new Date(activity.date).toLocaleDateString() : 'Recent'}
                         </span>
                         {activity.points && (
                           <Badge variant="outline" className="text-xs">
