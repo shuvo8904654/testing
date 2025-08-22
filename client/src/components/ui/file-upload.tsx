@@ -32,6 +32,7 @@ export function FileUpload({
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<Crop>();
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const { toast } = useToast();
@@ -51,6 +52,8 @@ export function FileUpload({
     }
 
     if (enableCrop && file.type.startsWith('image/')) {
+      // Store original file for later reference
+      setOriginalFile(file);
       // Create preview URL for cropping
       const reader = new FileReader();
       reader.onload = () => {
@@ -145,13 +148,15 @@ export function FileUpload({
         canvas.toBlob((blob) => {
           if (blob) {
             // Create a File object from the blob with proper name and type
-            const file = new File([blob], `cropped-image-${Date.now()}.jpg`, {
-              type: 'image/jpeg',
+            const fileExtension = originalFile?.type.includes('png') ? 'png' : 'jpg';
+            const mimeType = originalFile?.type.includes('png') ? 'image/png' : 'image/jpeg';
+            const file = new File([blob], `cropped-image-${Date.now()}.${fileExtension}`, {
+              type: mimeType,
               lastModified: Date.now(),
             });
             resolve(file);
           }
-        }, 'image/jpeg', 0.9);
+        }, file.type.includes('png') ? 'image/png' : 'image/jpeg', 0.9);
       });
     },
     []
