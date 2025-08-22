@@ -739,9 +739,9 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       {allUsers.map((targetUser) => (
                         <div
-                          key={targetUser.id}
+                          key={targetUser._id || targetUser.id}
                           className="border rounded-lg p-4 space-y-3"
-                          data-testid={`card-user-${targetUser.id}`}
+                          data-testid={`card-user-${targetUser._id || targetUser.id}`}
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
@@ -749,11 +749,11 @@ export default function AdminDashboard() {
                                 {targetUser.role === "super_admin" && <Crown className="w-4 h-4 text-yellow-500" />}
                                 {targetUser.role === "admin" && <Shield className="w-4 h-4 text-blue-500" />}
                                 {targetUser.role === "member" && <UserIcon className="w-4 h-4 text-gray-500" />}
-                                <h3 className="font-medium" data-testid={`text-user-name-${targetUser.id}`}>
+                                <h3 className="font-medium" data-testid={`text-user-name-${targetUser._id || targetUser.id}`}>
                                   {targetUser.firstName && targetUser.lastName 
                                     ? `${targetUser.firstName} ${targetUser.lastName}` 
                                     : targetUser.email}
-                                  {targetUser.id === user?.id && " (You)"}
+                                  {(targetUser._id || targetUser.id) === (user?._id || user?.id) && " (You)"}
                                 </h3>
                               </div>
                               <p className="text-sm text-gray-600" data-testid={`text-user-email-${targetUser.id}`}>

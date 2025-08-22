@@ -36,9 +36,9 @@ export const insertMemberSchema = z.object({
 export const insertProjectSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string(),
+  createdBy: z.string().optional(),
   approvedBy: z.string().optional(),
 });
 
@@ -47,10 +47,10 @@ export const insertNewsArticleSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
   excerpt: z.string().optional(),
-  imageUrl: z.string().url().optional(),
-  author: z.string().min(1),
+  imageUrl: z.string().optional(),
+  author: z.string().min(1).optional(),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string(),
+  createdBy: z.string().optional(),
   approvedBy: z.string().optional(),
   readCount: z.number().default(0),
 });
@@ -59,9 +59,9 @@ export const insertNewsArticleSchema = z.object({
 export const insertGalleryImageSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  imageUrl: z.string().url(),
+  imageUrl: z.string().min(1),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-  createdBy: z.string(),
+  createdBy: z.string().optional(),
   approvedBy: z.string().optional(),
 });
 
