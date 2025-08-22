@@ -16,7 +16,7 @@ import { Plus, Edit, Trash, Pin, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Notice {
-  _id: string;
+  id: number;
   title: string;
   content: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -41,25 +41,22 @@ export default function NoticeManagement() {
     defaultValues: {
       title: "",
       content: "",
-      priority: "medium" as const,
-      type: "general" as const,
-      targetAudience: "all" as const,
+      priority: "medium",
+      type: "general",
+      targetAudience: "all",
       isActive: true,
       isPinned: false,
       expiresAt: "",
     }
   });
 
-  // Mock data for now - replace with real API calls
   const { data: notices = [] } = useQuery<Notice[]>({
     queryKey: ["/api/notices"],
-    queryFn: () => Promise.resolve([]), // Replace with actual API call
   });
 
   const createNoticeMutation = useMutation({
     mutationFn: async (noticeData: any) => {
-      // Replace with actual API call
-      return Promise.resolve(noticeData);
+      return await apiRequest('/api/notices', 'POST', noticeData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notices"] });
@@ -81,8 +78,7 @@ export default function NoticeManagement() {
 
   const updateNoticeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      // Replace with actual API call
-      return Promise.resolve(data);
+      return await apiRequest(`/api/notices/${id}`, 'PUT', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notices"] });
@@ -97,8 +93,7 @@ export default function NoticeManagement() {
 
   const deleteNoticeMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Replace with actual API call
-      return Promise.resolve();
+      return await apiRequest(`/api/notices/${id}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notices"] });
@@ -327,7 +322,7 @@ export default function NoticeManagement() {
       ) : (
         <div className="space-y-4">
           {notices.map((notice) => (
-            <Card key={notice._id} className={`${notice.isPinned ? 'border-blue-200 bg-blue-50' : ''}`}>
+            <Card key={notice.id} className={`${notice.isPinned ? 'border-blue-200 bg-blue-50' : ''}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -348,7 +343,7 @@ export default function NoticeManagement() {
                     <Button size="sm" variant="outline" onClick={() => handleEdit(notice)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => deleteNoticeMutation.mutate(notice._id)}>
+                    <Button size="sm" variant="destructive" onClick={() => deleteNoticeMutation.mutate(notice.id.toString())}>
                       <Trash className="h-4 w-4" />
                     </Button>
                   </div>

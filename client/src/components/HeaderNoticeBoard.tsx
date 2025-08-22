@@ -16,7 +16,7 @@ import {
 import { Link } from "wouter";
 
 interface Notice {
-  id: string;
+  id: number;
   title: string;
   message: string;
   type: 'announcement' | 'event' | 'urgent' | 'info';
@@ -29,7 +29,7 @@ interface Notice {
 }
 
 export default function HeaderNoticeBoard() {
-  const [dismissedNotices, setDismissedNotices] = useState<string[]>([]);
+  const [dismissedNotices, setDismissedNotices] = useState<number[]>([]);
   const [currentNoticeIndex, setCurrentNoticeIndex] = useState(0);
 
   // Load dismissed notices from localStorage
@@ -40,10 +40,15 @@ export default function HeaderNoticeBoard() {
     }
   }, []);
 
-  // Mock notices data - in real app, this would come from an API
-  const notices: Notice[] = [
+  // Fetch active notices from API
+  const { data: noticesData = [] } = useQuery<Notice[]>({
+    queryKey: ["/api/notices", "active"],
+    queryFn: () => fetch('/api/notices?active=true').then(res => res.json()),
+  });
+
+  const notices: Notice[] = noticesData.length > 0 ? noticesData : [
     {
-      id: '1',
+      id: 1,
       title: 'Youth Environmental Olympiad 2025',
       message: 'Registration is now open for the annual Environmental Olympiad. Show your knowledge and win exciting prizes!',
       type: 'event',
@@ -55,7 +60,7 @@ export default function HeaderNoticeBoard() {
       dismissible: true
     },
     {
-      id: '2',
+      id: 2,
       title: 'New Partnership with Local Schools',
       message: 'We\'re excited to announce partnerships with 5 local schools to expand our environmental education programs.',
       type: 'announcement',
@@ -65,7 +70,7 @@ export default function HeaderNoticeBoard() {
       dismissible: true
     },
     {
-      id: '3',
+      id: 3,
       title: 'Monthly Team Meeting',
       message: 'Join us for our monthly planning meeting this Saturday at 3 PM at the community center.',
       type: 'event',
@@ -75,7 +80,7 @@ export default function HeaderNoticeBoard() {
       dismissible: true
     },
     {
-      id: '4',
+      id: 4,
       title: 'Website Maintenance Notice',
       message: 'Brief maintenance scheduled for this weekend. Some features may be temporarily unavailable.',
       type: 'info',
@@ -94,7 +99,7 @@ export default function HeaderNoticeBoard() {
     return isActive && isNotDismissed;
   });
 
-  const dismissNotice = (noticeId: string) => {
+  const dismissNotice = (noticeId: number) => {
     const newDismissed = [...dismissedNotices, noticeId];
     setDismissedNotices(newDismissed);
     localStorage.setItem('dismissedNotices', JSON.stringify(newDismissed));

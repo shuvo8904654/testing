@@ -1640,37 +1640,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Notice routes
   app.get("/api/notices", async (req, res) => {
     try {
-      // Mock notices data for now - should be replaced with real database operations
-      const notices = [
-        {
-          id: '1',
-          title: 'Youth Environmental Olympiad 2025',
-          content: 'Registration is now open for the annual Environmental Olympiad. Show your knowledge and win exciting prizes!',
-          type: 'event',
-          priority: 'high',
-          targetAudience: 'all',
-          isActive: true,
-          isPinned: true,
-          createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
-        },
-        {
-          id: '2',
-          title: 'New Partnership with Local Schools',
-          content: 'We\'re excited to announce partnerships with 5 local schools to expand our environmental education programs.',
-          type: 'announcement',
-          priority: 'medium',
-          targetAudience: 'all',
-          isActive: true,
-          isPinned: false,
-          createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
-        }
-      ];
+      const { active, targetAudience } = req.query;
+      
+      let notices;
+      if (active === 'true') {
+        notices = await storage.getActiveNotices(targetAudience as string);
+      } else {
+        notices = await storage.getNotices();
+      }
+      
       res.json(notices);
     } catch (error) {
       console.error("Error fetching notices:", error);
       res.status(500).json({ error: "Failed to fetch notices" });
+    }
+  });
+
+  app.post("/api/notices", isAdmin, async (req: any, res) => {
+    try {
+      const noticeData = {
+        ...req.body,
+        createdBy: req.user?.claims?.sub || req.user?.id
+      };
+      
+      const notice = await storage.createNotice(noticeData);
+      res.json(notice);
+    } catch (error) {
+      console.error("Error creating notice:", error);
+      res.status(500).json({ error: "Failed to create notice" });
+    }
+  });
+
+  app.put("/api/notices/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const notice = await storage.updateNotice(id, req.body);
+      
+      if (!notice) {
+        return res.status(404).json({ error: "Notice not found" });
+      }
+      
+      res.json(notice);
+    } catch (error) {
+      console.error("Error updating notice:", error);
+      res.status(500).json({ error: "Failed to update notice" });
+    }
+  });
+
+  app.delete("/api/notices/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteNotice(id);
+      res.json({ message: "Notice deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting notice:", error);
+      res.status(500).json({ error: "Failed to delete notice" });
     }
   });
 

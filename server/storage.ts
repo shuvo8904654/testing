@@ -86,6 +86,14 @@ export interface IStorage {
   getImage(filename: string): Promise<{ stream: any; contentType: string } | null>;
   deleteImage(filename: string): Promise<void>;
   
+  // Notice operations
+  getNotices(): Promise<Notice[]>;
+  getActiveNotices(targetAudience?: string): Promise<Notice[]>;
+  getNotice(id: number): Promise<Notice | null>;
+  createNotice(noticeData: InsertNotice): Promise<Notice>;
+  updateNotice(id: number, noticeData: Partial<InsertNotice>): Promise<Notice | null>;
+  deleteNotice(id: number): Promise<void>;
+  
   // Approval history
   createApprovalHistory(historyData: any): Promise<any>;
   getApprovalHistory(): Promise<any[]>;
@@ -439,6 +447,48 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   // Approval history (simplified implementation)
+  // Notice operations
+  async getNotices(): Promise<Notice[]> {
+    return await db.select().from(notices).orderBy(desc(notices.createdAt));
+  }
+
+  async getActiveNotices(targetAudience?: string): Promise<Notice[]> {
+    const now = new Date();
+    let query = db.select().from(notices)
+      .where(and(
+        sql`${notices.startDate} <= ${now}`,
+        sql`${notices.endDate} >= ${now}`
+      ));
+    
+    if (targetAudience) {
+      query = query.where(eq(notices.targetAudience, targetAudience));
+    }
+    
+    return await query.orderBy(desc(notices.priority), desc(notices.createdAt));
+  }
+
+  async getNotice(id: number): Promise<Notice | null> {
+    const result = await db.select().from(notices).where(eq(notices.id, id)).limit(1);
+    return result[0] || null;
+  }
+
+  async createNotice(noticeData: InsertNotice): Promise<Notice> {
+    const result = await db.insert(notices).values(noticeData).returning();
+    return result[0];
+  }
+
+  async updateNotice(id: number, noticeData: Partial<InsertNotice>): Promise<Notice | null> {
+    const result = await db.update(notices)
+      .set({ ...noticeData, updatedAt: new Date() })
+      .where(eq(notices.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteNotice(id: number): Promise<void> {
+    await db.delete(notices).where(eq(notices.id, id));
+  }
+
   async createApprovalHistory(historyData: any): Promise<any> {
     // Could implement with a separate approval_history table if needed
     return { id: Date.now(), ...historyData };
