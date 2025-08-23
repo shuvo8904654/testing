@@ -51,7 +51,9 @@ export const insertNewsArticleSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
   excerpt: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().optional(), // Legacy field
+  coverImageUrl: z.string().optional(),
+  images: z.array(z.string()).optional().default([]),
   author: z.string().min(1, "Author is required"),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   createdBy: z.number(),

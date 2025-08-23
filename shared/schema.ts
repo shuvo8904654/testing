@@ -66,7 +66,9 @@ export const newsArticles = pgTable('news_articles', {
   title: varchar('title', { length: 255 }).notNull(),
   content: text('content').notNull(),
   excerpt: text('excerpt'),
-  imageUrl: text('image_url'),
+  imageUrl: text('image_url'), // Legacy field - keeping for backward compatibility
+  coverImageUrl: text('cover_image_url'), // New cover image field
+  images: text('images').array(), // Array of image URLs for multiple images
   category: varchar('category', { length: 100 }),
   contentCategory: varchar('content_category', { length: 100 }),
   author: varchar('author', { length: 255 }).notNull(),

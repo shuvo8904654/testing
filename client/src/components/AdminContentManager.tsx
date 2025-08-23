@@ -821,6 +821,8 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
       content: "",
       excerpt: "",
       imageUrl: "",
+      coverImageUrl: "",
+      images: [],
       author: "Admin",
       status: "pending",
       createdBy: 1,
@@ -887,12 +889,77 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
         
         <FormField
           control={form.control}
+          name="coverImageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cover Image URL</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Main cover image for the article" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="images"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Additional Images</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {field.value?.map((imageUrl, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={imageUrl}
+                        onChange={(e) => {
+                          const newImages = [...(field.value || [])];
+                          newImages[index] = e.target.value;
+                          field.onChange(newImages);
+                        }}
+                        placeholder="Image URL"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newImages = [...(field.value || [])];
+                          newImages.splice(index, 1);
+                          field.onChange(newImages);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      field.onChange([...(field.value || []), ""]);
+                    }}
+                  >
+                    + Add Image
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image URL (optional)</FormLabel>
+              <FormLabel>Legacy Image URL (optional)</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="https://..." />
+                <Input {...field} placeholder="For backward compatibility" />
               </FormControl>
               <FormMessage />
             </FormItem>

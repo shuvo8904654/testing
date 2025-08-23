@@ -46,20 +46,28 @@ export default function News() {
         </div>
 
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-          {articles.map((article, index) => (
+          {articles.map((article, index) => {
+            const displayImage = article.coverImageUrl || article.imageUrl;
+            return (
             <Card 
               key={article.id} 
               className="bg-white shadow-lg overflow-hidden hover-scale"
               data-testid={`news-card-${index}`}
-              id={article.id}
             >
-              {article.imageUrl && (
-                <img 
-                  src={article.imageUrl} 
-                  alt={article.title}
-                  className="w-full h-48 object-cover"
-                  data-testid={`news-image-${index}`}
-                />
+              {displayImage && (
+                <div className="relative h-56 bg-gray-100 overflow-hidden">
+                  <img 
+                    src={displayImage} 
+                    alt={article.title}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    data-testid={`news-image-${index}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
               )}
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
@@ -71,7 +79,7 @@ export default function News() {
                   </span>
                   <div className="flex items-center text-gray-500 text-sm ml-auto" data-testid={`news-date-${index}`}>
                     <CalendarDays className="w-4 h-4 mr-1" />
-                    {new Date(article.publishedAt).toLocaleDateString()}
+                    {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'Not published'}
                   </div>
                 </div>
                 <Link href={`/news/${article.id}`}>
@@ -89,7 +97,8 @@ export default function News() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {(!articles || articles.length === 0) && (
