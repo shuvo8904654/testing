@@ -40,6 +40,12 @@ export default function Members() {
                   alt={member.name}
                   className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                   data-testid={`member-image-${index}`}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== '/placeholder-avatar.png') {
+                      target.src = '/placeholder-avatar.png';
+                    }
+                  }}
                 />
                 <h3 className="text-xl font-semibold text-gray-900 text-center mb-2" data-testid={`member-name-${index}`}>
                   {member.name}

@@ -416,7 +416,7 @@ function NewsManager({ articles }: { articles: NewsArticle[] }) {
                       <Badge variant="outline">{article.category}</Badge>
                     )}
                     <span className="text-xs text-gray-500">
-                      {new Date(article.publishedAt).toLocaleDateString()}
+                      {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'Not published'}
                     </span>
                   </div>
                 </div>
@@ -741,7 +741,7 @@ function CreateProjectForm({ onSuccess }: { onSuccess: () => void }) {
       description: "",
       imageUrl: "",
       status: "pending",
-      createdBy: "admin",
+      createdBy: 1,
     },
   });
 
@@ -823,7 +823,7 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
       imageUrl: "",
       author: "Admin",
       status: "pending",
-      createdBy: "admin",
+      createdBy: 1,
       readCount: 0,
     },
   });
@@ -922,7 +922,6 @@ function CreateEventForm({ onSuccess }: { onSuccess: () => void }) {
       category: "workshop",
       registrationRequired: false,
       status: "upcoming",
-      createdBy: 1,
     },
   });
 
@@ -1080,7 +1079,7 @@ function CreateGalleryForm({ onSuccess }: { onSuccess: () => void }) {
       description: "",
       imageUrl: "",
       status: "pending",
-      createdBy: "admin",
+      createdBy: 1,
     },
   });
 

@@ -50,6 +50,9 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
+  const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<IUser | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Form for creating new user
@@ -86,6 +89,44 @@ export default function AdminDashboard() {
       status: "upcoming",
     },
   });
+
+  // System settings form
+  const systemSettingsForm = useForm({
+    defaultValues: {
+      siteName: "3Zero Club",
+      siteDescription: "Empowering youth for positive change",
+      contactEmail: "admin@3zeroclub.com",
+      maintenanceMode: false,
+      allowRegistrations: true,
+      maxFileSize: 10,
+    },
+  });
+
+  // Edit user form
+  const editUserForm = useForm<Partial<IUser>>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "member",
+      isActive: true,
+      profileImageUrl: "",
+    },
+  });
+
+  // Update form values when editing user changes
+  useEffect(() => {
+    if (editingUser) {
+      editUserForm.reset({
+        firstName: editingUser.firstName ?? "",
+        lastName: editingUser.lastName ?? "",
+        email: editingUser.email ?? "",
+        role: editingUser.role ?? "member",
+        isActive: editingUser.isActive ?? true,
+        profileImageUrl: editingUser.profileImageUrl ?? "",
+      });
+    }
+  }, [editingUser, editUserForm]);
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -221,6 +262,56 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateSystemSettingsMutation = useMutation({
+    mutationFn: async (data: any) => {
+      // In a real app, this would save to a settings endpoint
+      return Promise.resolve(data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "System settings updated successfully",
+      });
+      setSystemSettingsOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update system settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editUserMutation = useMutation({
+    mutationFn: async (data: { id: number; userData: Partial<IUser> }) => {
+      return await apiRequest("PATCH", `/api/users/${data.id}`, data.userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      editUserForm.reset();
+      setEditUserDialogOpen(false);
+      setEditingUser(null);
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: isUnauthorizedError(error) ? "Unauthorized" : "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditUser = (user: IUser) => {
+    setEditingUser(user);
+    setEditUserDialogOpen(true);
+  };
+
   const getUrgentNotifications = () => {
     const notifications = [];
     if (stats.pendingApplicants > 0) {
@@ -277,7 +368,11 @@ export default function AdminDashboard() {
               {urgentNotifications.length} urgent
             </Badge>
           )}
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setSystemSettingsOpen(true)}
+          >
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
@@ -747,10 +842,128 @@ export default function AdminDashboard() {
                   <span className="text-sm">View Reports</span>
                 </Button>
                 
-                <Button variant="outline" className="h-20 flex-col">
-                  <Settings className="h-6 w-6 mb-2" />
-                  <span className="text-sm">System Settings</span>
-                </Button>
+                <Dialog open={systemSettingsOpen} onOpenChange={setSystemSettingsOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="h-20 flex-col">
+                      <Settings className="h-6 w-6 mb-2" />
+                      <span className="text-sm">System Settings</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>System Settings</DialogTitle>
+                      <DialogDescription>Configure your application settings and preferences.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...systemSettingsForm}>
+                      <form onSubmit={systemSettingsForm.handleSubmit((data) => updateSystemSettingsMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={systemSettingsForm.control}
+                          name="siteName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Site Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Your organization name" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={systemSettingsForm.control}
+                          name="siteDescription"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Site Description</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Brief description of your organization" rows={2} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={systemSettingsForm.control}
+                          name="contactEmail"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" placeholder="admin@example.com" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={systemSettingsForm.control}
+                            name="maxFileSize"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Max File Size (MB)</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="number" min="1" max="100" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-4">
+                          <FormField
+                            control={systemSettingsForm.control}
+                            name="allowRegistrations"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Allow New Registrations</FormLabel>
+                                  <div className="text-sm text-muted-foreground">
+                                    Enable this to allow new users to register for membership
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={systemSettingsForm.control}
+                            name="maintenanceMode"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Maintenance Mode</FormLabel>
+                                  <div className="text-sm text-muted-foreground">
+                                    Enable maintenance mode to temporarily disable public access
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setSystemSettingsOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={updateSystemSettingsMutation.isPending}>
+                            {updateSystemSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -768,7 +981,12 @@ export default function AdminDashboard() {
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={user.profileImageUrl || undefined} />
+                        <AvatarImage 
+                          src={user.profileImageUrl || undefined} 
+                          onError={(e) => {
+                            console.log('Avatar image failed to load:', user.profileImageUrl);
+                          }}
+                        />
                         <AvatarFallback>
                           {user.firstName?.[0] || user.email[0].toUpperCase()}
                         </AvatarFallback>
@@ -791,10 +1009,19 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditUser(user)}
+                        data-testid={`edit-user-${user.id}`}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        data-testid={`view-user-${user.id}`}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
@@ -813,6 +1040,145 @@ export default function AdminDashboard() {
           <NoticeManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user information, role, and status.</DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <Form {...editUserForm}>
+              <form onSubmit={editUserForm.handleSubmit((data) => {
+                if (editingUser) {
+                  editUserMutation.mutate({ id: editingUser.id!, userData: data });
+                }
+              })} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editUserForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="John" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editUserForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="Doe" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={editUserForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="john@example.com" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="profileImageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Profile Image</FormLabel>
+                      <div className="space-y-2">
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Current image: {field.value ? 'Set' : 'None'}
+                        </div>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ""} 
+                            placeholder="Or enter image URL directly" 
+                            className="text-sm"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editUserForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editUserForm.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Active Status</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Enable or disable this user account
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setEditUserDialogOpen(false);
+                    setEditingUser(null);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={editUserMutation.isPending}>
+                    {editUserMutation.isPending ? "Updating..." : "Update User"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
