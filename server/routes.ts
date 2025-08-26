@@ -2089,7 +2089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: registrationData.name.split(' ')[0] || registrationData.name,
           lastName: registrationData.name.split(' ').slice(1).join(' ') || '',
           phone: registrationData.phone || null,
-          role: 'member' as const,
+          role: 'participant' as const,
           authType: 'event_registration' as const,
           applicationStatus: 'approved' as const,
           isActive: true,

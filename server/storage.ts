@@ -605,7 +605,75 @@ async function createSuperAdmin() {
   }
 }
 
-// Initialize superadmin
+// Create sample projects if none exist
+async function createSampleProjects() {
+  try {
+    const existingProjects = await db.select().from(projects).limit(1);
+    
+    if (existingProjects.length === 0) {
+      const adminUser = await db.select().from(users)
+        .where(eq(users.role, 'super_admin'))
+        .limit(1);
+      
+      if (adminUser.length > 0) {
+        const sampleProjects = [
+          {
+            title: "Zero Poverty Initiative",
+            description: "Community-driven microfinance program providing small loans to local entrepreneurs, helping 150+ families start sustainable businesses and break the cycle of poverty.",
+            imageUrl: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
+            completedAt: "Completed December 2024",
+            category: "Economic Development",
+            status: "approved",
+            priorityScore: 95,
+            impactLevel: "high",
+            autoCategory: "Social Impact",
+            daysActive: 180,
+            createdBy: adminUser[0].id,
+            approvedBy: adminUser[0].id
+          },
+          {
+            title: "Green Youth Training Program",
+            description: "Environmental awareness and skill development program training 200+ young people in sustainable agriculture, renewable energy, and eco-friendly business practices.",
+            imageUrl: "https://images.unsplash.com/photo-1542810634-71277d95dcbb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
+            completedAt: "Ongoing since March 2024",
+            category: "Environmental",
+            status: "approved",
+            priorityScore: 88,
+            impactLevel: "high",
+            autoCategory: "Education",
+            daysActive: 120,
+            createdBy: adminUser[0].id,
+            approvedBy: adminUser[0].id
+          },
+          {
+            title: "Digital Literacy Campaign",
+            description: "Technology education initiative providing computer and internet skills training to rural communities, bridging the digital divide and creating new employment opportunities.",
+            imageUrl: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
+            completedAt: "Completed October 2024",
+            category: "Education",
+            status: "approved",
+            priorityScore: 82,
+            impactLevel: "medium",
+            autoCategory: "Technology",
+            daysActive: 90,
+            createdBy: adminUser[0].id,
+            approvedBy: adminUser[0].id
+          }
+        ];
+
+        await db.insert(projects).values(sampleProjects);
+        console.log('✅ Sample projects created successfully');
+      }
+    } else {
+      console.log('ℹ️ Projects already exist');
+    }
+  } catch (error) {
+    console.error('Error creating sample projects:', error);
+  }
+}
+
+// Initialize data
 createSuperAdmin();
+createSampleProjects();
 
 export const storage = new PostgreSQLStorage();

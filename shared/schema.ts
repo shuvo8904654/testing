@@ -294,6 +294,6 @@ export type Notice = typeof notices.$inferSelect;
 export type InsertNotice = typeof notices.$inferInsert;
 
 // Export common types
-export type UserRole = 'member' | 'admin' | 'super_admin' | 'applicant';
+export type UserRole = 'member' | 'admin' | 'super_admin' | 'applicant' | 'participant';
 export type ContentStatus = 'pending' | 'approved' | 'rejected';
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected';

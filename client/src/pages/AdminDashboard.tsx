@@ -179,6 +179,11 @@ export default function AdminDashboard() {
     enabled: isAdmin,
   });
 
+  const { data: eventRegistrations = [] } = useQuery<any[]>({
+    queryKey: ["/api/event-registrations"],
+    enabled: isAdmin,
+  });
+
   const allEvents = allEventsData?.events || [];
   const applicants = applicantsData?.applicants || [];
 
@@ -302,6 +307,28 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: isUnauthorizedError(error) ? "Unauthorized" : "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return await apiRequest("DELETE", `/api/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/applicants"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
+      toast({
+        title: "Success",
+        description: "User removed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: isUnauthorizedError(error) ? "Unauthorized" : "Failed to remove user",
         variant: "destructive",
       });
     },
@@ -449,9 +476,10 @@ export default function AdminDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="notices">Notices</TabsTrigger>
         </TabsList>
@@ -1024,10 +1052,212 @@ export default function AdminDashboard() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {user.role !== 'super_admin' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to remove ${user.firstName} ${user.lastName}? This action cannot be undone.`)) {
+                              deleteUserMutation.mutate(user.id);
+                            }
+                          }}
+                          disabled={deleteUserMutation.isPending}
+                          data-testid={`button-delete-user-${user.id}`}
+                        >
+                          {deleteUserMutation.isPending ? '...' : '✕'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="events" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Event Registrations */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Event Registrations
+                </CardTitle>
+                <CardDescription>
+                  Recent event registrations from participants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {eventRegistrations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No registrations yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {eventRegistrations.slice(0, 10).map((registration) => {
+                      const event = allEvents.find(e => e.id === registration.eventId);
+                      const user = allUsers.find(u => u.id === registration.userId);
+                      return (
+                        <div key={registration.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">
+                              {user?.firstName} {user?.lastName}
+                            </p>
+                            <p className="text-xs text-gray-600">{user?.email}</p>
+                            <p className="text-xs font-medium text-eco-green mt-1">
+                              {event?.title || 'Event Not Found'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge 
+                              variant={
+                                registration.status === 'confirmed' ? 'default' :
+                                registration.status === 'cancelled' ? 'destructive' : 'secondary'
+                              }
+                              className="text-xs"
+                            >
+                              {registration.status}
+                            </Badge>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(registration.registeredAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Event Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Event Management
+                </CardTitle>
+                <CardDescription>
+                  Manage events and their settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Total Events</p>
+                      <p className="text-sm text-gray-600">{allEvents.length} events</p>
+                    </div>
+                    <Badge variant="outline">{allEvents.length}</Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Total Registrations</p>
+                      <p className="text-sm text-gray-600">{eventRegistrations.length} participants</p>
+                    </div>
+                    <Badge variant="outline">{eventRegistrations.length}</Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Upcoming Events</p>
+                      <p className="text-sm text-gray-600">
+                        {allEvents.filter(e => e.status === 'upcoming').length} events
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {allEvents.filter(e => e.status === 'upcoming').length}
+                    </Badge>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <Dialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full" data-testid="button-create-event">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create New Event
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* All Events List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>All Events</CardTitle>
+              <CardDescription>Complete list of all events and their details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No events created yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4">Event</th>
+                        <th className="text-left py-3 px-4">Date & Time</th>
+                        <th className="text-left py-3 px-4">Location</th>
+                        <th className="text-left py-3 px-4">Status</th>
+                        <th className="text-left py-3 px-4">Registrations</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allEvents.map((event) => {
+                        const eventRegistrationCount = eventRegistrations.filter(
+                          reg => reg.eventId === event.id
+                        ).length;
+                        
+                        return (
+                          <tr key={event.id} className="border-b hover:bg-gray-50" data-testid={`event-row-${event.id}`}>
+                            <td className="py-3 px-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{event.title}</p>
+                                <p className="text-sm text-gray-600 truncate max-w-xs">
+                                  {event.description}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-gray-600">
+                              <div>
+                                <p>{new Date(event.date).toLocaleDateString()}</p>
+                                <p className="text-sm">{event.time}</p>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-gray-600">{event.location}</td>
+                            <td className="py-3 px-4">
+                              <Badge 
+                                variant={
+                                  event.status === 'upcoming' ? 'default' :
+                                  event.status === 'completed' ? 'secondary' : 'outline'
+                                }
+                              >
+                                {event.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center">
+                                <Users className="h-4 w-4 mr-1 text-gray-400" />
+                                <span>{eventRegistrationCount}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

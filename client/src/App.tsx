@@ -22,12 +22,13 @@ import Search from "@/pages/Search";
 import Events from "@/pages/Events";
 import AdminDashboard from "@/pages/AdminDashboard";
 import MemberDashboard from "@/pages/MemberDashboard";
+import ParticipantDashboard from "@/pages/ParticipantDashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ApplicationStatus from "@/pages/ApplicationStatus";
 
 function DashboardRouter() {
-  const { user, isLoading, isAuthenticated, isAdmin } = useAuth();
+  const { user, isLoading, isAuthenticated, isAdmin, isMember, isParticipant } = useAuth();
   
   if (isLoading) {
     return (
@@ -46,7 +47,12 @@ function DashboardRouter() {
     return null;
   }
 
-  return isAdmin ? <AdminDashboard /> : <MemberDashboard />;
+  if (isAdmin) return <AdminDashboard />;
+  if (isMember) return <MemberDashboard />;
+  if (isParticipant) return <ParticipantDashboard />;
+  
+  // Default fallback for other roles
+  return <ParticipantDashboard />;
 }
 
 function Router() {
@@ -76,6 +82,7 @@ function Router() {
                 <Route path="/register" component={Register} />
                 <Route path="/admin-dashboard" component={AdminDashboard} />
                 <Route path="/member-dashboard" component={MemberDashboard} />
+                <Route path="/participant-dashboard" component={ParticipantDashboard} />
                 <Route path="/application-status" component={ApplicationStatus} />
                 <Route component={NotFound} />
               </Switch>

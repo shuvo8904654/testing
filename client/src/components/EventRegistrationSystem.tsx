@@ -85,9 +85,8 @@ export default function EventRegistrationSystem() {
 
   const events = eventsData?.events || [];
   
-  // Filter events that require registration
+  // Filter events that require registration (all upcoming/ongoing events for now)
   const registrationEvents = events.filter(event => 
-    event.requiresRegistration && 
     (event.status === 'upcoming' || event.status === 'ongoing')
   );
 
@@ -135,7 +134,7 @@ export default function EventRegistrationSystem() {
     if (!selectedEvent) return;
     registerMutation.mutate({
       ...data,
-      eventId: selectedEvent.id,
+      eventId: String(selectedEvent.id),
     });
   };
 
@@ -161,19 +160,19 @@ export default function EventRegistrationSystem() {
     }
   };
 
-  const getRegistrationStatus = (eventId: string) => {
+  const getRegistrationStatus = (eventId: number) => {
     const userRegistration = registrations?.find(reg => 
-      reg.eventId === eventId && reg.email === user?.email
+      reg.eventId === String(eventId) && reg.email === user?.email
     );
     return userRegistration?.status;
   };
 
-  const isRegistered = (eventId: string) => {
+  const isRegistered = (eventId: number) => {
     return !!getRegistrationStatus(eventId);
   };
 
-  const getRegistrationCount = (eventId: string) => {
-    return registrations?.filter(reg => reg.eventId === eventId && reg.status !== 'cancelled').length || 0;
+  const getRegistrationCount = (eventId: number) => {
+    return registrations?.filter(reg => reg.eventId === String(eventId) && reg.status !== 'cancelled').length || 0;
   };
 
   if (authLoading || eventsLoading) {
