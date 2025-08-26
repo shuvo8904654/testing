@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { FileUpload } from "@/components/ui/file-upload";
 import { 
   Plus, 
   Edit, 
@@ -892,9 +893,15 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
           name="coverImageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cover Image URL</FormLabel>
+              <FormLabel>Cover Image (Main Thumbnail)</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Main cover image for the article" />
+                <FileUpload
+                  onFileUpload={field.onChange}
+                  placeholder="Upload cover image for the article"
+                  currentValue={field.value || ""}
+                  enableCrop={true}
+                  cropAspect={16/9}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -906,45 +913,92 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
           name="images"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Additional Images</FormLabel>
+              <FormLabel>Additional Images Gallery</FormLabel>
               <FormControl>
-                <div className="space-y-2">
-                  {field.value?.map((imageUrl, index) => (
-                    <div key={index} className="flex gap-2">
-                      <Input
-                        value={imageUrl}
-                        onChange={(e) => {
-                          const newImages = [...(field.value || [])];
-                          newImages[index] = e.target.value;
-                          field.onChange(newImages);
-                        }}
-                        placeholder="Image URL"
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newImages = [...(field.value || [])];
-                          newImages.splice(index, 1);
-                          field.onChange(newImages);
-                        }}
-                      >
-                        Remove
-                      </Button>
+                <div className="space-y-4">
+                  {/* Image Upload Area */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <FileUpload
+                      onFileUpload={(url) => {
+                        const newImages = [...(field.value || []), url];
+                        field.onChange(newImages);
+                      }}
+                      placeholder="Upload additional images for the gallery"
+                      enableCrop={false}
+                    />
+                  </div>
+                  
+                  {/* Uploaded Images Preview */}
+                  {field.value && field.value.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900">Uploaded Images ({field.value.length})</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {field.value.map((imageUrl: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video border">
+                              <img
+                                src={imageUrl}
+                                alt={`Gallery image ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = '/placeholder-image.jpg';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center space-x-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Set this image as the cover image
+                                    form.setValue('coverImageUrl', imageUrl);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  Set as Cover
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newImages = [...(field.value || [])];
+                                    newImages.splice(index, 1);
+                                    field.onChange(newImages);
+                                  }}
+                                  className="text-xs"
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1 text-center truncate">
+                              Image {index + 1}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Thumbnail Selection Helper */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <div className="text-blue-600 mt-1">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-sm text-blue-800 font-medium">Thumbnail Selection</p>
+                            <p className="text-xs text-blue-600">
+                              Hover over any image and click "Set as Cover" to make it the main thumbnail for social sharing.
+                              The cover image will appear when sharing this article on Facebook, Twitter, etc.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      field.onChange([...(field.value || []), ""]);
-                    }}
-                  >
-                    + Add Image
-                  </Button>
+                  )}
                 </div>
               </FormControl>
               <FormMessage />
@@ -952,19 +1006,6 @@ function CreateNewsForm({ onSuccess }: { onSuccess: () => void }) {
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Legacy Image URL (optional)</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="For backward compatibility" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         
         <Button type="submit" disabled={createMutation.isPending} className="w-full">
           {createMutation.isPending ? "Creating..." : "Create Article"}
