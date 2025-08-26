@@ -93,11 +93,16 @@ export default function EventRegistrationSystem() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegistrationData) => {
-      return apiRequest("POST", "/api/event-registrations", data);
+      // Use authenticated endpoint if user is logged in, otherwise use anonymous endpoint
+      const endpoint = user ? "/api/event-registrations" : "/api/event-registrations/anonymous";
+      return apiRequest("POST", endpoint, data);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/event-registrations"] });
-      toast({ title: "Registration successful!" });
+      toast({ 
+        title: "Registration successful!",
+        description: response.message || "You have been registered for the event."
+      });
       setShowRegistrationDialog(false);
       form.reset();
     },
@@ -113,7 +118,7 @@ export default function EventRegistrationSystem() {
   const form = useForm<RegistrationData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      participantName: user?.firstName || "",
+      participantName: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : "",
       email: user?.email || "",
       phone: "",
       institution: "",

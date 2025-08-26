@@ -208,8 +208,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  permissions: z.array(z.string()).optional().default([]),
 });
 
 export const insertMemberSchema = createInsertSchema(members).omit({

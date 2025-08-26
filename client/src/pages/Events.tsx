@@ -74,16 +74,18 @@ function RegistrationEvents() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegistrationForm & { eventId: number }) => {
-      return apiRequest("POST", "/api/event-registrations", data);
+      // Use authenticated endpoint if user is logged in, otherwise use anonymous endpoint
+      const endpoint = user ? "/api/event-registrations" : "/api/event-registrations/anonymous";
+      return apiRequest("POST", endpoint, data);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       setRegistrationDialogOpen(false);
       setSelectedEvent(null);
       registrationForm.reset();
       toast({ 
         title: "Registration successful!",
-        description: "You have been registered for the event."
+        description: response.message || "You have been registered for the event."
       });
     },
     onError: (error: any) => {
@@ -116,14 +118,6 @@ function RegistrationEvents() {
   };
 
   const handleRegister = (event: Event) => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please log in to register for events",
-        variant: "destructive",
-      });
-      return;
-    }
     setSelectedEvent(event);
     setRegistrationDialogOpen(true);
   };

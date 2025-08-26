@@ -2074,6 +2074,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Anonymous event registration - creates user account automatically
+  app.post("/api/event-registrations/anonymous", async (req: any, res) => {
+    try {
+      const registrationData = req.body;
+      
+      // Check if a user with this email already exists
+      let user = await storage.getUserByEmail(registrationData.email);
+      
+      if (!user) {
+        // Create a new user account automatically
+        const userData = {
+          email: registrationData.email,
+          firstName: registrationData.name.split(' ')[0] || registrationData.name,
+          lastName: registrationData.name.split(' ').slice(1).join(' ') || '',
+          phone: registrationData.phone || null,
+          role: 'member' as const,
+          authType: 'event_registration' as const,
+          applicationStatus: 'approved' as const,
+          isActive: true,
+          permissions: [],
+          password: null // No password for auto-created accounts
+        };
+        
+        user = await storage.createUser(userData);
+        console.log(`✅ Auto-created user account: ${user.email} (ID: ${user.id})`);
+      }
+
+      // Validate the registration data
+      const validatedData = insertEventRegistrationSchema.parse({
+        eventId: registrationData.eventId,
+        userId: user.id,
+        name: registrationData.name,
+        email: registrationData.email,
+        phone: registrationData.phone || null,
+        institution: registrationData.institution || null,
+        reason: registrationData.reason || null,
+        teamName: registrationData.teamName || null,
+        teamMembers: registrationData.teamMembers || null,
+        status: 'confirmed'
+      });
+
+      // Check if user is already registered for this event
+      const existingRegistrations = await storage.getEventRegistrations(validatedData.eventId);
+      const alreadyRegistered = existingRegistrations.some(reg => reg.userId === validatedData.userId);
+      
+      if (alreadyRegistered) {
+        return res.status(409).json({ error: "This email is already registered for this event" });
+      }
+
+      // Create the registration
+      const registration = await storage.createEventRegistration(validatedData);
+      
+      console.log(`✅ Anonymous event registration created: ${registration.name} for event ${registration.eventId}`);
+      
+      res.status(201).json({
+        registration,
+        userCreated: !user.password, // Indicates if a new account was created
+        message: !user.password ? 
+          "Registration successful! An account has been created for you." : 
+          "Registration successful!"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid registration data", details: error.errors });
+      }
+      console.error("Error creating anonymous event registration:", error);
+      res.status(500).json({ error: "Failed to create event registration" });
+    }
+  });
+
   // Update event registration status
   app.patch("/api/event-registrations/:id", isAdmin, async (req, res) => {
     try {
