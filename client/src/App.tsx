@@ -11,6 +11,7 @@ import HeaderNoticeBoard from "@/components/HeaderNoticeBoard";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import Members from "@/pages/Members";
+import MemberProfile from "@/pages/MemberProfile";
 import Projects from "@/pages/Projects";
 import Gallery from "@/pages/Gallery";
 import News from "@/pages/News";
@@ -61,6 +62,7 @@ function Router() {
               <Route path="/" component={Home} />
               <Route path="/about" component={About} />
               <Route path="/members" component={Members} />
+              <Route path="/member/:username" component={MemberProfile} />
               <Route path="/projects" component={Projects} />
               <Route path="/gallery" component={Gallery} />
               <Route path="/news" component={News} />

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Linkedin, Facebook } from "lucide-react";
+import { Users, Linkedin, Facebook, ExternalLink, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import type { Member } from "@shared/schema";
 
@@ -56,25 +56,44 @@ export default function Members() {
                 <p className="text-gray-600 text-center text-sm mb-4" data-testid={`member-bio-${index}`}>
                   {member.bio}
                 </p>
-                <div className="flex justify-center space-x-3">
-                  {member.social?.linkedin && (
-                    <a 
-                      href={member.social.linkedin} 
-                      className="text-youth-blue hover:text-youth-blue-dark"
-                      data-testid={`member-linkedin-${index}`}
-                    >
-                      <Linkedin className="w-5 h-5" />
-                    </a>
-                  )}
-                  {member.social?.facebook && (
-                    <a 
-                      href={member.social.facebook} 
-                      className="text-eco-green hover:text-eco-green-dark"
-                      data-testid={`member-facebook-${index}`}
-                    >
-                      <Facebook className="w-5 h-5" />
-                    </a>
-                  )}
+                <div className="space-y-4">
+                  <div className="flex justify-center space-x-3">
+                    {member.social?.linkedin && (
+                      <a 
+                        href={member.social.linkedin} 
+                        className="text-youth-blue hover:text-youth-blue-dark transition-colors"
+                        data-testid={`member-linkedin-${index}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Linkedin className="w-5 h-5" />
+                      </a>
+                    )}
+                    {member.social?.facebook && (
+                      <a 
+                        href={member.social.facebook} 
+                        className="text-eco-green hover:text-eco-green-dark transition-colors"
+                        data-testid={`member-facebook-${index}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Facebook className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="border-t pt-4">
+                    <Link href={`/member/${member.name.toLowerCase().replace(/\s+/g, '')}`}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full text-blue-600 border-blue-600 hover:bg-blue-50 hover:border-blue-700 transition-all duration-200"
+                        data-testid={`member-profile-link-${index}`}
+                      >
+                        View Profile
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>
