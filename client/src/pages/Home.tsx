@@ -76,7 +76,7 @@ export default function Home() {
                 </span>
               </div>
               <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight" data-testid="hero-title">
-                Creating a World of <span className="text-yellow-300">Three Zeros</span>
+                Building a <span className="text-yellow-300">Sustainable Future</span> Together
               </h1>
               <div className="text-xl mb-8 space-y-2">
                 <p className="flex items-center" data-testid="zero-poverty">
@@ -93,8 +93,9 @@ export default function Home() {
                 </p>
               </div>
               <p className="text-lg mb-8 opacity-90" data-testid="hero-description">
-                Join the youth-led movement in Kurigram, inspired by Nobel Laureate Dr. Muhammad Yunus, 
-                to build a sustainable and equitable future for all.
+                We are the 3ZERO Club Kurigram, a dynamic youth organization working to create lasting change in our community. 
+                Inspired by Nobel Laureate Dr. Muhammad Yunus's vision, we're committed to eliminating poverty, unemployment, 
+                and environmental destruction through innovative community-driven initiatives.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/join" className="bg-white text-eco-green px-8 py-4 rounded-full font-semibold hover:bg-gray-100 text-lg flex items-center justify-center" data-testid="button-join-movement">

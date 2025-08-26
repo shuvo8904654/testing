@@ -58,26 +58,28 @@ function Router() {
           <Navigation />
           <HeaderNoticeBoard />
           <main className="flex-1">
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/about" component={About} />
-              <Route path="/members" component={Members} />
-              <Route path="/member/:username" component={MemberProfile} />
-              <Route path="/projects" component={Projects} />
-              <Route path="/gallery" component={Gallery} />
-              <Route path="/news" component={News} />
-              <Route path="/news/:id" component={NewsArticle} />
-              <Route path="/search" component={Search} />
-              <Route path="/events" component={Events} />
-              <Route path="/join" component={Join} />
-              <Route path="/contact" component={Contact} />
-              <Route path="/login" component={Login} />
-              <Route path="/register" component={Register} />
-              <Route path="/admin-dashboard" component={AdminDashboard} />
-              <Route path="/member-dashboard" component={MemberDashboard} />
-              <Route path="/application-status" component={ApplicationStatus} />
-              <Route component={NotFound} />
-            </Switch>
+            <div className="page-transition">
+              <Switch>
+                <Route path="/" component={Home} />
+                <Route path="/about" component={About} />
+                <Route path="/members" component={Members} />
+                <Route path="/member/:username" component={MemberProfile} />
+                <Route path="/projects" component={Projects} />
+                <Route path="/gallery" component={Gallery} />
+                <Route path="/news" component={News} />
+                <Route path="/news/:id" component={NewsArticle} />
+                <Route path="/search" component={Search} />
+                <Route path="/events" component={Events} />
+                <Route path="/join" component={Join} />
+                <Route path="/contact" component={Contact} />
+                <Route path="/login" component={Login} />
+                <Route path="/register" component={Register} />
+                <Route path="/admin-dashboard" component={AdminDashboard} />
+                <Route path="/member-dashboard" component={MemberDashboard} />
+                <Route path="/application-status" component={ApplicationStatus} />
+                <Route component={NotFound} />
+              </Switch>
+            </div>
           </main>
           <Footer />
         </Route>
