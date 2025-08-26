@@ -11,6 +11,7 @@ import {
   Mail, 
   Linkedin, 
   Facebook,
+  Globe,
   User,
   Award,
   Target,
@@ -29,9 +30,10 @@ export default function MemberProfile() {
     queryKey: ["/api/members"],
   });
 
-  // Find member by username (using name as username for now)
+  // Find member by username or fallback to name-based matching
   const member = members?.find(m => 
-    m.name.toLowerCase().replace(/\s+/g, '') === params?.username?.toLowerCase()
+    (m.username && m.username.toLowerCase() === params?.username?.toLowerCase()) ||
+    (!m.username && m.name.toLowerCase().replace(/\s+/g, '') === params?.username?.toLowerCase())
   );
 
   // Fetch member's contributions
@@ -82,7 +84,7 @@ export default function MemberProfile() {
   }
 
   const joinDate = member.createdAt ? new Date(member.createdAt) : new Date();
-  const username = member.name.toLowerCase().replace(/\s+/g, '');
+  const username = member.username || member.name.toLowerCase().replace(/\s+/g, '');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -134,38 +136,46 @@ export default function MemberProfile() {
                 </div>
 
                 {/* Social Links */}
-                {member.social && (
-                  <div className="flex justify-center space-x-4 mb-6">
-                    {member.social.linkedin && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(member.social!.linkedin, '_blank')}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                      >
-                        <Linkedin className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {member.social.facebook && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(member.social!.facebook, '_blank')}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                      >
-                        <Facebook className="w-4 h-4" />
-                      </Button>
-                    )}
+                <div className="flex justify-center space-x-3 mb-6 flex-wrap gap-2">
+                  {member.social?.linkedin && (
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.location.href = `mailto:${member.email}`}
-                      className="text-gray-600 border-gray-600 hover:bg-gray-50"
+                      onClick={() => window.open(member.social!.linkedin, '_blank')}
+                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
                     >
-                      <Mail className="w-4 h-4" />
+                      <Linkedin className="w-4 h-4" />
                     </Button>
-                  </div>
-                )}
+                  )}
+                  {member.social?.facebook && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(member.social!.facebook, '_blank')}
+                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {member.website && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(member.website, '_blank')}
+                      className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                    >
+                      <Globe className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = `mailto:${member.email}`}
+                    className="text-gray-600 border-gray-600 hover:bg-gray-50"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </Button>
+                </div>
 
                 <Separator className="mb-6" />
 

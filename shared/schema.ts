@@ -29,9 +29,11 @@ export const users = pgTable('users', {
 export const members = pgTable('members', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
+  username: varchar('username', { length: 100 }).unique(),
   email: varchar('email', { length: 255 }).notNull(),
   role: varchar('role', { length: 100 }).notNull(),
   bio: text('bio').notNull(),
+  website: varchar('website', { length: 255 }),
   profileImageUrl: text('profile_image_url'),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
   social: json('social').$type<{ linkedin?: string; facebook?: string }>(),

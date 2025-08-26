@@ -143,9 +143,13 @@ export default function MemberDashboardEnhanced() {
   const profileForm = useForm({
     defaultValues: {
       name: memberData?.name || "",
+      username: memberData?.username || "",
       bio: memberData?.bio || "",
+      website: memberData?.website || "",
       profileImageUrl: memberData?.profileImageUrl || "",
-      position: memberData?.role || ""
+      position: memberData?.role || "",
+      linkedin: memberData?.social?.linkedin || "",
+      facebook: memberData?.social?.facebook || ""
     }
   });
 
@@ -330,12 +334,64 @@ export default function MemberDashboardEnhanced() {
                   />
                   <FormField
                     control={profileForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Your unique username" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
                     name="bio"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Bio</FormLabel>
                         <FormControl>
                           <Textarea {...field} placeholder="Tell us about yourself" rows={3} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Personal Website</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://your-website.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="linkedin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>LinkedIn Profile</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://linkedin.com/in/your-profile" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="facebook"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Facebook Profile</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://facebook.com/your-profile" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

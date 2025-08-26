@@ -193,40 +193,42 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             {featuredProjects.map((project, index) => (
-              <Card key={`project-${project.id}`} className={`hover-scale ${
-                index === 0 ? 'bg-gradient-to-br from-eco-green/5 to-eco-green/10' :
-                index === 1 ? 'bg-gradient-to-br from-youth-blue/5 to-youth-blue/10' :
-                'bg-gradient-to-br from-yellow-400/5 to-yellow-400/10'
-              }`} data-testid={`project-card-${index}`}>
-                <CardContent className="p-8">
-                  <div className={`p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 ${
-                    index === 0 ? 'bg-eco-green/20' :
-                    index === 1 ? 'bg-youth-blue/20' :
-                    'bg-yellow-400/20'
-                  }`}>
-                    <Leaf className={`text-2xl ${
-                      index === 0 ? 'text-eco-green' :
-                      index === 1 ? 'text-youth-blue' :
-                      'text-yellow-600'
-                    }`} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid={`project-title-${index}`}>
-                    {project.title}
-                  </h3>
-                  <p className="text-gray-600 mb-6" data-testid={`project-description-${index}`}>
-                    {project.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${
-                      index === 0 ? 'text-eco-green' :
-                      index === 1 ? 'text-youth-blue' :
-                      'text-yellow-600'
-                    }`} data-testid={`project-status-${index}`}>
-                      {project.completedAt}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+              <Link key={`project-${project.id}`} href="/projects">
+                <Card className={`hover-scale cursor-pointer ${
+                  index === 0 ? 'bg-gradient-to-br from-eco-green/5 to-eco-green/10' :
+                  index === 1 ? 'bg-gradient-to-br from-youth-blue/5 to-youth-blue/10' :
+                  'bg-gradient-to-br from-yellow-400/5 to-yellow-400/10'
+                }`} data-testid={`project-card-${index}`}>
+                  <CardContent className="p-8">
+                    <div className={`p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 ${
+                      index === 0 ? 'bg-eco-green/20' :
+                      index === 1 ? 'bg-youth-blue/20' :
+                      'bg-yellow-400/20'
+                    }`}>
+                      <Leaf className={`text-2xl ${
+                        index === 0 ? 'text-eco-green' :
+                        index === 1 ? 'text-youth-blue' :
+                        'text-yellow-600'
+                      }`} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid={`project-title-${index}`}>
+                      {project.title}
+                    </h3>
+                    <p className="text-gray-600 mb-6" data-testid={`project-description-${index}`}>
+                      {project.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm font-medium ${
+                        index === 0 ? 'text-eco-green' :
+                        index === 1 ? 'text-youth-blue' :
+                        'text-yellow-600'
+                      }`} data-testid={`project-status-${index}`}>
+                        {project.completedAt}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 
@@ -253,36 +255,38 @@ export default function Home() {
                   const bgColor = categoryColors[event.category as keyof typeof categoryColors] || 'bg-eco-green';
 
                   return (
-                    <Card key={`event-${event.id}`} className="shadow-lg" data-testid={`event-card-${index}`}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center mb-4">
-                          <div className={`${bgColor} text-white p-3 rounded-lg mr-4`}>
-                            <Calendar className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900" data-testid={`event-title-${index}`}>
-                              {event.title}
-                            </h4>
-                            <p className="text-gray-600 text-sm" data-testid={`event-date-${index}`}>
-                              {new Date(event.date).toLocaleDateString()} {event.time && `at ${event.time}`}
-                            </p>
-                            {event.location && (
-                              <p className="text-gray-500 text-xs" data-testid={`event-location-${index}`}>
-                                📍 {event.location}
+                    <Link key={`event-${event.id}`} href="/events">
+                      <Card className="shadow-lg cursor-pointer hover-scale" data-testid={`event-card-${index}`}>
+                        <CardContent className="p-6">
+                          <div className="flex items-center mb-4">
+                            <div className={`${bgColor} text-white p-3 rounded-lg mr-4`}>
+                              <Calendar className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900" data-testid={`event-title-${index}`}>
+                                {event.title}
+                              </h4>
+                              <p className="text-gray-600 text-sm" data-testid={`event-date-${index}`}>
+                                {new Date(event.date).toLocaleDateString()} {event.time && `at ${event.time}`}
                               </p>
-                            )}
+                              {event.location && (
+                                <p className="text-gray-500 text-xs" data-testid={`event-location-${index}`}>
+                                  📍 {event.location}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-gray-600" data-testid={`event-description-${index}`}>
-                          {event.description}
-                        </p>
-                        {event.maxParticipants && (
-                          <p className="text-sm text-gray-500 mt-2" data-testid={`event-capacity-${index}`}>
-                            Max participants: {event.maxParticipants}
+                          <p className="text-gray-600" data-testid={`event-description-${index}`}>
+                            {event.description}
                           </p>
-                        )}
-                      </CardContent>
-                    </Card>
+                          {event.maxParticipants && (
+                            <p className="text-sm text-gray-500 mt-2" data-testid={`event-capacity-${index}`}>
+                              Max participants: {event.maxParticipants}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
                   );
                 })}
               </div>
@@ -304,39 +308,38 @@ export default function Home() {
 
             <div className="grid lg:grid-cols-2 gap-8 mb-12">
               {latestNews.map((article, index) => (
-                <Card key={`news-${article.id}`} className="shadow-lg hover-scale overflow-hidden" data-testid={`news-card-${index}`}>
-                  {article.imageUrl && (
-                    <img 
-                      src={article.imageUrl} 
-                      alt={article.title}
-                      className="w-full h-48 object-cover"
-                      data-testid={`news-image-${index}`}
-                    />
-                  )}
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        article.category === 'Success Story' ? 'bg-eco-green/10 text-eco-green' :
-                        article.category === 'Update' ? 'bg-youth-blue/10 text-youth-blue' :
-                        'bg-yellow-400/20 text-yellow-700'
-                      }`} data-testid={`news-category-${index}`}>
-                        {article.category}
-                      </span>
-                      <span className="text-gray-500 text-sm ml-auto" data-testid={`news-date-${index}`}>
-                        {new Date(article.publishedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3" data-testid={`news-title-${index}`}>
-                      {article.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4" data-testid={`news-excerpt-${index}`}>
-                      {article.excerpt}
-                    </p>
-                    <Link href={`/news#${article.id}`} className="text-eco-green font-medium hover:text-eco-green-dark transition-colors" data-testid={`news-read-more-${index}`}>
-                      Read More →
-                    </Link>
-                  </CardContent>
-                </Card>
+                <Link key={`news-${article.id}`} href={`/news/${article.id}`}>
+                  <Card className="shadow-lg hover-scale overflow-hidden cursor-pointer" data-testid={`news-card-${index}`}>
+                    {article.imageUrl && (
+                      <img 
+                        src={article.imageUrl} 
+                        alt={article.title}
+                        className="w-full h-48 object-cover"
+                        data-testid={`news-image-${index}`}
+                      />
+                    )}
+                    <CardContent className="p-6">
+                      <div className="flex items-center mb-4">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          article.category === 'Success Story' ? 'bg-eco-green/10 text-eco-green' :
+                          article.category === 'Update' ? 'bg-youth-blue/10 text-youth-blue' :
+                          'bg-yellow-400/20 text-yellow-700'
+                        }`} data-testid={`news-category-${index}`}>
+                          {article.category}
+                        </span>
+                        <span className="text-gray-500 text-sm ml-auto" data-testid={`news-date-${index}`}>
+                          {new Date(article.publishedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3" data-testid={`news-title-${index}`}>
+                        {article.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4" data-testid={`news-excerpt-${index}`}>
+                        {article.excerpt}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
 
@@ -361,25 +364,27 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {teamMembers.map((member, index) => (
-              <Card key={`member-${member.id || member._id || index}`} className="hover-scale shadow-lg" data-testid={`team-member-${index}`}>
-                <CardContent className="p-6 text-center">
-                  <img 
-                    src={member.profileImageUrl || '/placeholder-avatar.png'} 
-                    alt={member.name}
-                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                    data-testid={`member-image-${index}`}
-                  />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2" data-testid={`member-name-${index}`}>
-                    {member.name}
-                  </h3>
-                  <p className="text-eco-green font-medium mb-3" data-testid={`member-position-${index}`}>
-                    {member.position}
-                  </p>
-                  <p className="text-gray-600 text-sm" data-testid={`member-bio-${index}`}>
-                    {member.bio}
-                  </p>
-                </CardContent>
-              </Card>
+              <Link key={`member-${member.id || member._id || index}`} href={`/member/${member.username || member.name.toLowerCase().replace(/\s+/g, '')}`}>
+                <Card className="hover-scale shadow-lg cursor-pointer" data-testid={`team-member-${index}`}>
+                  <CardContent className="p-6 text-center">
+                    <img 
+                      src={member.profileImageUrl || '/placeholder-avatar.png'} 
+                      alt={member.name}
+                      className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
+                      data-testid={`member-image-${index}`}
+                    />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2" data-testid={`member-name-${index}`}>
+                      {member.name}
+                    </h3>
+                    <p className="text-eco-green font-medium mb-3" data-testid={`member-position-${index}`}>
+                      {member.role}
+                    </p>
+                    <p className="text-gray-600 text-sm" data-testid={`member-bio-${index}`}>
+                      {member.bio}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 

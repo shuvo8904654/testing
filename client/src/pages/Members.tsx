@@ -82,7 +82,7 @@ export default function Members() {
                     )}
                   </div>
                   <div className="border-t pt-4">
-                    <Link href={`/member/${member.name.toLowerCase().replace(/\s+/g, '')}`}>
+                    <Link href={`/member/${member.username || member.name.toLowerCase().replace(/\s+/g, '')}`}>
                       <Button 
                         variant="outline" 
                         size="sm" 
