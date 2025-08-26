@@ -205,7 +205,7 @@ export default function NewsArticle() {
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
               <div className="flex items-center" data-testid="meta-date">
                 <Calendar className="w-4 h-4 mr-2" />
-                <time dateTime={article.createdAt.toISOString()}>
+                <time dateTime={new Date(article.createdAt).toISOString()}>
                   {format(new Date(article.createdAt), 'EEEE, MMMM d, yyyy')}
                 </time>
               </div>

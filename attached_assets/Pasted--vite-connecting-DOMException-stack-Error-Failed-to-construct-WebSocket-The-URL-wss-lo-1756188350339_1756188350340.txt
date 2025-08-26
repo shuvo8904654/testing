@@ -1,0 +1,43 @@
+[vite] connecting...
+DOMException {stack: "Error: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=AaC1fYzo17z1' is…"}
+
+article.createdAt.toISOString is not a function
+article.createdAt.toISOString is not a function
+The above error occurred in the <NewsArticle> component:
+
+    at NewsArticle (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/src/pages/NewsArticle.tsx:37:22)
+    at Route (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:323:16)
+    at Switch (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:379:17)
+    at main
+    at Route (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:323:16)
+    at Switch (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:379:17)
+    at div
+    at Router
+    at Provider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=65e55270:38:15)
+    at TooltipProvider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=65e55270:62:5)
+    at QueryClientProvider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=65e55270:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at NewsArticle (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/src/pages/NewsArticle.tsx:37:22)
+at Route (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:323:16)
+at Switch (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:379:17)
+at main
+at Route (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:323:16)
+at Switch (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=65e55270:379:17)
+at div
+at Router
+at Provider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=65e55270:38:15)
+at TooltipProvider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=65e55270:62:5)
+at QueryClientProvider (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=65e55270:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://6a823ffe-8d1c-41e7-a805-0ef9d459cf24-00-3hxhqjudd030m.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+article.createdAt.toISOString is not a function
