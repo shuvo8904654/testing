@@ -14,7 +14,8 @@ import {
   Twitter, 
   Linkedin, 
   Copy,
-  Eye
+  Eye,
+  Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -109,245 +110,305 @@ export default function NewsArticle() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation Header */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-3">
+      <nav className="sticky top-0 z-50 bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <Button 
               variant="ghost" 
               onClick={() => setLocation("/news")}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-700 hover:text-gray-900 hover:bg-gray-100"
               data-testid="button-back"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to News
+              <span className="hidden sm:inline">Back to</span> News
             </Button>
             
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNativeShare}
-                className="bg-white hover:bg-gray-50 border-gray-200"
-                data-testid="button-share"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNativeShare}
+              className="text-gray-700 border-gray-300 hover:bg-gray-50"
+              data-testid="button-share"
+            >
+              <Share2 className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Share</span>
+            </Button>
           </div>
         </div>
       </nav>
 
-      {/* Article Content */}
-      <article className="max-w-4xl mx-auto">
-        {/* Hero Section */}
-        {(article.coverImageUrl || article.imageUrl) && (
-          <div className="relative h-[40vh] md:h-[50vh] lg:h-[60vh] overflow-hidden">
-            <img
-              src={article.coverImageUrl || article.imageUrl}
-              alt={article.title}
-              className="w-full h-full object-cover"
-              data-testid="img-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            
-            {/* Title Overlay on Image */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-              <div className="max-w-4xl mx-auto">
-                {article.category && (
-                  <span className="inline-block px-3 py-1 mb-4 text-sm font-medium bg-white/20 backdrop-blur-sm rounded-full border border-white/30" data-testid="badge-category">
-                    {article.category}
-                  </span>
-                )}
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4" data-testid="text-title">
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid lg:grid-cols-12 gap-8">
+          {/* Main Article Column */}
+          <article className="lg:col-span-8">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* Hero Image */}
+              {(article.coverImageUrl || article.imageUrl) && (
+                <div className="relative aspect-[16/9] sm:aspect-[2/1] overflow-hidden">
+                  <img
+                    src={article.coverImageUrl || article.imageUrl}
+                    alt={article.title}
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                    data-testid="img-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                </div>
+              )}
+              
+              {/* Article Header */}
+              <div className="p-6 sm:p-8 lg:p-10">
+                {/* Category and Meta Info */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {article.category && (
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full" data-testid="badge-category">
+                        {article.category}
+                      </span>
+                    )}
+                    <div className="flex items-center text-sm text-gray-500" data-testid="meta-date">
+                      <Calendar className="w-4 h-4 mr-1.5" />
+                      <time dateTime={new Date(article.createdAt).toISOString()}>
+                        {format(new Date(article.createdAt), 'MMM d, yyyy')}
+                      </time>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    {article.author && (
+                      <div className="flex items-center" data-testid="meta-author">
+                        <User className="w-4 h-4 mr-1.5" />
+                        <span>By {article.author}</span>
+                      </div>
+                    )}
+                    
+                    {article.readCount !== undefined && (
+                      <div className="flex items-center" data-testid="meta-reads">
+                        <Eye className="w-4 h-4 mr-1.5" />
+                        <span>{article.readCount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {article.estimatedReadTime && (
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1.5" />
+                        <span>{article.estimatedReadTime} min</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Title */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6" data-testid="text-title">
                   {article.title}
                 </h1>
+                
+                {/* Excerpt */}
                 {article.excerpt && (
-                  <p className="text-xl md:text-2xl text-gray-100 leading-relaxed mb-6 max-w-3xl" data-testid="text-excerpt">
+                  <p className="text-lg sm:text-xl text-gray-600 leading-relaxed mb-8 border-l-4 border-blue-500 pl-6" data-testid="text-excerpt">
                     {article.excerpt}
                   </p>
                 )}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Article Header (when no cover image) */}
-        {!(article.coverImageUrl || article.imageUrl) && (
-          <header className="px-8 pt-12 pb-8 bg-gradient-to-br from-gray-50 to-white">
-            <div className="max-w-4xl mx-auto">
-              {article.category && (
-                <span className="inline-block px-4 py-2 mb-6 text-sm font-semibold bg-blue-100 text-blue-800 rounded-full" data-testid="badge-category">
-                  {article.category}
-                </span>
-              )}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6" data-testid="text-title">
-                {article.title}
-              </h1>
-              {article.excerpt && (
-                <p className="text-xl md:text-2xl text-gray-600 leading-relaxed" data-testid="text-excerpt">
-                  {article.excerpt}
-                </p>
-              )}
-            </div>
-          </header>
-        )}
+                {/* Divider */}
+                <div className="border-t border-gray-200 mb-8"></div>
 
-        {/* Article Meta */}
-        <div className="px-8 py-6 bg-gray-50 border-b">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center" data-testid="meta-date">
-                <Calendar className="w-4 h-4 mr-2" />
-                <time dateTime={new Date(article.createdAt).toISOString()}>
-                  {format(new Date(article.createdAt), 'EEEE, MMMM d, yyyy')}
-                </time>
-              </div>
-              
-              {article.author && (
-                <div className="flex items-center" data-testid="meta-author">
-                  <User className="w-4 h-4 mr-2" />
-                  <span className="font-medium">By {article.author}</span>
-                </div>
-              )}
-              
-              {article.readCount !== undefined && (
-                <div className="flex items-center" data-testid="meta-reads">
-                  <Eye className="w-4 h-4 mr-2" />
-                  <span>{article.readCount.toLocaleString()} reads</span>
-                </div>
-              )}
-              
-              {article.estimatedReadTime && (
-                <div className="flex items-center">
-                  <span>{article.estimatedReadTime} min read</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                {/* Article Content */}
+                <div 
+                  className="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-em:text-gray-600 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-gray-700 prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:text-gray-800 prose-code:before:content-none prose-code:after:content-none prose-ul:mb-4 prose-ol:mb-4 prose-li:mb-1"
+                  data-testid="content-article"
+                  dangerouslySetInnerHTML={{ 
+                    __html: article.content.replace(/\n/g, '<br>') 
+                  }}
+                />
 
-        {/* Article Body */}
-        <div className="px-8 py-12 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <div 
-              className="prose prose-xl prose-gray max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl prose-p:text-gray-700 prose-p:leading-8 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-em:text-gray-800 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:not-italic prose-blockquote:text-gray-700 prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-gray-800 prose-code:before:content-none prose-code:after:content-none"
-              data-testid="content-article"
-              dangerouslySetInnerHTML={{ 
-                __html: article.content.replace(/\n/g, '<br>') 
-              }}
-            />
-
-            {/* Additional Images Gallery */}
-            {article.images && article.images.length > 0 && (
-              <div className="mt-16 pt-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Photo Gallery</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {article.images.map((imageUrl: string, index: number) => (
-                    <div key={index} className="group relative rounded-xl overflow-hidden bg-gray-100 aspect-[4/3] shadow-lg hover:shadow-2xl transition-all duration-300">
-                      <img
-                        src={imageUrl}
-                        alt={article.title || `Gallery image ${index + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
-                        data-testid={`gallery-image-${index}`}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                {/* Additional Images Gallery */}
+                {article.images && article.images.length > 0 && (
+                  <div className="mt-12 pt-8 border-t border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-900 mb-6">Gallery</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {article.images.map((imageUrl: string, index: number) => (
+                        <div key={index} className="group relative rounded-lg overflow-hidden bg-gray-100 aspect-[4/3] hover:shadow-lg transition-all duration-300">
+                          <img
+                            src={imageUrl}
+                            alt={article.title || `Gallery image ${index + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            data-testid={`gallery-image-${index}`}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+                
+                {/* Social Share Section */}
+                <div className="mt-12 pt-8 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Share this article</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsSharing(!isSharing)}
+                      className="text-gray-700"
+                      data-testid="button-toggle-share"
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      {isSharing ? 'Hide' : 'Show'} Options
+                    </Button>
+                  </div>
+
+                  {isSharing && (
+                    <div className="flex gap-3 flex-wrap">
+                      <Button
+                        onClick={() => handleShare('facebook')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                        data-testid="button-share-facebook"
+                      >
+                        <Facebook className="w-4 h-4 mr-2" />
+                        Facebook
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleShare('twitter')}
+                        className="bg-blue-400 hover:bg-blue-500 text-white"
+                        size="sm"
+                        data-testid="button-share-twitter"
+                      >
+                        <Twitter className="w-4 h-4 mr-2" />
+                        Twitter
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleShare('linkedin')}
+                        className="bg-blue-700 hover:bg-blue-800 text-white"
+                        size="sm"
+                        data-testid="button-share-linkedin"
+                      >
+                        <Linkedin className="w-4 h-4 mr-2" />
+                        LinkedIn
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        onClick={() => handleShare('copy')}
+                        size="sm"
+                        data-testid="button-copy-link"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Link
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </article>
 
 
-        {/* Share Section */}
-        <div className="px-8 py-12 bg-gray-50 border-t">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Share this article</h3>
-              <p className="text-gray-600 mb-8">Found this article interesting? Share it with your network</p>
-              
-              <div className="flex items-center justify-center mb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsSharing(!isSharing)}
-                  className="bg-white hover:bg-gray-50 border-gray-200 px-6 py-3"
-                  data-testid="button-toggle-share"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  {isSharing ? 'Hide' : 'Show'} Share Options
-                </Button>
+          {/* Sidebar */}
+          <aside className="lg:col-span-4">
+            <div className="sticky top-24">
+              {/* Article Meta Card */}
+              <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Article Info</h3>
+                <div className="space-y-4 text-sm">
+                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Published</span>
+                    <span className="font-medium">{format(new Date(article.createdAt), 'MMM d, yyyy')}</span>
+                  </div>
+                  {article.author && (
+                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <span className="text-gray-600">Author</span>
+                      <span className="font-medium">{article.author}</span>
+                    </div>
+                  )}
+                  {article.readCount !== undefined && (
+                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <span className="text-gray-600">Views</span>
+                      <span className="font-medium">{article.readCount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {article.estimatedReadTime && (
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-gray-600">Read time</span>
+                      <span className="font-medium">{article.estimatedReadTime} min</span>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Share Buttons */}
-              {isSharing && (
-                <div className="flex justify-center gap-4 flex-wrap">
+              
+              {/* Quick Share */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Share Article</h3>
+                <div className="grid grid-cols-2 gap-3">
                   <Button
                     onClick={() => handleShare('facebook')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full"
-                    data-testid="button-share-facebook"
+                    variant="outline"
+                    size="sm"
+                    className="justify-center"
+                    data-testid="sidebar-share-facebook"
                   >
-                    <Facebook className="w-5 h-5 mr-2" />
-                    Facebook
+                    <Facebook className="w-4 h-4" />
                   </Button>
-                  
                   <Button
                     onClick={() => handleShare('twitter')}
-                    className="bg-blue-400 hover:bg-blue-500 text-white px-6 py-3 rounded-full"
-                    data-testid="button-share-twitter"
+                    variant="outline"
+                    size="sm"
+                    className="justify-center"
+                    data-testid="sidebar-share-twitter"
                   >
-                    <Twitter className="w-5 h-5 mr-2" />
-                    Twitter
+                    <Twitter className="w-4 h-4" />
                   </Button>
-                  
                   <Button
                     onClick={() => handleShare('linkedin')}
-                    className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-full"
-                    data-testid="button-share-linkedin"
-                  >
-                    <Linkedin className="w-5 h-5 mr-2" />
-                    LinkedIn
-                  </Button>
-                  
-                  <Button
                     variant="outline"
-                    onClick={() => handleShare('copy')}
-                    className="bg-white hover:bg-gray-50 border-gray-200 px-6 py-3 rounded-full"
-                    data-testid="button-copy-link"
+                    size="sm"
+                    className="justify-center"
+                    data-testid="sidebar-share-linkedin"
                   >
-                    <Copy className="w-5 h-5 mr-2" />
-                    Copy Link
+                    <Linkedin className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => handleShare('copy')}
+                    variant="outline"
+                    size="sm"
+                    className="justify-center"
+                    data-testid="sidebar-copy-link"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
 
+        
         {/* Back to News */}
-        <div className="px-8 py-12 bg-white text-center">
+        <div className="mt-8 text-center">
           <Button 
             onClick={() => setLocation("/news")} 
+            variant="outline"
             size="lg"
-            className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 rounded-full"
+            className="bg-white hover:bg-gray-50 border-gray-300 px-6 py-3"
             data-testid="button-back-bottom"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to All News
           </Button>
         </div>
-      </article>
+      </div>
     </div>
   );
 }
