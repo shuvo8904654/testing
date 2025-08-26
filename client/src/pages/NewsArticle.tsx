@@ -141,17 +141,18 @@ export default function NewsArticle() {
 
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid lg:grid-cols-12 gap-8">
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
           {/* Main Article Column */}
-          <article className="lg:col-span-8">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <article className="lg:col-span-8 min-w-0 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden w-full">
               {/* Hero Image */}
               {(article.coverImageUrl || article.imageUrl) && (
-                <div className="relative aspect-[16/9] sm:aspect-[2/1] overflow-hidden">
+                <div className="relative w-full aspect-[16/9] sm:aspect-[3/2] lg:aspect-[2/1] overflow-hidden">
                   <img
                     src={article.coverImageUrl || article.imageUrl}
                     alt={article.title}
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                    style={{ maxWidth: '100%', height: 'auto' }}
                     data-testid="img-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -163,9 +164,9 @@ export default function NewsArticle() {
               )}
               
               {/* Article Header */}
-              <div className="p-6 sm:p-8 lg:p-10">
+              <div className="p-4 sm:p-6 lg:p-8 w-full">
                 {/* Category and Meta Info */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div className="flex flex-wrap items-center gap-3">
                     {article.category && (
                       <span className="inline-flex items-center px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full" data-testid="badge-category">
@@ -173,31 +174,31 @@ export default function NewsArticle() {
                       </span>
                     )}
                     <div className="flex items-center text-sm text-gray-500" data-testid="meta-date">
-                      <Calendar className="w-4 h-4 mr-1.5" />
-                      <time dateTime={new Date(article.createdAt).toISOString()}>
+                      <Calendar className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                      <time dateTime={new Date(article.createdAt).toISOString()} className="truncate">
                         {format(new Date(article.createdAt), 'MMM d, yyyy')}
                       </time>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                     {article.author && (
                       <div className="flex items-center" data-testid="meta-author">
-                        <User className="w-4 h-4 mr-1.5" />
-                        <span>By {article.author}</span>
+                        <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                        <span className="truncate">By {article.author}</span>
                       </div>
                     )}
                     
                     {article.readCount !== undefined && (
                       <div className="flex items-center" data-testid="meta-reads">
-                        <Eye className="w-4 h-4 mr-1.5" />
+                        <Eye className="w-4 h-4 mr-1.5 flex-shrink-0" />
                         <span>{article.readCount.toLocaleString()}</span>
                       </div>
                     )}
                     
                     {article.estimatedReadTime && (
                       <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1.5" />
+                        <Clock className="w-4 h-4 mr-1.5 flex-shrink-0" />
                         <span>{article.estimatedReadTime} min</span>
                       </div>
                     )}
@@ -205,13 +206,13 @@ export default function NewsArticle() {
                 </div>
                 
                 {/* Title */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6" data-testid="text-title">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 leading-tight mb-6 break-words" data-testid="text-title">
                   {article.title}
                 </h1>
                 
                 {/* Excerpt */}
                 {article.excerpt && (
-                  <p className="text-lg sm:text-xl text-gray-600 leading-relaxed mb-8 border-l-4 border-blue-500 pl-6" data-testid="text-excerpt">
+                  <p className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed mb-8 border-l-4 border-blue-500 pl-4 sm:pl-6 break-words" data-testid="text-excerpt">
                     {article.excerpt}
                   </p>
                 )}
@@ -221,7 +222,8 @@ export default function NewsArticle() {
 
                 {/* Article Content */}
                 <div 
-                  className="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-em:text-gray-600 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-gray-700 prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:text-gray-800 prose-code:before:content-none prose-code:after:content-none prose-ul:mb-4 prose-ol:mb-4 prose-li:mb-1"
+                  className="prose prose-lg prose-gray w-full max-w-none overflow-hidden break-words prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4 prose-p:break-words prose-a:text-blue-600 prose-a:no-underline prose-a:break-words hover:prose-a:underline prose-strong:text-gray-900 prose-em:text-gray-600 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-gray-700 prose-blockquote:break-words prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:text-gray-800 prose-code:break-words prose-code:before:content-none prose-code:after:content-none prose-ul:mb-4 prose-ol:mb-4 prose-li:mb-1 prose-img:w-full prose-img:h-auto prose-img:max-w-full"
+                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
                   data-testid="content-article"
                   dangerouslySetInnerHTML={{ 
                     __html: article.content.replace(/\n/g, '<br>') 
@@ -232,13 +234,14 @@ export default function NewsArticle() {
                 {article.images && article.images.length > 0 && (
                   <div className="mt-12 pt-8 border-t border-gray-200">
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Gallery</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                       {article.images.map((imageUrl: string, index: number) => (
-                        <div key={index} className="group relative rounded-lg overflow-hidden bg-gray-100 aspect-[4/3] hover:shadow-lg transition-all duration-300">
+                        <div key={index} className="group relative rounded-lg overflow-hidden bg-gray-100 aspect-[4/3] hover:shadow-lg transition-all duration-300 w-full">
                           <img
                             src={imageUrl}
                             alt={article.title || `Gallery image ${index + 1}`}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            style={{ maxWidth: '100%', height: 'auto' }}
                             data-testid={`gallery-image-${index}`}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
