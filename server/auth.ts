@@ -1,13 +1,26 @@
 import type { RequestHandler } from "express";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
 import { storage } from "./storage";
+import { pool } from "./db";
 
-// Simple session middleware for standard deployment
+// Session middleware with PostgreSQL store for production
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
-  // Use memory store for development, should be replaced with Redis/database in production
+  let store;
+  if (process.env.NODE_ENV === "production") {
+    // Use PostgreSQL session store for production
+    const PostgreSQLStore = pgSession(session);
+    store = new PostgreSQLStore({
+      pool: pool,
+      createTableIfMissing: true,
+    });
+  }
+  // Use default memory store for development
+  
   return session({
+    store: store, // This will be undefined for development (uses memory store)
     secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
