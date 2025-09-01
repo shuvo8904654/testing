@@ -483,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user-analytics/:userId", isAuthenticated, async (req, res) => {
     try {
       const userId = req.params.userId;
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(parseInt(userId));
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -498,9 +498,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       // Calculate user stats
-      const userProjects = projects.filter(p => p.createdBy === userId);
-      const userArticles = articles.filter(a => a.createdBy === userId);
-      const userImages = galleryImages.filter(i => i.createdBy === userId);
+      const userProjects = projects.filter(p => p.createdBy === parseInt(userId));
+      const userArticles = articles.filter(a => a.createdBy === parseInt(userId));
+      const userImages = galleryImages.filter(i => i.createdBy === parseInt(userId));
       
       // Simple points calculation
       const points = (userProjects.length * 50) + (userArticles.length * 30) + (userImages.length * 20);
@@ -1424,6 +1424,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/users/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteUser(parseInt(req.params.id));
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // Enhanced applicants endpoint with analytics and smart sorting
   app.get("/api/users/applicants", isAdmin, async (req, res) => {
     try {
@@ -1599,8 +1609,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/registrations/:id/status", isAdmin, async (req: any, res) => {
     try {
       const { status } = req.body;
-      const reviewedBy = parseInt(req.user.claims.sub);
-      const registration = await storage.updateRegistrationStatus(parseInt(req.params.id), status, parseInt(reviewedBy));
+      const reviewedBy = parseInt((req as any).user.claims.sub);
+      const registration = await storage.updateRegistrationStatus(parseInt(req.params.id), status, reviewedBy);
       res.json(registration);
     } catch (error) {
       res.status(500).json({ message: "Failed to update registration status" });
@@ -1918,7 +1928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactInfo: z.string().optional(),
         status: z.enum(['upcoming', 'ongoing', 'completed', 'cancelled']).default('upcoming'),
       }).parse(req.body);
-      const createdBy = req.user.claims.sub;
+      const createdBy = parseInt((req as any).user.claims.sub);
       
       const eventDate = new Date(validatedData.date);
       const now = new Date();
@@ -2074,6 +2084,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/event-registrations/:id", isAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      const registrationId = parseInt(req.params.id);
+      const registration = await storage.updateEventRegistrationStatus(registrationId, status);
+      res.json(registration);
+    } catch (error) {
+      console.error("Error updating event registration:", error);
+      res.status(500).json({ error: "Failed to update event registration" });
+    }
+  });
+
   // Anonymous event registration - creates user account automatically
   app.post("/api/event-registrations/anonymous", async (req: any, res) => {
     try {
@@ -2203,7 +2225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(notice);
     } catch (error) {
       console.error("Error creating notice:", error);
-      res.status(500).json({ error: "Failed to create notice", details: error.message });
+      res.status(500).json({ error: "Failed to create notice", details: (error as Error).message });
     }
   });
 

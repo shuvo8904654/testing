@@ -54,9 +54,14 @@ export default function Home() {
     queryKey: ["/api/events"],
   });
 
+  const { data: galleryData } = useQuery<{images: any[], analytics: any}>({
+    queryKey: ["/api/gallery"],
+  });
+
   const projects = projectsData?.projects || [];
   const news = newsData?.articles || [];
   const events = eventsData?.events || [];
+  const galleryImages = galleryData?.images || [];
 
   const featuredProjects = projects.slice(0, 3) || [];
   const latestNews = news.slice(0, 2) || [];
@@ -186,52 +191,93 @@ export default function Home() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="featured-projects-title">Our Impact</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="featured-projects-title">Our Mission & Vision</h2>
             <p className="text-xl text-gray-600">
-              Transforming communities through action-oriented projects and events
+              As a newly established club, we're setting ambitious goals to transform our community
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {featuredProjects.map((project, index) => (
-              <Link key={`project-${project.id}`} href="/projects">
-                <Card className={`hover-scale cursor-pointer ${
-                  index === 0 ? 'bg-gradient-to-br from-eco-green/5 to-eco-green/10' :
-                  index === 1 ? 'bg-gradient-to-br from-youth-blue/5 to-youth-blue/10' :
-                  'bg-gradient-to-br from-yellow-400/5 to-yellow-400/10'
-                }`} data-testid={`project-card-${index}`}>
-                  <CardContent className="p-8">
-                    <div className={`p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 ${
-                      index === 0 ? 'bg-eco-green/20' :
-                      index === 1 ? 'bg-youth-blue/20' :
-                      'bg-yellow-400/20'
-                    }`}>
-                      <Leaf className={`text-2xl ${
-                        index === 0 ? 'text-eco-green' :
-                        index === 1 ? 'text-youth-blue' :
-                        'text-yellow-600'
-                      }`} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid={`project-title-${index}`}>
-                      {project.title}
-                    </h3>
-                    <p className="text-gray-600 mb-6" data-testid={`project-description-${index}`}>
-                      {project.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${
-                        index === 0 ? 'text-eco-green' :
-                        index === 1 ? 'text-youth-blue' :
-                        'text-yellow-600'
-                      }`} data-testid={`project-status-${index}`}>
-                        {project.completedAt}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {featuredProjects.length > 0 ? (
+            <div className="grid lg:grid-cols-3 gap-8 mb-16">
+              {featuredProjects.map((project, index) => (
+                <Link key={`project-${project.id}`} href="/projects">
+                  <Card className={`hover-scale cursor-pointer ${
+                    index === 0 ? 'bg-gradient-to-br from-eco-green/5 to-eco-green/10' :
+                    index === 1 ? 'bg-gradient-to-br from-youth-blue/5 to-youth-blue/10' :
+                    'bg-gradient-to-br from-yellow-400/5 to-yellow-400/10'
+                  }`} data-testid={`project-card-${index}`}>
+                    <CardContent className="p-8">
+                      <div className={`p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6 ${
+                        index === 0 ? 'bg-eco-green/20' :
+                        index === 1 ? 'bg-youth-blue/20' :
+                        'bg-yellow-400/20'
+                      }`}>
+                        <Leaf className={`text-2xl ${
+                          index === 0 ? 'text-eco-green' :
+                          index === 1 ? 'text-youth-blue' :
+                          'text-yellow-600'
+                        }`} />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4" data-testid={`project-title-${index}`}>
+                        {project.title}
+                      </h3>
+                      <p className="text-gray-600 mb-6" data-testid={`project-description-${index}`}>
+                        {project.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${
+                          index === 0 ? 'text-eco-green' :
+                          index === 1 ? 'text-youth-blue' :
+                          'text-yellow-600'
+                        }`} data-testid={`project-status-${index}`}>
+                          {project.status}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-3 gap-8 mb-16">
+              <Card className="bg-gradient-to-br from-eco-green/5 to-eco-green/10" data-testid="goal-card-0">
+                <CardContent className="p-8">
+                  <div className="bg-eco-green/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                    <Target className="text-2xl text-eco-green" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Community Outreach</h3>
+                  <p className="text-gray-600 mb-6">
+                    Building connections with local communities to understand needs and create impactful solutions together.
+                  </p>
+                  <span className="text-sm font-medium text-eco-green">Planned Initiative</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-youth-blue/5 to-youth-blue/10" data-testid="goal-card-1">
+                <CardContent className="p-8">
+                  <div className="bg-youth-blue/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                    <Users className="text-2xl text-youth-blue" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Youth Empowerment</h3>
+                  <p className="text-gray-600 mb-6">
+                    Training and mentoring young leaders to drive positive change and become change-makers in their communities.
+                  </p>
+                  <span className="text-sm font-medium text-youth-blue">Core Focus</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-yellow-400/5 to-yellow-400/10" data-testid="goal-card-2">
+                <CardContent className="p-8">
+                  <div className="bg-yellow-400/20 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                    <Leaf className="text-2xl text-yellow-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Sustainable Development</h3>
+                  <p className="text-gray-600 mb-6">
+                    Implementing eco-friendly practices and promoting environmental consciousness for a greener future.
+                  </p>
+                  <span className="text-sm font-medium text-yellow-600">Vision 2025</span>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Upcoming Events */}
           <div className="bg-white rounded-3xl p-8 lg:p-12">
@@ -268,7 +314,7 @@ export default function Home() {
                                 {event.title}
                               </h4>
                               <p className="text-gray-600 text-sm" data-testid={`event-date-${index}`}>
-                                {new Date(event.date).toLocaleDateString()} {event.time && `at ${event.time}`}
+                                {event.date && new Date(event.date).toLocaleDateString()} {event.time && `at ${event.time}`}
                               </p>
                               {event.location && (
                                 <p className="text-gray-500 text-xs" data-testid={`event-location-${index}`}>
@@ -329,7 +375,7 @@ export default function Home() {
                           {article.category}
                         </span>
                         <span className="text-gray-500 text-sm ml-auto" data-testid={`news-date-${index}`}>
-                          {new Date(article.publishedAt).toLocaleDateString()}
+                          {article.publishedAt && new Date(article.publishedAt).toLocaleDateString()}
                         </span>
                       </div>
                       <h3 className="text-xl font-bold text-gray-900 mb-3" data-testid={`news-title-${index}`}>
@@ -365,7 +411,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {teamMembers.map((member, index) => (
-              <Link key={`member-${member.id || member._id || index}`} href={`/member/${member.username || member.name.toLowerCase().replace(/\s+/g, '')}`}>
+              <Link key={`member-${member.id || index}`} href={`/member/${member.username || member.name.toLowerCase().replace(/\s+/g, '')}`}>
                 <Card className="hover-scale shadow-lg cursor-pointer" data-testid={`team-member-${index}`}>
                   <CardContent className="p-6 text-center">
                     <img 
@@ -454,23 +500,28 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-              "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-              "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-              "https://images.unsplash.com/photo-1544027993-37dbfe43562a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-              "https://images.unsplash.com/photo-1542810634-71277d95dcbb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-            ].map((src, index) => (
-              <div key={`gallery-${index}`} className="relative group overflow-hidden rounded-lg" data-testid={`gallery-image-${index}`}>
-                <img
-                  src={src}
-                  alt={`Community activity ${index + 1}`}
-                  className="w-full h-48 object-cover transition-transform group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Camera className="text-white text-2xl" />
+            {galleryImages.length > 0 ? (
+              galleryImages.slice(0, 4).map((image, index) => (
+                <div key={`gallery-${image.id}`} className="relative group overflow-hidden rounded-lg" data-testid={`gallery-image-${index}`}>
+                  <img
+                    src={image.imageUrl}
+                    alt={image.title || `Community activity ${index + 1}`}
+                    className="w-full h-48 object-cover transition-transform group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="text-white text-2xl" />
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Gallery Images Yet</h3>
+                <p className="text-gray-500">
+                  Our photo gallery will showcase memorable moments as we embark on our journey to create positive change.
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
           <div className="text-center">
