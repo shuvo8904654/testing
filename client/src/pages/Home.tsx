@@ -122,14 +122,14 @@ export default function Home() {
               />
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl" data-testid="stat-youth-empowered">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-eco-green">500+</p>
-                  <p className="text-sm text-gray-600">Youth Empowered</p>
+                  <p className="text-3xl font-bold text-eco-green">2025</p>
+                  <p className="text-sm text-gray-600">Year Founded</p>
                 </div>
               </div>
               <div className="absolute -top-6 -right-6 bg-white p-6 rounded-2xl shadow-xl" data-testid="stat-projects-completed">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-youth-blue">25+</p>
-                  <p className="text-sm text-gray-600">Projects Completed</p>
+                  <p className="text-3xl font-bold text-youth-blue">∞</p>
+                  <p className="text-sm text-gray-600">Potential Ahead</p>
                 </div>
               </div>
             </div>
@@ -450,40 +450,40 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-r from-eco-green to-youth-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4" data-testid="impact-stats-title">Our Impact by Numbers</h2>
+            <h2 className="text-4xl font-bold text-white mb-4" data-testid="impact-stats-title">Our Goals & Commitment</h2>
             <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              Measurable change through collective action and youth empowerment
+              Setting ambitious targets as we begin our journey toward meaningful change
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center text-white" data-testid="stat-communities">
               <div className="bg-white/20 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                <Globe className="text-2xl" />
+                <Target className="text-2xl" />
               </div>
-              <div className="text-3xl lg:text-4xl font-bold mb-2">15+</div>
-              <div className="text-white/90">Communities Reached</div>
+              <div className="text-3xl lg:text-4xl font-bold mb-2">5+</div>
+              <div className="text-white/90">Communities to Reach</div>
             </div>
             <div className="text-center text-white" data-testid="stat-volunteers">
               <div className="bg-white/20 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                <Heart className="text-2xl" />
+                <Users className="text-2xl" />
               </div>
-              <div className="text-3xl lg:text-4xl font-bold mb-2">200+</div>
-              <div className="text-white/90">Active Volunteers</div>
+              <div className="text-3xl lg:text-4xl font-bold mb-2">50+</div>
+              <div className="text-white/90">Youth to Mobilize</div>
             </div>
             <div className="text-center text-white" data-testid="stat-training">
               <div className="bg-white/20 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
                 <BookOpen className="text-2xl" />
               </div>
-              <div className="text-3xl lg:text-4xl font-bold mb-2">50+</div>
-              <div className="text-white/90">Training Sessions</div>
+              <div className="text-3xl lg:text-4xl font-bold mb-2">2025</div>
+              <div className="text-white/90">Our Launch Year</div>
             </div>
             <div className="text-center text-white" data-testid="stat-impact">
               <div className="bg-white/20 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                <TrendingUp className="text-2xl" />
+                <Heart className="text-2xl" />
               </div>
-              <div className="text-3xl lg:text-4xl font-bold mb-2">95%</div>
-              <div className="text-white/90">Success Rate</div>
+              <div className="text-3xl lg:text-4xl font-bold mb-2">100%</div>
+              <div className="text-white/90">Dedicated to Change</div>
             </div>
           </div>
         </div>
@@ -539,30 +539,30 @@ export default function Home() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="testimonials-title">Community Voices</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="testimonials-title">Community Support</h2>
             <p className="text-xl text-gray-600">
-              Hear from those whose lives have been transformed
+              Local leaders and community members encouraging our mission
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                quote: "The skills training program helped me start my own business. Now I employ 5 other young people from our community.",
+                quote: "Young people like the 3ZERO Club members are the future of our community. We're excited to see their fresh ideas and energy.",
                 author: "Rashida Begum",
-                role: "Entrepreneur",
+                role: "Local Business Owner",
                 location: "Kurigram"
               },
               {
-                quote: "Through environmental projects, we've made our village cleaner and more sustainable. The youth are leading the change.",
+                quote: "It's inspiring to see youth taking initiative for environmental and social change. We support their vision completely.",
                 author: "Md. Karim",
-                role: "Community Leader",
+                role: "Community Elder",
                 location: "Char Area"
               },
               {
-                quote: "3ZERO Club gave me hope and direction. I learned leadership skills that I use every day in my career.",
+                quote: "The establishment of 3ZERO Club brings hope for positive change. We look forward to collaborating with them.",
                 author: "Fatima Khatun",
-                role: "Teacher",
+                role: "Local Educator",
                 location: "Kurigram"
               }
             ].map((testimonial, index) => (
@@ -589,50 +589,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Awards & Recognition */}
+      {/* Future Aspirations */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="awards-title">Recognition & Achievements</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" data-testid="awards-title">Our Aspirations</h2>
             <p className="text-xl text-gray-600">
-              Our efforts recognized by local and international organizations
+              Working towards meaningful recognition through impactful community work
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                title: "Best Youth Initiative",
-                organization: "District Administration",
-                year: "2024",
-                icon: Award
+                title: "Community Partnership",
+                organization: "Local Government",
+                year: "Goal 2025",
+                icon: Handshake
               },
               {
-                title: "Environmental Excellence",
-                organization: "Green Bangladesh",
-                year: "2023",
+                title: "Environmental Impact",
+                organization: "Green Initiatives",
+                year: "Vision 2026",
                 icon: Leaf
               },
               {
-                title: "Community Impact Award",
-                organization: "Youth Development Fund",
-                year: "2023",
-                icon: Heart
+                title: "Youth Empowerment",
+                organization: "Skills Development",
+                year: "Target 2025",
+                icon: Users
               },
               {
-                title: "Innovation in Education",
-                organization: "Education Ministry",
-                year: "2024",
+                title: "Social Innovation",
+                organization: "Community Solutions",
+                year: "Mission 2026",
                 icon: BookOpen
               }
-            ].map((award, index) => (
-              <div key={`award-${index}`} className="text-center" data-testid={`award-${index}`}>
+            ].map((aspiration, index) => (
+              <div key={`aspiration-${index}`} className="text-center" data-testid={`award-${index}`}>
                 <div className="bg-gradient-to-br from-eco-green/10 to-youth-blue/10 rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                  <award.icon className="text-eco-green text-2xl" />
+                  <aspiration.icon className="text-eco-green text-2xl" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{award.title}</h3>
-                <p className="text-sm text-gray-600 mb-1">{award.organization}</p>
-                <Badge variant="outline" className="text-xs">{award.year}</Badge>
+                <h3 className="font-bold text-gray-900 mb-2">{aspiration.title}</h3>
+                <p className="text-sm text-gray-600 mb-1">{aspiration.organization}</p>
+                <Badge variant="outline" className="text-xs text-youth-blue border-youth-blue">{aspiration.year}</Badge>
               </div>
             ))}
           </div>
