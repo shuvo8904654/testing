@@ -797,7 +797,36 @@ async function createSampleProjects() {
 }
 
 // Initialize data
-createSuperAdmin();
-createSampleProjects();
+// Initialize database setup asynchronously without blocking startup
+async function initializeDatabase() {
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  while (retryCount < maxRetries) {
+    try {
+      console.log(`🔄 Attempting database initialization (attempt ${retryCount + 1}/${maxRetries})`);
+      await createSuperAdmin();
+      await createSampleProjects();
+      console.log('✅ Database initialization completed successfully');
+      break;
+    } catch (error) {
+      retryCount++;
+      console.warn(`⚠️ Database initialization attempt ${retryCount} failed:`, error instanceof Error ? error.message : String(error));
+      
+      if (retryCount < maxRetries) {
+        const delay = retryCount * 5000; // Exponential backoff: 5s, 10s, 15s
+        console.log(`⏳ Retrying in ${delay/1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error('❌ Database initialization failed after all retries. App will continue without sample data.');
+      }
+    }
+  }
+}
+
+// Run database initialization in background without blocking startup
+setTimeout(() => {
+  initializeDatabase();
+}, 2000); // Wait 2 seconds after startup before attempting
 
 export const storage = new PostgreSQLStorage();
