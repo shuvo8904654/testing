@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useDynamicMeta } from "@/hooks/useDynamicMeta";
 import { 
   ArrowLeft, 
   Calendar, 
@@ -30,6 +31,18 @@ export default function NewsArticle() {
   const { data: article, isLoading, error } = useQuery<NewsArticleType>({
     queryKey: ["/api/news", params?.id],
     enabled: !!params?.id,
+  });
+
+  // Update meta tags for social sharing when article loads
+  useDynamicMeta({
+    title: article?.title || undefined,
+    description: article?.excerpt || (article?.content ? article.content.substring(0, 150) + '...' : undefined),
+    image: article?.coverImageUrl || article?.imageUrl || undefined,
+    url: window.location.href,
+    type: 'article',
+    siteName: '3ZERO Club Kurigram',
+    author: article?.author || undefined,
+    publishedTime: article?.createdAt ? new Date(article.createdAt).toISOString() : undefined
   });
 
   const handleShare = (platform: string) => {
@@ -149,7 +162,7 @@ export default function NewsArticle() {
               {(article.coverImageUrl || article.imageUrl) && (
                 <div className="relative w-full aspect-[16/9] sm:aspect-[3/2] lg:aspect-[2/1] overflow-hidden">
                   <img
-                    src={article.coverImageUrl || article.imageUrl}
+                    src={article.coverImageUrl || article.imageUrl || ''}
                     alt={article.title}
                     className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                     style={{ maxWidth: '100%', height: 'auto' }}

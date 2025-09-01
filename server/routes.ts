@@ -675,6 +675,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Open Graph meta tags for social media crawlers (Facebook, Twitter, etc.)
+  app.get("/news/:id", async (req, res) => {
+    try {
+      const articleId = parseInt(req.params.id);
+      const article = await storage.getNewsArticle(articleId);
+      
+      if (!article) {
+        // Redirect to 404 or serve default meta tags
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>Article Not Found | 3ZERO Club Kurigram</title>
+              <meta property="og:title" content="Article Not Found" />
+              <meta property="og:description" content="The article you're looking for doesn't exist." />
+              <meta property="og:type" content="website" />
+              <meta property="og:site_name" content="3ZERO Club Kurigram" />
+            </head>
+            <body>
+              <script>window.location.href = '/news';</script>
+            </body>
+          </html>
+        `);
+      }
+
+      const title = article.title;
+      const description = article.excerpt || article.content.substring(0, 150) + '...';
+      const image = article.coverImageUrl || article.imageUrl || 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=630';
+      const url = `${req.protocol}://${req.get('host')}/news/${articleId}`;
+      const publishedTime = new Date(article.createdAt).toISOString();
+
+      // Return HTML with proper Open Graph meta tags for social media crawlers
+      res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            
+            <!-- Basic Meta Tags -->
+            <title>${title} | 3ZERO Club Kurigram</title>
+            <meta name="description" content="${description}" />
+            <meta name="author" content="${article.author || '3ZERO Club Kurigram'}" />
+            
+            <!-- Open Graph Tags -->
+            <meta property="og:type" content="article" />
+            <meta property="og:title" content="${title}" />
+            <meta property="og:description" content="${description}" />
+            <meta property="og:image" content="${image}" />
+            <meta property="og:image:alt" content="${title}" />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:url" content="${url}" />
+            <meta property="og:site_name" content="3ZERO Club Kurigram" />
+            <meta property="og:locale" content="en_US" />
+            
+            <!-- Article-specific Open Graph Tags -->
+            <meta property="article:author" content="${article.author || '3ZERO Club Kurigram'}" />
+            <meta property="article:published_time" content="${publishedTime}" />
+            <meta property="article:section" content="${article.category || 'News'}" />
+            
+            <!-- Twitter Card Tags -->
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="${title}" />
+            <meta name="twitter:description" content="${description}" />
+            <meta name="twitter:image" content="${image}" />
+            <meta name="twitter:image:alt" content="${title}" />
+            
+            <!-- Additional Meta Tags -->
+            <meta name="theme-color" content="#22c55e" />
+            <link rel="canonical" href="${url}" />
+            
+            <!-- Structured Data for Rich Snippets -->
+            <script type="application/ld+json">
+            {
+              "@context": "https://schema.org",
+              "@type": "NewsArticle",
+              "headline": "${title}",
+              "description": "${description}",
+              "image": "${image}",
+              "author": {
+                "@type": "Organization",
+                "name": "${article.author || '3ZERO Club Kurigram'}"
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "3ZERO Club Kurigram",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+                }
+              },
+              "datePublished": "${publishedTime}",
+              "dateModified": "${new Date(article.updatedAt).toISOString()}",
+              "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": "${url}"
+              }
+            }
+            </script>
+            
+            <!-- Redirect to React app -->
+            <script>
+              // Check if this is a crawler/bot
+              const userAgent = navigator.userAgent.toLowerCase();
+              const isCrawler = /bot|crawler|spider|facebookexternalhit|twitterbot|linkedinbot|whatsapp/i.test(userAgent);
+              
+              if (!isCrawler) {
+                // Redirect to the React app for human users
+                window.location.href = '/news/${articleId}';
+              }
+            </script>
+          </head>
+          <body>
+            <noscript>
+              <meta http-equiv="refresh" content="0; url=/news/${articleId}" />
+            </noscript>
+            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px;">
+              <h1>${title}</h1>
+              <p>${description}</p>
+              <a href="/news/${articleId}" style="color: #22c55e; text-decoration: none;">Continue reading →</a>
+            </div>
+          </body>
+        </html>
+      `);
+      
+    } catch (error) {
+      console.error("Error serving article meta tags:", error);
+      res.status(500).send('Error loading article');
+    }
+  });
+
   // Create project endpoint for members
   app.post("/api/projects", isAuthenticated, async (req, res) => {
     try {
