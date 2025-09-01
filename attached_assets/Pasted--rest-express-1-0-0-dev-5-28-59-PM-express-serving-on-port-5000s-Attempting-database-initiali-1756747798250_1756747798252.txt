@@ -1,0 +1,391 @@
+
+> rest-express@1.0.0 dev
+5:28:59 PM [express] serving on port 5000s
+🔄 Attempting database initialization (attempt 1/3)
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+5:29:03 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Unauthorized"}
+5:29:04 PM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+Error creating superadmin: DrizzleQueryError: Failed query: select "id", "email", "password", "first_name", "last_name", "phone", "age", "address", "motivation", "profile_image_url", "role", "permissions", "is_active", "auth_type", "application_status", "applied_at", "approved_at", "created_at", "updated_at" from "users" where "users"."role" = $1 limit $2
+params: super_admin,1
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async createSuperAdmin (/home/runner/workspace/server/storage.ts:705:27)
+    at async initializeDatabase (/home/runner/workspace/server/storage.ts:808:7) {
+  query: 'select "id", "email", "password", "first_name", "last_name", "phone", "age", "address", "motivation", "profile_image_url", "role", "permissions", "is_active", "auth_type", "application_status", "applied_at", "approved_at", "created_at", "updated_at" from "users" where "users"."role" = $1 limit $2',
+  params: [ 'super_admin', 1 ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async createSuperAdmin (/home/runner/workspace/server/storage.ts:705:27)
+      at async initializeDatabase (/home/runner/workspace/server/storage.ts:808:7) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching notices: DrizzleQueryError: Failed query: select "id", "title", "message", "type", "priority", "start_date", "end_date", "link", "link_text", "dismissible", "target_audience", "created_by", "created_at", "updated_at" from "notices" where ("notices"."start_date" <= $1 and "notices"."end_date" >= $2) order by "notices"."priority" desc, "notices"."created_at" desc
+params: Mon Sep 01 2025 17:29:03 GMT+0000 (Coordinated Universal Time),Mon Sep 01 2025 17:29:03 GMT+0000 (Coordinated Universal Time)
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getActiveNotices (/home/runner/workspace/server/storage.ts:602:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2369:19) {
+  query: 'select "id", "title", "message", "type", "priority", "start_date", "end_date", "link", "link_text", "dismissible", "target_audience", "created_by", "created_at", "updated_at" from "notices" where ("notices"."start_date" <= $1 and "notices"."end_date" >= $2) order by "notices"."priority" desc, "notices"."created_at" desc',
+  params: [ 2025-09-01T17:29:03.785Z, 2025-09-01T17:29:03.785Z ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getActiveNotices (/home/runner/workspace/server/storage.ts:602:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:2369:19) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching projects: DrizzleQueryError: Failed query: select "id", "title", "description", "image_url", "completed_at", "category", "status", "priority_score", "impact_level", "auto_category", "days_active", "created_by", "approved_by", "created_at", "updated_at" from "projects" where "projects"."status" = $1 order by "projects"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getProjects (/home/runner/workspace/server/storage.ts:226:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:871:22) {
+  query: 'select "id", "title", "description", "image_url", "completed_at", "category", "status", "priority_score", "impact_level", "auto_category", "days_active", "created_by", "approved_by", "created_at", "updated_at" from "projects" where "projects"."status" = $1 order by "projects"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getProjects (/home/runner/workspace/server/storage.ts:226:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:871:22) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching news articles: DrizzleQueryError: Failed query: select "id", "title", "content", "excerpt", "image_url", "cover_image_url", "images", "category", "content_category", "author", "status", "content_score", "readability_level", "estimated_read_time", "engagement", "days_old", "read_count", "published_at", "created_by", "approved_by", "created_at", "updated_at" from "news_articles" where "news_articles"."status" = $1 order by "news_articles"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getNewsArticles (/home/runner/workspace/server/storage.ts:268:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:980:22) {
+  query: 'select "id", "title", "content", "excerpt", "image_url", "cover_image_url", "images", "category", "content_category", "author", "status", "content_score", "readability_level", "estimated_read_time", "engagement", "days_old", "read_count", "published_at", "created_by", "approved_by", "created_at", "updated_at" from "news_articles" where "news_articles"."status" = $1 order by "news_articles"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getNewsArticles (/home/runner/workspace/server/storage.ts:268:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:980:22) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching events: DrizzleQueryError: Failed query: select "id", "title", "description", "date", "time", "location", "category", "max_participants", "registration_required", "registration_deadline", "eligibility", "prizes", "team_event", "min_team_size", "max_team_size", "contact_info", "custom_questions", "status", "urgency", "capacity", "popularity", "smart_status", "days_until_event", "created_by", "created_at", "updated_at" from "events" order by "events"."created_at" desc
+params: 
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getEvents (/home/runner/workspace/server/storage.ts:371:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1983:20) {
+  query: 'select "id", "title", "description", "date", "time", "location", "category", "max_participants", "registration_required", "registration_deadline", "eligibility", "prizes", "team_event", "min_team_size", "max_team_size", "contact_info", "custom_questions", "status", "urgency", "capacity", "popularity", "smart_status", "days_until_event", "created_by", "created_at", "updated_at" from "events" order by "events"."created_at" desc',
+  params: [],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getEvents (/home/runner/workspace/server/storage.ts:371:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:1983:20) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching gallery images: DrizzleQueryError: Failed query: select "id", "title", "description", "alt", "image_url", "category", "quality_score", "days_old", "status", "created_by", "approved_by", "created_at", "updated_at" from "gallery_images" where "gallery_images"."status" = $1 order by "gallery_images"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getGalleryImages (/home/runner/workspace/server/storage.ts:315:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1246:20) {
+  query: 'select "id", "title", "description", "alt", "image_url", "category", "quality_score", "days_old", "status", "created_by", "approved_by", "created_at", "updated_at" from "gallery_images" where "gallery_images"."status" = $1 order by "gallery_images"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getGalleryImages (/home/runner/workspace/server/storage.ts:315:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:1246:20) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+Error fetching notices: DrizzleQueryError: Failed query: select "id", "title", "message", "type", "priority", "start_date", "end_date", "link", "link_text", "dismissible", "target_audience", "created_by", "created_at", "updated_at" from "notices" where ("notices"."start_date" <= $1 and "notices"."end_date" >= $2) order by "notices"."priority" desc, "notices"."created_at" desc
+params: Mon Sep 01 2025 17:29:04 GMT+0000 (Coordinated Universal Time),Mon Sep 01 2025 17:29:04 GMT+0000 (Coordinated Universal Time)
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getActiveNotices (/home/runner/workspace/server/storage.ts:602:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2369:19) {
+  query: 'select "id", "title", "message", "type", "priority", "start_date", "end_date", "link", "link_text", "dismissible", "target_audience", "created_by", "created_at", "updated_at" from "notices" where ("notices"."start_date" <= $1 and "notices"."end_date" >= $2) order by "notices"."priority" desc, "notices"."created_at" desc',
+  params: [ 2025-09-01T17:29:04.971Z, 2025-09-01T17:29:04.971Z ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getActiveNotices (/home/runner/workspace/server/storage.ts:602:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:2369:19) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+5:29:34 PM [express] GET /api/notices 500 in 30004ms :: {"error":"Failed to fetch notices"}
+Error fetching projects: DrizzleQueryError: Failed query: select "id", "title", "description", "image_url", "completed_at", "category", "status", "priority_score", "impact_level", "auto_category", "days_active", "created_by", "approved_by", "created_at", "updated_at" from "projects" where "projects"."status" = $1 order by "projects"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getProjects (/home/runner/workspace/server/storage.ts:226:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:871:22) {
+  query: 'select "id", "title", "description", "image_url", "completed_at", "category", "status", "priority_score", "impact_level", "auto_category", "days_active", "created_by", "approved_by", "created_at", "updated_at" from "projects" where "projects"."status" = $1 order by "projects"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getProjects (/home/runner/workspace/server/storage.ts:226:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:871:22) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+5:29:34 PM [express] GET /api/projects 500 in 30002ms :: {"message":"Failed to fetch projects"}
+Error fetching news articles: DrizzleQueryError: Failed query: select "id", "title", "content", "excerpt", "image_url", "cover_image_url", "images", "category", "content_category", "author", "status", "content_score", "readability_level", "estimated_read_time", "engagement", "days_old", "read_count", "published_at", "created_by", "approved_by", "created_at", "updated_at" from "news_articles" where "news_articles"."status" = $1 order by "news_articles"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    ... 2 lines matching cause stack trace ...
+    at process.processTimers (node:internal/timers:519:7)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getNewsArticles (/home/runner/workspace/server/storage.ts:268:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:980:22) {
+  query: 'select "id", "title", "content", "excerpt", "image_url", "cover_image_url", "images", "category", "content_category", "author", "status", "content_score", "readability_level", "estimated_read_time", "engagement", "days_old", "read_count", "published_at", "created_by", "approved_by", "created_at", "updated_at" from "news_articles" where "news_articles"."status" = $1 order by "news_articles"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: Connection terminated due to connection timeout
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at processTicksAndRejections (node:internal/process/task_queues:95:5)
+      at runNextTicks (node:internal/process/task_queues:64:3)
+      at listOnTimeout (node:internal/timers:545:9)
+      at process.processTimers (node:internal/timers:519:7)
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getNewsArticles (/home/runner/workspace/server/storage.ts:268:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:980:22) {
+    [cause]: ErrorEvent {
+      [Symbol(kTarget)]: [WebSocket],
+      [Symbol(kType)]: 'error',
+      [Symbol(kError)]: Error: WebSocket was closed before the connection was established
+          at WebSocket.close (/home/runner/workspace/node_modules/ws/lib/websocket.js:299:7)
+          at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:4
+          at S.write (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:423:51)
+          at S.end (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:425:83)
+          at S.destroy (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:426:63)
+          at Timeout.<anonymous> (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1117:99)
+          at listOnTimeout (node:internal/timers:581:17)
+          at process.processTimers (node:internal/timers:519:7),
+      [Symbol(kMessage)]: 'WebSocket was closed before the connection was established'
+    }
+  }
+}
+5:29:34 PM [express] GET /api/news 500 in 30003ms :: {"message":"Failed to fetch news articles"}
+5:29:34 PM [express] GET /api/members 500 in 30002ms :: {"message":"Failed to fetch members"}
+Error fetching events: DrizzleQueryError: Failed query: select "id", "title", "description", "date", "time", "location", "category", "max_participants", "registration_required", "registration_deadline", "eligibility", "prizes", "team_event", "min_team_size", "max_team_size", "contact_info", "custom_questions", "status", "urgency", "capacity", "popularity", "smart_status", "days_until_event", "created_by", "created_at", "updated_at" from "events" order by "events"."created_at" desc
+params: 
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getEvents (/home/runner/workspace/server/storage.ts:371:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1983:20) {
+  query: 'select "id", "title", "description", "date", "time", "location", "category", "max_participants", "registration_required", "registration_deadline", "eligibility", "prizes", "team_event", "min_team_size", "max_team_size", "contact_info", "custom_questions", "status", "urgency", "capacity", "popularity", "smart_status", "days_until_event", "created_by", "created_at", "updated_at" from "events" order by "events"."created_at" desc',
+  params: [],
+  cause: Error: timeout exceeded when trying to connect
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getEvents (/home/runner/workspace/server/storage.ts:371:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:1983:20)
+}
+5:29:34 PM [express] GET /api/events 500 in 30004ms :: {"message":"Failed to fetch events"}
+Error fetching gallery images: DrizzleQueryError: Failed query: select "id", "title", "description", "alt", "image_url", "category", "quality_score", "days_old", "status", "created_by", "approved_by", "created_at", "updated_at" from "gallery_images" where "gallery_images"."status" = $1 order by "gallery_images"."created_at" desc
+params: approved
+    at NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:73:11)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+    at async PostgreSQLStorage.getGalleryImages (/home/runner/workspace/server/storage.ts:315:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1246:20) {
+  query: 'select "id", "title", "description", "alt", "image_url", "category", "quality_score", "days_old", "status", "created_by", "approved_by", "created_at", "updated_at" from "gallery_images" where "gallery_images"."status" = $1 order by "gallery_images"."created_at" desc',
+  params: [ 'approved' ],
+  cause: Error: timeout exceeded when trying to connect
+      at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1087:33
+      at async <anonymous> (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:153:11)
+      at async NeonPreparedQuery.queryWithCache (/home/runner/workspace/node_modules/src/pg-core/session.ts:71:12)
+      at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:152:18)
+      at async PostgreSQLStorage.getGalleryImages (/home/runner/workspace/server/storage.ts:315:12)
+      at async <anonymous> (/home/runner/workspace/server/routes.ts:1246:20)
+}
+5:29:34 PM [express] GET /api/gallery 500 in 30002ms :: {"message":"Failed to fetch gallery images"}
+5:29:45 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Unauthorized"}
+^A
