@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const { buffer, originalname, mimetype } = req.file;
+      const { buffer, originalname, mimetype, size } = req.file;
       
       // Generate unique filename
       const ext = originalname.split('.').pop();
@@ -54,9 +54,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const imageUrl = await storage.uploadImage(buffer, filename, mimetype);
       
+      // Get image metadata after upload
+      const imageData = await storage.getImage(filename);
+      
       res.json({ 
         url: imageUrl,
-        filename 
+        filename,
+        originalName: originalname,
+        size: size,
+        mimeType: mimetype,
+        metadata: imageData?.metadata || null,
+        transformations: imageData?.transformations || []
       });
     } catch (error) {
       console.error("Upload error:", error);
@@ -620,9 +628,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Images are now served directly by Cloudinary URLs, no need for this endpoint
   // Keeping for backward compatibility - redirects to Cloudinary
   app.get("/api/images/:filename", async (req, res) => {
-    res.status(410).json({ 
-      message: "Images are now served directly via Cloudinary URLs. Please use the full Cloudinary URL instead." 
-    });
+    try {
+      const { filename } = req.params;
+      const imageData = await storage.getImage(filename);
+      
+      if (!imageData) {
+        return res.status(404).json({ 
+          message: "Image not found or has been deleted" 
+        });
+      }
+      
+      res.json({
+        url: imageData.url,
+        metadata: imageData.metadata,
+        transformations: imageData.transformations,
+        thumbnailUrl: imageData.transformations[0] || imageData.url,
+        mediumUrl: imageData.transformations[1] || imageData.url
+      });
+    } catch (error) {
+      console.error("Image retrieval error:", error);
+      res.status(500).json({ 
+        message: "Failed to retrieve image information" 
+      });
+    }
   });
 
   app.delete("/api/images/:filename", isAdmin, async (req, res) => {
@@ -633,6 +661,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Image deletion error:", error);
       res.status(500).json({ message: "Failed to delete image" });
+    }
+  });
+
+  // Image analytics endpoint
+  app.get("/api/images/analytics", isAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getImageAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Image analytics error:", error);
+      res.status(500).json({ message: "Failed to get image analytics" });
     }
   });
 

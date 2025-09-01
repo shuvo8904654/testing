@@ -25,6 +25,7 @@ export interface IStorage {
   updateUserRole(id: number, role: string, permissions: string[]): Promise<User | null>;
   updateUserStatus(id: number, isActive: boolean): Promise<User | null>;
   updateUserApplicationStatus(id: number, updateData: any): Promise<User | null>;
+  deleteUser(id: number): Promise<void>;
   
   // Member operations
   getMembers(): Promise<Member[]>;
@@ -90,7 +91,7 @@ export interface IStorage {
   
   // Image storage operations
   uploadImage(buffer: Buffer, filename: string, contentType: string): Promise<string>;
-  getImage(filename: string): Promise<{ stream: any; contentType: string } | null>;
+  getImage(filename: string): Promise<{ url: string; metadata: any; transformations: string[] } | null>;
   deleteImage(filename: string): Promise<void>;
   
   // Notice operations
@@ -104,6 +105,14 @@ export interface IStorage {
   // Approval history
   createApprovalHistory(historyData: any): Promise<any>;
   getApprovalHistory(): Promise<any[]>;
+  
+  // Image analytics
+  getImageAnalytics(): Promise<{
+    totalImages: number;
+    storageUsed: number;
+    topCategories: { category: string; count: number }[];
+    recentUploads: { date: string; count: number }[];
+  }>;
 }
 
 export class PostgreSQLStorage implements IStorage {
@@ -167,6 +176,10 @@ export class PostgreSQLStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0] || null;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Member operations
@@ -494,6 +507,15 @@ export class PostgreSQLStorage implements IStorage {
           resource_type: 'image',
           public_id: filename.split('.')[0],
           format: filename.split('.').pop(),
+          transformation: [
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' },
+            { width: 1920, height: 1080, crop: 'limit' }
+          ],
+          eager: [
+            { width: 300, height: 300, crop: 'thumb', gravity: 'auto' },
+            { width: 800, height: 600, crop: 'fit' }
+          ]
         },
         (error, result) => {
           if (error) {
@@ -506,14 +528,54 @@ export class PostgreSQLStorage implements IStorage {
     });
   }
 
-  async getImage(filename: string): Promise<{ stream: any; contentType: string } | null> {
-    return null; // Images served directly via Cloudinary URLs
+  async getImage(filename: string): Promise<{ url: string; metadata: any; transformations: string[] } | null> {
+    try {
+      const publicId = filename.split('.')[0];
+      
+      // Get image metadata from Cloudinary
+      const resource = await cloudinary.api.resource(publicId, {
+        image_metadata: true,
+        colors: true,
+        quality_analysis: true
+      });
+      
+      return {
+        url: resource.secure_url,
+        metadata: {
+          width: resource.width,
+          height: resource.height,
+          format: resource.format,
+          size: resource.bytes,
+          colors: resource.colors,
+          qualityAnalysis: resource.quality_analysis,
+          createdAt: resource.created_at,
+          publicId: resource.public_id
+        },
+        transformations: [
+          `${resource.secure_url.replace('/upload/', '/upload/w_300,h_300,c_thumb,g_auto/')}`,
+          `${resource.secure_url.replace('/upload/', '/upload/w_800,h_600,c_fit/')}`
+        ]
+      };
+    } catch (error) {
+      console.error('Error getting image metadata:', error);
+      return null;
+    }
   }
 
   async deleteImage(filename: string): Promise<void> {
     try {
       const publicId = filename.split('.')[0];
-      await cloudinary.uploader.destroy(publicId);
+      
+      // Delete main image and all its transformations
+      await cloudinary.uploader.destroy(publicId, {
+        invalidate: true,
+        resource_type: 'image'
+      });
+      
+      // Also delete eager transformations
+      await cloudinary.api.delete_derived_resources([publicId]);
+      
+      console.log(`Successfully deleted image: ${publicId}`);
     } catch (error) {
       console.error('Error deleting image from Cloudinary:', error);
       throw error;
@@ -572,6 +634,68 @@ export class PostgreSQLStorage implements IStorage {
   async getApprovalHistory(): Promise<any[]> {
     // Could implement with a separate approval_history table if needed
     return [];
+  }
+  
+  async getImageAnalytics(): Promise<{
+    totalImages: number;
+    storageUsed: number;
+    topCategories: { category: string; count: number }[];
+    recentUploads: { date: string; count: number }[];
+  }> {
+    // Get gallery images count and categories
+    const images = await db.select().from(galleryImages);
+    
+    // Calculate storage used (approximate from Cloudinary)
+    let totalStorageBytes = 0;
+    for (const image of images) {
+      try {
+        const imageInfo = await this.getImage(image.imageUrl.split('/').pop() || '');
+        if (imageInfo?.metadata?.size) {
+          totalStorageBytes += imageInfo.metadata.size;
+        }
+      } catch (error) {
+        // Continue if individual image fails
+      }
+    }
+    
+    // Get category distribution
+    const categoryCount = images.reduce((acc: Record<string, number>, img) => {
+      const category = img.category || 'Uncategorized';
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const topCategories = Object.entries(categoryCount)
+      .map(([category, count]) => ({ category, count: count as number }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    // Get recent uploads (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentImages = images.filter(
+      img => new Date(img.createdAt) >= thirtyDaysAgo
+    );
+    
+    // Group by date
+    const uploadsByDate = recentImages.reduce((acc: Record<string, number>, img) => {
+      const date = new Date(img.createdAt).toISOString().split('T')[0];
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const recentUploads = Object.entries(uploadsByDate)
+      .map(([date, count]) => ({ date, count: count as number }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 7);
+    
+    return {
+      totalImages: images.length,
+      storageUsed: totalStorageBytes,
+      topCategories,
+      recentUploads
+    };
   }
 }
 
