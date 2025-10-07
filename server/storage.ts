@@ -802,6 +802,14 @@ async function initializeDatabase() {
   let retryCount = 0;
   const maxRetries = 3;
   
+  // First, automatically push database schema
+  try {
+    const { pushDatabaseSchema } = await import('./db-migration');
+    await pushDatabaseSchema();
+  } catch (error) {
+    console.error('⚠️ Schema push failed, but continuing with initialization:', error instanceof Error ? error.message : String(error));
+  }
+  
   while (retryCount < maxRetries) {
     try {
       console.log(`🔄 Attempting database initialization (attempt ${retryCount + 1}/${maxRetries})`);
